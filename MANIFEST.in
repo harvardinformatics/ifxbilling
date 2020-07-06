@@ -1,0 +1,4 @@
+include LICENSE
+include README.rst
+recursive-include ifxbilling/templates *
+exclude ifxbilling/management/commands/applyDevData.py

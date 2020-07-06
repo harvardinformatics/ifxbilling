@@ -1,0 +1,13 @@
+.DS_Store
+__pycache__
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sqlite3
+docker-compose-local.yml
+build*
+ifxbilling.egg-info*

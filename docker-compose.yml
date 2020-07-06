@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb
+    volumes:
+      - ifxbilling-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=ifxbilling
+      - MYSQL_DATABASE=ifxbilling
+      - MYSQL_USER=ifxbilling
+      - MYSQL_PASSWORD=ifxbilling
+    ports:
+      - 3307:3306
+  drf:
+    build: .
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    ports:
+      - 8091:80
+    environment:
+      - IFXBILLING_USERNAME=ifxbilling
+      - IFXBILLING_PASSWORD=ifxbilling
+      - IFXBILLING_DATABASE=ifxbilling
+      - IFXBILLING_HOSTNAME=db
+      - IFXBILLING_DEBUG=TRUE
+      - IFXBILLING_LOGLEVEL=DEBUG
+      - IFXBILLING_DJANGO_KEY=anweijfnvwoejvniejnvfwvijnf
+volumes:
+  ifxbilling-data:
