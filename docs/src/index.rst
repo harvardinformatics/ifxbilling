@@ -9,6 +9,7 @@ Billing core application
    :maxdepth: 4
    :caption: Contents:
 
+    Invoicing <invoicing>
 
 Indices and tables
 ==================
