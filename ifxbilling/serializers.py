@@ -1,15 +1,26 @@
-from rest_framework import serializers, viewsets
-from ifxbilling.models import *
+# -*- coding: utf-8 -*-
 
-class ExpenseCodeSerializer(serializers.ModelSerializer):
+'''
+Serializers and viewsets for ifxbilling
+'''
+
+from rest_framework import serializers, viewsets
+from ifxbilling import models
+
+
+class AccountSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for accounts
+    '''
     class Meta:
-        model = ExpenseCode
-        fields  = ( 'id', 'fullcode', 'name', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated')
+        model = models.Account
+        fields = ('id', 'code', 'name', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated')
         read_only_fields = ('created', 'updated')
 
-class ExpenseCodeViewSet(viewsets.ModelViewSet):
+
+class AccountViewSet(viewsets.ModelViewSet):
     '''
-    ViewSet for Expense Code models
+    ViewSet for Account models
     '''
-    queryset = ExpenseCode.objects.all()
-    serializer_class = ExpenseCodeSerializer
+    queryset = models.Account.objects.all()
+    serializer_class = AccountSerializer

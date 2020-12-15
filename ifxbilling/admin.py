@@ -17,13 +17,15 @@ from ifxbilling import models
 
 logger = logging.getLogger(__name__)
 
-class ExpenseCodeAdmin(admin.ModelAdmin):
+
+class AccountAdmin(admin.ModelAdmin):
     '''
-    Admin for expense codes
+    Admin for expense codes and POs
     '''
     fields = (
-        'fullcode',
+        'code',
         'name',
+        'account_type',
         'root',
         'expiration_date',
         'active',
@@ -33,7 +35,8 @@ class ExpenseCodeAdmin(admin.ModelAdmin):
     )
     list_display = (
         'id',
-        'fullcode',
+        'code',
+        'account_type',
         'name',
         'root',
         'expiration_date',
@@ -44,11 +47,12 @@ class ExpenseCodeAdmin(admin.ModelAdmin):
     )
     ordering = ('updated',)
     search_fields = (
-        'fullcode',
+        'code',
         'name',
         'root'
     )
-    list_filter = ('expiration_date', 'active')
+    list_filter = ('account_type', 'active')
     readonly_fields = ('created', 'updated')
 
-admin.site.register(models.ExpenseCode, ExpenseCodeAdmin)
+
+admin.site.register(models.Account, AccountAdmin)

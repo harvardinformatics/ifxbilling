@@ -18,6 +18,7 @@ ARG IFXAUTH_COMMIT=afcaad2b05f5dd90e86e53b2de864bef04c91898
 
 RUN --mount=type=ssh pip install --upgrade pip && \
     pip install 'Django>2.2,<3' && \
+    pip install 'djangorestframework>3.9.1,<3.12.0' && \
     pip install git+ssh://git@github.com/harvardinformatics/djvocab.git@${DJVOCAB_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxurls.git@${IFXURLS_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxuser.git@${IFXUSER_COMMIT} && \
