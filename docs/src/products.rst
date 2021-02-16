@@ -44,7 +44,12 @@ Items like recovered helium that have a negative charge (credit) can
 be implemented as products.  This will ensure that they are treated as a
 distinct invoice line item.
 
-"Credit" products will be supported??
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-For the Helium system, returned helium is credited to the user
-account.  This isn't really an adjustment to a charge, right?????
+ProductUsages can be billed
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The actual item associated wih a BillingRecord is a ProductUsage.  The
+ProductUsage model in ifxbilling is a minimal model that links a Product
+to a User for a "quantity" of use at a particular time.  This can be
+subclassed in applications to provide additional information.  For example,
+an HCBI product usage may include links to reservation records and usage data.
+
+

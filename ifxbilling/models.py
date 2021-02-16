@@ -11,12 +11,14 @@ All rights reserved.
 @license: GPL v2.0
 '''
 import logging
-from datetime import datetime
+from django.utils import timezone
 from django.db import models
+from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from author.decorators import with_author
+from ifxuser.models import Organization
 
 
 logger = logging.getLogger('__name__')
@@ -28,7 +30,7 @@ class Account(models.Model):
     """
     class Meta:
         db_table = "account"
-        unique_together = ('code', 'institution')
+        unique_together = ('code', 'organization')
 
     code = models.CharField(
         max_length=50,
@@ -37,19 +39,20 @@ class Account(models.Model):
         default=None,
         help_text='Account code (e.g. expense code or PO number)',
     )
-    institution = models.CharField(
-        max_length=100,
-        blank=False,
-        null=False,
-        default='Harvard',
-        help_text='Institution that issues the code'
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,  # Organizations are not deleted during sync.  Organizations with accounts should not be deleted.
+        help_text='Organization responsible for the account.'
     )
     account_type = models.CharField(
         max_length=10,
         blank=False,
         null=False,
         default='Expense Code',
-        choices=('Expense Code', 'PO'),
+        choices=(
+            ('Expense Code', 'Expense Code'),
+            ('PO', 'PO'),
+        ),
         help_text='Expense Code or PO',
     )
     name = models.CharField(
@@ -71,7 +74,7 @@ class Account(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     active = models.BooleanField(default=False)
-    valid_from = models.DateTimeField(default=datetime.now(), blank=True)
+    valid_from = models.DateTimeField(default=timezone.now(), blank=True)
     expiration_date = models.DateTimeField(
         blank=True,
         null=True
@@ -82,9 +85,8 @@ class Account(models.Model):
 
 class Product(models.Model):
     '''
-    Mixin model for anything that can be charged for.
-    This is a mixin (and BillingRecord points to product_number as foreign key)
-    because things like "DewarRequest" that inherit from Request may be the product
+    General name of product and product number.  Helium dewar,  ELYRA microscope, Lustre disk, Promethion sequencing could
+    all be Products.  Rate sets are associated with products.  Actual usage of a product is a ProductUsage
     '''
     class Meta:
         db_table = 'product'
@@ -111,6 +113,13 @@ class Product(models.Model):
         default=None,
         help_text='Product description'
     )
+    billing_calculator = models.CharField(
+        max_length=100,
+        null=False,
+        blank=False,
+        default='ifxbilling.calculator.BasicBillingCalculator',
+        help_text='Class to use for calculating charges for this product'
+    )
 
 
 class Rate(models.Model):
@@ -135,11 +144,55 @@ class Rate(models.Model):
         help_text='Price in pennies'
     )
     unit = models.CharField(
+        max_length=100,
         null=False,
         blank=False,
         default=None,
         help_text='Unit for price (e.g. ea)'
     )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Is this rate currently active?'
+    )
+
+
+class ProductUsage(models.Model):
+    '''
+    Usage of a product that can be billed for.
+    Base class that should be subclassed in the lab application,
+    or, if it's already a subclass, a OneToOne relationship can be set.
+    '''
+    class Meta:
+        db_table = 'product_usage'
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    year = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Calendar year in which the usage occurs',
+        default=timezone.now().year
+    )
+    month = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Month in which the usage occurs',
+        default=timezone.now().month
+    )
+    quantity = models.IntegerField(
+        null=False,
+        blank=False,
+        default=1,
+        help_text='Quantity of product'
+    )
+    units = models.CharField(
+        max_length=100,
+        null=False,
+        blank=False,
+        default='ea',
+        help_text='Units of quantity'
+    )
+    created = models.DateTimeField(auto_now_add=True)
 
 
 class BillingRecord(models.Model):
@@ -149,34 +202,35 @@ class BillingRecord(models.Model):
     this record.
     This will eventually be a line item in an invoice.
     '''
+
     class Meta:
         db_table = 'billing_record'
 
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    product_usage = models.ForeignKey(ProductUsage, on_delete=models.PROTECT)
     charge = models.IntegerField(
         null=False,
         blank=False,
         default=0,
         help_text='Sum of charge records in pennies'
     )
-    quantity = models.IntegerField(
-        null=False,
-        blank=False,
-        default=1,
-        help_text='Quantity of product'
-    )
-    units = models.CharField(
-        null=False,
-        blank=False,
-        default='ea',
-        help_text='Units of quantity'
-    )
     description = models.CharField(
         max_length=200,
         blank=True,
         null=True,
         help_text='Description of the billing record.'
+    )
+    year = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Calendar year to which the billing applies',
+        default=timezone.now().year
+    )
+    month = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Month in which the billing applies',
+        default=timezone.now().month
     )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

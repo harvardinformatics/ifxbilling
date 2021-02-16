@@ -13,7 +13,8 @@ COPY requirements.txt /app
 
 ARG DJVOCAB_COMMIT=a0cfeba93ea805d3861e97e9c38fd27447e5b58a
 ARG IFXURLS_COMMIT=72f75b3fcc9446fc5095ad747b3ed53d05bc4799
-ARG IFXUSER_COMMIT=056d06c5592ca72c911fffdc9c7436441f78ce31
+ARG NANITES_CLIENT_COMMIT=a11ff96ccb2c888d0d07ac97f27de1153463bf59
+ARG IFXUSER_COMMIT=a7cf433a6572fa5a9fc969a6e6de7ff3e5297a0c
 ARG IFXAUTH_COMMIT=afcaad2b05f5dd90e86e53b2de864bef04c91898
 
 RUN --mount=type=ssh pip install --upgrade pip && \
@@ -21,6 +22,7 @@ RUN --mount=type=ssh pip install --upgrade pip && \
     pip install 'djangorestframework>3.9.1,<3.12.0' && \
     pip install git+ssh://git@github.com/harvardinformatics/djvocab.git@${DJVOCAB_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxurls.git@${IFXURLS_COMMIT} && \
+    pip install git+ssh://git@github.com/harvardinformatics/nanites.client.git@${NANITES_CLIENT_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxuser.git@${IFXUSER_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxauth.git@${IFXAUTH_COMMIT} && \
     pip install -r requirements.txt
