@@ -1,0 +1,209 @@
+# -*- coding: utf-8 -*-
+
+'''
+Test Product
+
+Created on  2021-02-10
+
+@author: Aaron Kitzmiller <aaron_kitzmiller@harvard.edu>
+@copyright: 2021 The Presidents and Fellows of Harvard College.
+All rights reserved.
+@license: GPL v2.0
+'''
+from rest_framework.test import APITestCase
+from rest_framework.authtoken.models import Token
+from rest_framework.reverse import reverse
+from rest_framework import status
+from django.contrib.auth import get_user_model
+from ifxbilling.test import data
+from ifxbilling.models import Product
+
+class TestProduct(APITestCase):
+    '''
+    Test Product models and serializers
+    '''
+    def setUp(self):
+        '''
+        setup
+        '''
+        data.clearTestData()
+        self.superuser = get_user_model().objects.create_superuser('john', 'john@snow.com', 'johnpassword')
+        self.token = Token(user=self.superuser)
+        self.token.save()
+        self.client.login(username='john', password='johnpassword')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+
+    def testProductInsert(self):
+        '''
+        Insert a minimal Product
+        '''
+        product_data = {
+            'product_number': 'IFXP0000000001',
+            'product_name': 'Helium Dewar',
+            'product_description': 'A dewar of helium',
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
+        self.assertTrue(response.data['billing_calculator'] == 'ifxbilling.calculator.BasicBillingCalculator', f'Incorrect response data {response.data}')
+
+    def testMissingProductNumber(self):
+        '''
+        Ensure insertion fails without product number
+        '''
+        product_data = {
+            'product_name': 'Helium Dewar',
+            'product_description': 'A dewar of helium',
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response status: {response.data}')
+        self.assertTrue('This field is required' in str(response.data['product_number']), f'Incorrect response data {response.data}')
+
+    def testMissingProductName(self):
+        '''
+        Ensure insertion fails without product name
+        '''
+        product_data = {
+            'product_number': 'IFXP0000000001',
+            'product_description': 'A dewar of helium',
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response status: {response.data}')
+        self.assertTrue('This field is required' in str(response.data['product_name']), f'Incorrect response data {response.data}')
+
+    def testMissingProductDescription(self):
+        '''
+        Ensure insertion fails without product name
+        '''
+        product_data = {
+            'product_number': 'IFXP0000000001',
+            'product_name': 'Helium Dewar',
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response status: {response.data}')
+        self.assertTrue('This field is required' in str(response.data['product_description']), f'Incorrect response data {response.data}')
+
+    def testInsertProductWithRates(self):
+        '''
+        Ensure that a product can be inserted with rates
+        '''
+        product_data = {
+            'product_number': 'IFXP0000000001',
+            'product_name': 'Helium Dewar',
+            'product_description': 'A dewar of helium',
+            'rates': [
+                {
+                    'name': 'Helium Dewar Internal Rate',
+                    'price': 1000,
+                    'unit': 'Dewar',
+                    'is_active': True
+                },
+                {
+                    'name': 'Helium Dewar External Rate',
+                    'price': 10000,
+                    'unit': 'Dewar',
+                    'is_active': True
+                }
+            ]
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
+
+        product = Product.objects.get(id=response.data['id'])
+        # Make sure the rates are saved
+        self.assertTrue(len(product.rate_set.all()) == 2, f'Rates were not properly saved {product}')
+
+    def testUpdateProductWithRates(self):
+        '''
+        Ensure that a product rates can be updated
+        '''
+        product_data = {
+            'product_number': 'IFXP0000000001',
+            'product_name': 'Helium Dewar',
+            'product_description': 'A dewar of helium',
+            'rates': [
+                {
+                    'name': 'Helium Dewar Internal Rate',
+                    'price': 1000,
+                    'unit': 'Dewar',
+                    'is_active': True
+                },
+                {
+                    'name': 'Helium Dewar External Rate',
+                    'price': 10000,
+                    'unit': 'Dewar',
+                    'is_active': True
+                }
+            ]
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
+
+        # Fetch the existing object
+        url = reverse('product-detail', kwargs={'pk': response.data['id']})
+        response = self.client.get(url, format='json')
+        self.assertTrue(response.data['product_name'] == 'Helium Dewar', f'Incorrect response {response.data}')
+        product_data = response.data
+        for i, rate in enumerate(product_data['rates']):
+            if rate['name'] == 'Helium Dewar External Rate':
+                self.assertTrue(rate['price'] == 10000, f'Rate was incorrectly saved {rate}')
+                product_data['rates'][i]['price'] = 9999
+
+        # Update object
+        response = self.client.put(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_200_OK, f'Incorrect response code {response.status_code}')
+        found = False
+        for rate in response.data['rates']:
+            if rate['name'] == 'Helium Dewar External Rate':
+                self.assertTrue(rate['price'] == 9999, f'Update failed {rate}')
+                found = True
+        if not found:
+            self.assertTrue(False, f'Updated rate was not found')
+
+    def testRemoveProductRate(self):
+        '''
+        Ensure that a product rates can be removed
+        '''
+        product_data = {
+            'product_number': 'IFXP0000000001',
+            'product_name': 'Helium Dewar',
+            'product_description': 'A dewar of helium',
+            'rates': [
+                {
+                    'name': 'Helium Dewar Internal Rate',
+                    'price': 1000,
+                    'unit': 'Dewar',
+                    'is_active': True
+                },
+                {
+                    'name': 'Helium Dewar External Rate',
+                    'price': 10000,
+                    'unit': 'Dewar',
+                    'is_active': True
+                }
+            ]
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
+
+        # Fetch the existing object
+        url = reverse('product-detail', kwargs={'pk': response.data['id']})
+        response = self.client.get(url, format='json')
+        self.assertTrue(len(response.data['rates']) == 2, f'Incorrect response {response.data}')
+        product_data = response.data
+        for i, rate in enumerate(product_data['rates']):
+            if rate['name'] == 'Helium Dewar External Rate':
+                del product_data['rates'][i]
+
+        # Update object
+        response = self.client.put(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_200_OK, f'Incorrect response code {response.status_code}')
+
+        product = Product.objects.get(id=response.data['id'])
+        self.assertTrue(len(product.rate_set.all()) == 1, f'Incorrect number of product rates {product}')

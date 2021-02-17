@@ -45,7 +45,7 @@ class Account(models.Model):
         help_text='Organization responsible for the account.'
     )
     account_type = models.CharField(
-        max_length=10,
+        max_length=20,
         blank=False,
         null=False,
         default='Expense Code',
@@ -67,8 +67,8 @@ class Account(models.Model):
         default=None,
         help_text='If it is an expense code, the last 4 digits',
         validators=[
-            RegexValidator('^[0-9]{4}$',
-            message='Root must be 4 digits.'),
+            RegexValidator('^[0-9]{5}$',
+            message='Root must be 5 digits.'),
         ]
     )
     created = models.DateTimeField(auto_now_add=True)

@@ -46,7 +46,8 @@ if IFX_APP['token'] == 'FIXME':
 IFX_AUTH_META_KEY = 'HTTP_HKEY_EDUPERSONPRINCIPALNAME'
 
 # Erroneous error for json field with mariadb
-SILENCED_SYSTEM_CHECKS = ['django_mysql.E016']
+# timezone.now() is used for models.Account.valid_from, but the complaint persists
+SILENCED_SYSTEM_CHECKS = ['django_mysql.E016', 'fields.W161']
 
 # Application definition
 
