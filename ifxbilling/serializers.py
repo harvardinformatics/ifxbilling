@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 
 '''
-Serializers and viewsets for ifxbilling
+Serializers and viewsets for ifxbilling.
+
+Note that the ProductUsage serializer is unlikely to be used by client
+applications.  It is setup here for testing purposes.
+
+Likewise the *ViewSet classes should be replaced by local versions that provide
+appropriate permissions.
+
 '''
 import re
 import logging
 from django.db import transaction
+from django.contrib.auth import get_user_model
 from rest_framework import serializers, viewsets
 from ifxuser.models import Organization
 from ifxbilling import models
@@ -73,12 +81,12 @@ class RateSerializer(serializers.ModelSerializer):
     '''
     name = serializers.CharField(max_length=50)
     price = serializers.IntegerField()
-    unit = serializers.CharField(max_length=100)
+    units = serializers.CharField(max_length=100)
     is_active = serializers.BooleanField(required=False)
 
     class Meta:
         model = models.Product
-        fields = ('id', 'name', 'price', 'unit', 'is_active')
+        fields = ('id', 'name', 'price', 'units', 'is_active')
         read_only_fields = ('id',)
 
 
@@ -143,9 +151,34 @@ class ProductSerializer(serializers.ModelSerializer):
             instance = models.Product.objects.get(id=instance.id)
         return instance
 
+
 class ProductViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for Product models
     '''
     queryset = models.Product.objects.all()
     serializer_class = ProductSerializer
+
+
+class ProductUsageSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for product usages
+    '''
+    year = serializers.IntegerField(required=False)
+    month = serializers.IntegerField(required=False)
+    quantity = serializers.IntegerField(required=False)
+    units = serializers.CharField(max_length=100, required=False)
+    product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
+    product_user = serializers.SlugRelatedField(slug_field='full_name', queryset=get_user_model().objects.all())
+
+    class Meta:
+        model = models.ProductUsage
+        fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created')
+        read_only_fields = ('id', 'created')
+
+class ProductUsageViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for ProductUsages
+    '''
+    queryset = models.ProductUsage.objects.all()
+    serializer_class = ProductUsageSerializer

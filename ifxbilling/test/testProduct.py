@@ -98,13 +98,13 @@ class TestProduct(APITestCase):
                 {
                     'name': 'Helium Dewar Internal Rate',
                     'price': 1000,
-                    'unit': 'Dewar',
+                    'units': 'Dewar',
                     'is_active': True
                 },
                 {
                     'name': 'Helium Dewar External Rate',
                     'price': 10000,
-                    'unit': 'Dewar',
+                    'units': 'Dewar',
                     'is_active': True
                 }
             ]
@@ -129,13 +129,13 @@ class TestProduct(APITestCase):
                 {
                     'name': 'Helium Dewar Internal Rate',
                     'price': 1000,
-                    'unit': 'Dewar',
+                    'units': 'Dewar',
                     'is_active': True
                 },
                 {
                     'name': 'Helium Dewar External Rate',
                     'price': 10000,
-                    'unit': 'Dewar',
+                    'units': 'Dewar',
                     'is_active': True
                 }
             ]
@@ -177,13 +177,13 @@ class TestProduct(APITestCase):
                 {
                     'name': 'Helium Dewar Internal Rate',
                     'price': 1000,
-                    'unit': 'Dewar',
+                    'units': 'Dewar',
                     'is_active': True
                 },
                 {
                     'name': 'Helium Dewar External Rate',
                     'price': 10000,
-                    'unit': 'Dewar',
+                    'units': 'Dewar',
                     'is_active': True
                 }
             ]

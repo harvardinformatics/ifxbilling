@@ -143,7 +143,7 @@ class Rate(models.Model):
         default=0,
         help_text='Price in pennies'
     )
-    unit = models.CharField(
+    units = models.CharField(
         max_length=100,
         null=False,
         blank=False,
@@ -165,7 +165,7 @@ class ProductUsage(models.Model):
     class Meta:
         db_table = 'product_usage'
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     product_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     year = models.IntegerField(
         null=False,
