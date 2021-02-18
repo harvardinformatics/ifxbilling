@@ -37,8 +37,8 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Account
-        fields = ('id', 'code', 'name', 'organization', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated')
-        read_only_fields = ('created', 'updated', 'id')
+        fields = ('id', 'code', 'name', 'organization', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated', 'slug')
+        read_only_fields = ('created', 'updated', 'id', 'slug')
 
     @transaction.atomic
     def create(self, validated_data):
@@ -176,9 +176,30 @@ class ProductUsageSerializer(serializers.ModelSerializer):
         fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created')
         read_only_fields = ('id', 'created')
 
+
 class ProductUsageViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for ProductUsages
     '''
     queryset = models.ProductUsage.objects.all()
     serializer_class = ProductUsageSerializer
+
+
+class BillingRecordSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for billing records.  BillingRecords should mostly be created
+    by BillingCalculators.  They may be created manually, but this is probably
+    mostly for display of full objects.  List displays should probably be populated
+    with custom SQL.
+    '''
+    product_usage = serializers.IntegerField(required=False)
+    charge = serializers.IntegerField()
+    description = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    year = serializers.IntegerField(required=False)
+    month = serializers.IntegerField(required=False)
+#    transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
+
+    class Meta:
+        model = models.BillingRecord
+        fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'created', 'updated')
+        read_only_fields = ('id', 'created', 'updated')

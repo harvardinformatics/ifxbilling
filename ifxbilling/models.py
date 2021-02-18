@@ -79,9 +79,20 @@ class Account(models.Model):
         blank=True,
         null=True
     )
+    slug = models.CharField(max_length=100, unique=True, help_text='EC or PO + institution')
+
     def __str__(self):
         return '%s (%s) an %s %s' % (self.code, self.name, 'active' if self.active else 'inactive', self.account_type)
 
+    def save(self, *args, **kwargs):
+        '''
+        Set the slug
+        '''
+        if self.account_type == 'Expense Code':
+            self.slug = self.code
+        else:
+            self.slug = 'PO %s (%s)' % (self.code, self.organization.name)
+        super().save(*args, **kwargs)
 
 class Product(models.Model):
     '''
