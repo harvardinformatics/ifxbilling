@@ -10,8 +10,10 @@ Created on  2021-02-10
 All rights reserved.
 @license: GPL v2.0
 '''
+from copy import deepcopy
 from ifxuser.models import Organization, UserAffiliation
 from django.contrib.auth import get_user_model
+from ifxbilling import models
 
 ORGS = [
     {
@@ -54,6 +56,31 @@ USERS = [
     },
 ]
 
+ACCOUNTS = [
+    {
+        'code': '370-31230-8100-000775-600200-0000-44075',
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'name': 'mycode',
+        'root': '12345',
+    }
+]
+
+PRODUCTS = [
+    {
+        'product_number': 'IFXP0000000001',
+        'product_name': 'Helium Dewar',
+        'product_description': 'A dewar of helium',
+    }
+]
+
+PRODUCT_USAGES = [
+    {
+        'product': 'Helium Dewar',
+        'product_user': 'Slurpy Slurpiston',
+        'quantity': 1,
+    }
+]
+
 def clearTestData():
     '''
     Clear all of the data from the database.  Called during setUp
@@ -70,10 +97,17 @@ def clearTestData():
     except Exception:
         pass
 
+    models.BillingRecord.objects.all().delete()
+    models.ProductUsage.objects.all().delete()
+    models.Product.objects.all().delete()
+    models.Account.objects.all().delete()
 
-def init():
+
+
+def init(types=None):
     '''
-    Initialize organizations and users
+    Initialize organizations and users.  If types is set, initialize those as well.
+    types will be processed in order, so child objects will need to be after parents.
     '''
     for user_data in USERS:
         get_user_model().objects.create(**user_data)
@@ -83,3 +117,19 @@ def init():
     for user in get_user_model().objects.all():
         if user.username in ('sslurpiston', 'dderpiston'):
             UserAffiliation.objects.create(user=user, organization=org, role='member')
+
+    if types:
+        if 'Account' in types:
+            for account_data in ACCOUNTS:
+                data_copy = deepcopy(account_data)
+                data_copy['organization'] = Organization.objects.get(slug=account_data['organization'])
+                models.Account.objects.create(**data_copy)
+        if 'Product' in types:
+            for product_data in PRODUCTS:
+                models.Product.objects.create(**product_data)
+        if 'ProductUsage' in types:
+            for product_usage_data in PRODUCT_USAGES:
+                data_copy = deepcopy(product_usage_data)
+                data_copy['product'] = models.Product.objects.get(product_name=product_usage_data['product'])
+                data_copy['product_user'] = get_user_model().objects.get(full_name=product_usage_data['product_user'])
+                models.ProductUsage.objects.create(**data_copy)

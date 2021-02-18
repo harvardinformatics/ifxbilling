@@ -115,6 +115,7 @@ class Product(models.Model):
         null=False,
         blank=False,
         default=None,
+        unique=True,
         help_text='Name of the product'
     )
     product_description = models.CharField(
@@ -278,7 +279,7 @@ def transaction_post_save(sender, instance, **kwargs):
     Recalculate the BillingRecord charge
     """
     billing_record_charge = 0
-    transactions = instance.billing_record.transactions
+    transactions = instance.billing_record.transaction_set.all()
     for trx in sorted(transactions, key=lambda transaction: transaction.created):
         billing_record_charge += trx.charge
     instance.billing_record.charge = billing_record_charge

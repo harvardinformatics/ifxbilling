@@ -168,6 +168,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     month = serializers.IntegerField(required=False)
     quantity = serializers.IntegerField(required=False)
     units = serializers.CharField(max_length=100, required=False)
+    # The product should probably be connected by product_number, but, within a given application, names should be unique.
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
     product_user = serializers.SlugRelatedField(slug_field='full_name', queryset=get_user_model().objects.all())
 
@@ -185,6 +186,19 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
     serializer_class = ProductUsageSerializer
 
 
+class TransactionSerializer(viewsets.ModelViewSet):
+    '''
+    Serilizer for BillingRecord Transactions.
+    '''
+    charge = serializers.IntegerField()
+    description = serializers.CharField(max_length=200)
+
+    class Meta:
+        model = models.Transaction
+        fields = ('id', 'charge', 'description', 'created', 'author')
+        read_only_fields = ('id', 'created', 'author')
+
+
 class BillingRecordSerializer(serializers.ModelSerializer):
     '''
     Serializer for billing records.  BillingRecords should mostly be created
@@ -192,14 +206,114 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     mostly for display of full objects.  List displays should probably be populated
     with custom SQL.
     '''
-    product_usage = serializers.IntegerField(required=False)
-    charge = serializers.IntegerField()
+    account = serializers.SlugRelatedField(slug_field='slug', queryset=models.Account.objects.all())
+    product_usage = ProductUsageSerializer(read_only=True)
+    charge = serializers.IntegerField(read_only=True)
     description = serializers.CharField(max_length=200, required=False, allow_blank=True)
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
-#    transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
+    transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
 
     class Meta:
         model = models.BillingRecord
         fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'created', 'updated')
         read_only_fields = ('id', 'created', 'updated')
+
+    @transaction.atomic
+    def create(self, validated_data):
+        '''
+        Ensure that BillingRecord is composed of transactions.
+        '''
+        # Fail if transactions are missing
+        if 'transactions' not in self.initial_data:
+            raise serializers.ValidationError(
+                detail={
+                    'transactions': 'Billing record must have at least one transaction'
+                }
+            )
+
+        # Check for product_usage, fetch and add to validated_data
+        if 'product_usage' not in self.initial_data \
+            or not self.initial_data['product_usage'] \
+            or not self.initial_data['product_usage']['id']:
+            raise serializers.ValidationError(
+                detail={
+                    'product_usage': 'An existing product usage must be defined.'
+                }
+            )
+        product_usage_id = self.initial_data['product_usage']['id']
+        try:
+            product_usage = models.ProductUsage.objects.get(id=int(product_usage_id))
+            validated_data['product_usage'] = product_usage
+        except Exception as e:
+            logger.exception(e)
+            raise serializers.ValidationError(
+                detail={
+                    'product_usage': 'Cannot find the specifiec product usage record.'
+                }
+            )
+
+        # Create the billing record.  Charge will be 0
+        billing_record = models.BillingRecord.objects.create(**validated_data)
+
+        # Set the transactions to get the actual charge
+        transactions_data = self.initial_data['transactions']
+        for transaction_data in transactions_data:
+            models.Transaction.objects.create(**transaction_data, billing_record=billing_record)
+
+        return billing_record
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        '''
+        Ensure the BillingRecord is composed of transactions
+        '''
+        if 'transactions' not in self.initial_data:
+            raise serializers.ValidationError(
+                detail={
+                    'transactions': 'Billing record must have at least one transaction'
+                }
+            )
+
+        # Check for product_usage, fetch and add to validated_data
+        if 'product_usage' not in self.initial_data \
+            or not self.initial_data['product_usage'] \
+            or not self.initial_data['product_usage']['id']:
+            raise serializers.ValidationError(
+                detail={
+                    'product_usage': 'An existing product usage must be defined.'
+                }
+            )
+        product_usage_id = self.initial_data['product_usage']['id']
+        try:
+            product_usage = models.ProductUsage.objects.get(id=int(product_usage_id))
+            validated_data['product_usage'] = product_usage
+        except Exception as e:
+            logger.exception(e)
+            raise serializers.ValidationError(
+                detail={
+                    'product_usage': 'Cannot find the specific product usage record.'
+                }
+            )
+
+        for attr in ['account', 'charge', 'description', 'year', 'month', 'product_usage']:
+            if attr in validated_data:
+                setattr(instance, attr, validated_data[attr])
+
+        instance.save()
+
+        # Clear old transaction records and set the new ones
+        instance.transaction_set.all().delete()
+        transactions_data = self.initial_data['transactions']
+        for transaction_data in transactions_data:
+            models.Transaction.objects.create(**transaction_data, billing_record=instance)
+
+        return instance
+
+
+class BillingRecordViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for BillingRecords
+    '''
+    queryset = models.BillingRecord.objects.all()
+    serializer_class = BillingRecordSerializer
