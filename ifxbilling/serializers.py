@@ -206,17 +206,17 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     mostly for display of full objects.  List displays should probably be populated
     with custom SQL.
     '''
-    account = serializers.SlugRelatedField(slug_field='slug', queryset=models.Account.objects.all())
     product_usage = ProductUsageSerializer(read_only=True)
     charge = serializers.IntegerField(read_only=True)
     description = serializers.CharField(max_length=200, required=False, allow_blank=True)
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
     transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
+    accounts = AccountSerializer(many=True, read_only=True, source='billingrecordaccount_set')
 
     class Meta:
         model = models.BillingRecord
-        fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'created', 'updated')
+        fields = ('id', 'accounts', 'product_usage', 'charge', 'description', 'year', 'month', 'created', 'updated')
         read_only_fields = ('id', 'created', 'updated')
 
     @transaction.atomic

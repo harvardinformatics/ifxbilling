@@ -218,7 +218,6 @@ class BillingRecord(models.Model):
     class Meta:
         db_table = 'billing_record'
 
-    account = models.ForeignKey(Account, on_delete=models.PROTECT)
     product_usage = models.ForeignKey(ProductUsage, on_delete=models.PROTECT)
     charge = models.IntegerField(
         null=False,
@@ -284,3 +283,20 @@ def transaction_post_save(sender, instance, **kwargs):
         billing_record_charge += trx.charge
     instance.billing_record.charge = billing_record_charge
     instance.billing_record.save()
+
+
+class BillingRecordAccount(models.Model):
+    '''
+    Associates BillingRecords with Accounts with an optional percentage
+    '''
+
+    class Meta:
+        db_table = 'billing_record_account'
+
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    billing_record = models.ForeignKey(BillingRecord, on_delete=models.CASCADE)
+    percent = models.IntegerField(
+        blank=False,
+        null=False,
+        default=100
+    )
