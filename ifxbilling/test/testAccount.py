@@ -33,6 +33,51 @@ class TestAccount(APITestCase):
         self.client.login(username='john', password='johnpassword')
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
+    def testDotSeparatedExpenseCodeInsertFail(self):
+        '''
+        Ensure that an improperly formatted expense code (containing dot separators) will fail
+        '''
+        data.init()
+        account_data = {
+            'code': '370.31230.8100.000775.600200.0000.44075',
+            'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+            'name': 'mycode',
+            'root': '12345',
+        }
+        url = reverse('account-list')
+        response = self.client.post(url, account_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response status: {response.data}')
+
+    def testMissingObjectCodeInsertion(self):
+        '''
+        Ensure that an expense code with missing object code will succeed
+        '''
+        data.init()
+        account_data = {
+            'code': '370-31230-000775-600200-0000-44075',
+            'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+            'name': 'mycode',
+            'root': '12345',
+        }
+        url = reverse('account-list')
+        response = self.client.post(url, account_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
+
+    def testExpenseCodeCharsFail(self):
+        '''
+        Ensure that an expense code with chars will fail
+        '''
+        data.init()
+        account_data = {
+            'code': '370-31230-xxxx-000775-600200-0000-44075',
+            'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+            'name': 'mycode',
+            'root': '12345',
+        }
+        url = reverse('account-list')
+        response = self.client.post(url, account_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response status: {response.data}')
+
     def testAccountInsert(self):
         '''
         Insert a minimal account. Ensure default account_type 'Expense Code', default active and valid_from are set

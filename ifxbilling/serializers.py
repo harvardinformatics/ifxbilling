@@ -51,6 +51,14 @@ class AccountSerializer(serializers.ModelSerializer):
                     'root': f'Root must be a 5 digit number.'
                 }
             )
+        if 'account_type' not in validated_data or validated_data['account_type'] == 'Expense Code':
+            if not models.EXPENSE_CODE_RE.match(validated_data['code']) and not models.EXPENSE_CODE_SANS_OBJECT_RE.match(validated_data['code']):
+                raise serializers.ValidationError(
+                    detail={
+                        'code': f'Expense codes must be dash separated and contain either 33 digits or 29 (33 sans object code)'
+                    }
+                )
+
         return super().create(validated_data)
 
     @transaction.atomic

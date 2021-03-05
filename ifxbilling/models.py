@@ -10,6 +10,7 @@ Created on  2020-05-12
 All rights reserved.
 @license: GPL v2.0
 '''
+import re
 import logging
 from django.utils import timezone
 from django.db import models
@@ -23,6 +24,8 @@ from ifxuser.models import Organization
 
 logger = logging.getLogger('__name__')
 
+EXPENSE_CODE_RE = re.compile(r'\d{3}-\d{5}-\d{4}-\d{6}-\d{6}-\d{4}-\d{5}')
+EXPENSE_CODE_SANS_OBJECT_RE = re.compile(r'\d{3}-\d{5}-\d{6}-\d{6}-\d{4}-\d{5}')
 
 class Account(models.Model):
     """
@@ -89,7 +92,10 @@ class Account(models.Model):
         Set the slug
         '''
         if self.account_type == 'Expense Code':
-            self.slug = self.code
+            if self.name:
+                self.slug = f'{self.code} ({self.name})'
+            else:
+                self.slug = self.code
         else:
             self.slug = 'PO %s (%s)' % (self.code, self.organization.name)
         super().save(*args, **kwargs)
