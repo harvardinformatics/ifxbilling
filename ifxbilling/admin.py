@@ -23,9 +23,10 @@ class AccountAdmin(admin.ModelAdmin):
     Admin for expense codes and POs
     '''
     fields = (
-        'code',
         'name',
+        'code',
         'account_type',
+        'organization',
         'root',
         'expiration_date',
         'active',
@@ -35,9 +36,10 @@ class AccountAdmin(admin.ModelAdmin):
     )
     list_display = (
         'id',
+        'name',
         'code',
         'account_type',
-        'name',
+        'organization',
         'root',
         'expiration_date',
         'active',
@@ -49,9 +51,10 @@ class AccountAdmin(admin.ModelAdmin):
     search_fields = (
         'code',
         'name',
-        'root'
+        'root',
+        'organization__name',
     )
-    list_filter = ('account_type', 'active')
+    list_filter = ('account_type', 'active', 'organization__name')
     readonly_fields = ('created', 'updated')
 
 

@@ -65,7 +65,7 @@ class Account(models.Model):
         blank=True,
         null=True,
         default=None,
-        help_text='If it is an expense code, the last 4 digits',
+        help_text='If it is an expense code, the last 5 digits',
         validators=[
             RegexValidator('^[0-9]{5}$',
             message='Root must be 5 digits.'),
