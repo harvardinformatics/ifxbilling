@@ -94,6 +94,24 @@ class Account(models.Model):
             self.slug = 'PO %s (%s)' % (self.code, self.organization.name)
         super().save(*args, **kwargs)
 
+
+class UserAccount(models.Model):
+    '''
+    Provide default accounts for a user
+    '''
+    class Meta:
+        db_table = 'user_account'
+
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+
+
 class Product(models.Model):
     '''
     General name of product and product number.  Helium dewar,  ELYRA microscope, Lustre disk, Promethion sequencing could
