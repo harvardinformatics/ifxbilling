@@ -56,3 +56,12 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 admin.site.register(models.Account, AccountAdmin)
+
+
+class UserAccountInlineAdmin(admin.TabularInline):
+    '''
+    Inline for user account listing.  To be used on UserAdmin
+    '''
+    model = models.UserAccount
+    autocomplete_fields = ('user', 'account')
+    extra = 0
