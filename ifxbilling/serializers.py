@@ -220,11 +220,11 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
     transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
-    accounts = AccountSerializer(many=True, read_only=True, source='billingrecordaccount_set')
+    account = serializers.SlugRelatedField(slug_field='slug', queryset=models.Account.objects.all())
 
     class Meta:
         model = models.BillingRecord
-        fields = ('id', 'accounts', 'product_usage', 'charge', 'description', 'year', 'month', 'created', 'updated')
+        fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'created', 'updated')
         read_only_fields = ('id', 'created', 'updated')
 
     @transaction.atomic
@@ -310,11 +310,11 @@ class BillingRecordSerializer(serializers.ModelSerializer):
 
         instance.save()
 
-        # Clear old transaction records and set the new ones
-        instance.transaction_set.all().delete()
+        # Only add new transactions.  Old ones cannot be removed.
         transactions_data = self.initial_data['transactions']
         for transaction_data in transactions_data:
-            models.Transaction.objects.create(**transaction_data, billing_record=instance)
+            if 'id' not in transaction_data:
+                models.Transaction.objects.create(**transaction_data, billing_record=instance)
 
         return instance
 
