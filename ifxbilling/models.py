@@ -191,16 +191,13 @@ class Rate(models.Model):
         help_text='Is this rate currently active?'
     )
 
-
-class ProductUsage(models.Model):
+class AbstractProductUsage(models.Model):
     '''
-    Usage of a product that can be billed for.
-    Base class that should be subclassed in the lab application,
-    or, if it's already a subclass, a OneToOne relationship can be set.
+    Abstract base class for any Product usage representing
+    a usage of a product that can be billed for.
     '''
     class Meta:
-        db_table = 'product_usage'
-
+        abstract = True
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     product_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     year = models.IntegerField(
@@ -229,6 +226,15 @@ class ProductUsage(models.Model):
         help_text='Units of quantity'
     )
     created = models.DateTimeField(auto_now_add=True)
+
+
+class ProductUsage(AbstractProductUsage):
+    '''
+    Concrete subclass of AbstractProductUsage
+    '''
+    class Meta:
+        db_table = 'product_usage'
+
 
 
 class BillingRecord(models.Model):
