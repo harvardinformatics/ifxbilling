@@ -68,3 +68,62 @@ class UserAccountInlineAdmin(admin.TabularInline):
     model = models.UserAccount
     autocomplete_fields = ('user', 'account')
     extra = 0
+
+
+class ProductAdmin(admin.ModelAdmin):
+    '''
+    Admin products
+    '''
+    fields = (
+        'product_number',
+        'product_name',
+        'product_description',
+        'billing_calculator',
+    )
+    list_display = (
+        'id',
+        'product_number',
+        'product_name',
+        'product_description',
+    )
+    ordering = ('product_number',)
+    search_fields = (
+        'product_number',
+        'product_name',
+        'product_description',
+     )
+    list_filter = ('billing_calculator', )
+
+
+admin.site.register(models.Product, ProductAdmin)
+
+
+class RateAdmin(admin.ModelAdmin):
+    '''
+    Admin rates
+    '''
+    fields = (
+        'product',
+        'name',
+        'price',
+        'units',
+        'is_active',
+    )
+    list_display = (
+        'id',
+        'product',
+        'name',
+        'price',
+        'units',
+        'is_active',
+    )
+    ordering = ('product__product_name',)
+    search_fields = (
+        'product__product_name',
+        'product__product_description',
+        'name',
+     )
+    list_filter = ('is_active', 'product')
+
+
+admin.site.register(models.Rate, RateAdmin)
