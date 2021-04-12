@@ -116,6 +116,11 @@ class UserAccount(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE
     )
+    is_valid = models.BooleanField(
+        null=False,
+        blank=False,
+        default=True
+    )
 
 
 class Product(models.Model):
