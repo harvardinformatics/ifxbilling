@@ -163,6 +163,7 @@ class Product(models.Model):
     )
 
 
+
 class Rate(models.Model):
     '''
     Rates for chargeable products
