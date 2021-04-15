@@ -9,7 +9,10 @@ Billing core application
    :maxdepth: 4
    :caption: Contents:
 
+    Setup <setup>
     Invoicing <invoicing>
+    Products <products>
+    Modules <modules>
 
 Indices and tables
 ==================

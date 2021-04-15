@@ -13,7 +13,7 @@ services:
     ports:
       - 3307:3306
   drf:
-    build: .
+    image: ifxbilling
     depends_on:
       - db
     volumes:

@@ -46,7 +46,8 @@ if IFX_APP['token'] == 'FIXME':
 IFX_AUTH_META_KEY = 'HTTP_HKEY_EDUPERSONPRINCIPALNAME'
 
 # Erroneous error for json field with mariadb
-SILENCED_SYSTEM_CHECKS = ['django_mysql.E016']
+# timezone.now() is used for models.Account.valid_from, but the complaint persists
+SILENCED_SYSTEM_CHECKS = ['django_mysql.E016', 'fields.W161']
 
 # Application definition
 
@@ -62,6 +63,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'author',
     'djvocab',
     'ifxauth',
     'ifxbilling',
@@ -77,6 +79,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'author.middlewares.AuthorDefaultBackendMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -152,4 +155,3 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
-
