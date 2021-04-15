@@ -17,13 +17,16 @@ from ifxbilling import models
 
 logger = logging.getLogger(__name__)
 
-class ExpenseCodeAdmin(admin.ModelAdmin):
+
+class AccountAdmin(admin.ModelAdmin):
     '''
-    Admin for expense codes
+    Admin for expense codes and POs
     '''
     fields = (
-        'fullcode',
         'name',
+        'code',
+        'account_type',
+        'organization',
         'root',
         'expiration_date',
         'active',
@@ -33,8 +36,10 @@ class ExpenseCodeAdmin(admin.ModelAdmin):
     )
     list_display = (
         'id',
-        'fullcode',
         'name',
+        'code',
+        'account_type',
+        'organization',
         'root',
         'expiration_date',
         'active',
@@ -44,11 +49,81 @@ class ExpenseCodeAdmin(admin.ModelAdmin):
     )
     ordering = ('updated',)
     search_fields = (
-        'fullcode',
+        'code',
         'name',
-        'root'
+        'root',
+        'organization__name',
     )
-    list_filter = ('expiration_date', 'active')
+    list_filter = ('account_type', 'active', 'organization__name')
     readonly_fields = ('created', 'updated')
 
-admin.site.register(models.ExpenseCode, ExpenseCodeAdmin)
+
+admin.site.register(models.Account, AccountAdmin)
+
+
+class UserAccountInlineAdmin(admin.TabularInline):
+    '''
+    Inline for user account listing.  To be used on UserAdmin
+    '''
+    model = models.UserAccount
+    autocomplete_fields = ('user', 'account')
+    extra = 0
+
+
+class ProductAdmin(admin.ModelAdmin):
+    '''
+    Admin products
+    '''
+    fields = (
+        'product_number',
+        'product_name',
+        'product_description',
+        'billing_calculator',
+    )
+    list_display = (
+        'id',
+        'product_number',
+        'product_name',
+        'product_description',
+    )
+    ordering = ('product_number',)
+    search_fields = (
+        'product_number',
+        'product_name',
+        'product_description',
+     )
+    list_filter = ('billing_calculator', )
+
+
+admin.site.register(models.Product, ProductAdmin)
+
+
+class RateAdmin(admin.ModelAdmin):
+    '''
+    Admin rates
+    '''
+    fields = (
+        'product',
+        'name',
+        'price',
+        'units',
+        'is_active',
+    )
+    list_display = (
+        'id',
+        'product',
+        'name',
+        'price',
+        'units',
+        'is_active',
+    )
+    ordering = ('product__product_name',)
+    search_fields = (
+        'product__product_name',
+        'product__product_description',
+        'name',
+     )
+    list_filter = ('is_active', 'product')
+
+
+admin.site.register(models.Rate, RateAdmin)

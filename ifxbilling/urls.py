@@ -11,7 +11,10 @@ from ifxbilling.views import get_remote_user_auth_token
 
 # routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
-router.register(r'expense_codes', serializers.ExpenseCodeViewSet)
+router.register(r'accounts', serializers.AccountViewSet)
+router.register(r'products', serializers.ProductViewSet)
+router.register(r'product-usages', serializers.ProductUsageViewSet)
+router.register(r'billing-records', serializers.BillingRecordViewSet)
 
 urlpatterns = [
     path(r'ifxbilling/djadmin/', admin.site.urls),
