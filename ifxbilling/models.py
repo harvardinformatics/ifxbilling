@@ -163,6 +163,12 @@ class Product(models.Model):
     )
 
 
+def createNewProduct(product_name, product_description, billing_calculator=None):
+    '''
+    Creates product record in fiine, and creates the local record with product number
+    '''
+    pass
+
 
 class Rate(models.Model):
     '''
