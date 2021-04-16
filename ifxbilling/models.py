@@ -27,6 +27,21 @@ logger = logging.getLogger('__name__')
 EXPENSE_CODE_RE = re.compile(r'\d{3}-\d{5}-\d{4}-\d{6}-\d{6}-\d{4}-\d{5}')
 EXPENSE_CODE_SANS_OBJECT_RE = re.compile(r'\d{3}-\d{5}-\d{6}-\d{6}-\d{4}-\d{5}')
 
+
+def thisYear():
+    '''
+    Callable for setting default year
+    '''
+    return timezone.now().year
+
+
+def thisMonth():
+    '''
+    Callable for setting default month
+    '''
+    return timezone.now().month
+
+
 class Account(models.Model):
     """
     Model for accounts, including both expense codes and POs
@@ -77,7 +92,7 @@ class Account(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     active = models.BooleanField(default=False)
-    valid_from = models.DateTimeField(default=timezone.now(), blank=True)
+    valid_from = models.DateTimeField(default=timezone.now, blank=True)
     expiration_date = models.DateTimeField(
         blank=True,
         null=True
@@ -157,17 +172,10 @@ class Product(models.Model):
     billing_calculator = models.CharField(
         max_length=100,
         null=False,
-        blank=False,
+        blank=True,
         default='ifxbilling.calculator.BasicBillingCalculator',
         help_text='Class to use for calculating charges for this product'
     )
-
-
-def createNewProduct(product_name, product_description, billing_calculator=None):
-    '''
-    Creates product record in fiine, and creates the local record with product number
-    '''
-    pass
 
 
 class Rate(models.Model):
@@ -216,13 +224,13 @@ class AbstractProductUsage(models.Model):
         null=False,
         blank=False,
         help_text='Calendar year in which the usage occurs',
-        default=timezone.now().year
+        default=thisYear
     )
     month = models.IntegerField(
         null=False,
         blank=False,
         help_text='Month in which the usage occurs',
-        default=timezone.now().month
+        default=thisMonth
     )
     quantity = models.IntegerField(
         null=False,
@@ -278,13 +286,13 @@ class BillingRecord(models.Model):
         null=False,
         blank=False,
         help_text='Calendar year to which the billing applies',
-        default=timezone.now().year
+        default=thisYear
     )
     month = models.IntegerField(
         null=False,
         blank=False,
         help_text='Month in which the billing applies',
-        default=timezone.now().month
+        default=thisMonth
     )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

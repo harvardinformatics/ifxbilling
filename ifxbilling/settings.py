@@ -36,8 +36,8 @@ DB_HOSTNAME = os.environ.get('IFXBILLING_HOSTNAME', 'ifxbilling')
 ALLOWED_HOSTS = []
 
 IFX_APP = {
-    'name': os.environ.get('IFXBILLING_IFX_APP_TOKEN'),
-    'token': 'ifxbilling',
+    'token': os.environ.get('IFXBILLING_IFX_APP_TOKEN'),
+    'name': 'ifxbilling',
 }
 
 if IFX_APP['token'] == 'FIXME':
@@ -155,3 +155,5 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+FACILITY_NAME = 'Helium Recovery Service'
