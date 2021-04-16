@@ -18,6 +18,7 @@ from django.contrib.auth import get_user_model
 from ifxbilling.test import data
 from ifxbilling.models import Product
 
+
 class TestProduct(APITestCase):
     '''
     Test Product models and serializers
@@ -38,7 +39,6 @@ class TestProduct(APITestCase):
         Insert a minimal Product
         '''
         product_data = {
-            'product_number': 'IFXP0000000001',
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
         }
@@ -47,25 +47,11 @@ class TestProduct(APITestCase):
         self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
         self.assertTrue(response.data['billing_calculator'] == 'ifxbilling.calculator.BasicBillingCalculator', f'Incorrect response data {response.data}')
 
-    def testMissingProductNumber(self):
-        '''
-        Ensure insertion fails without product number
-        '''
-        product_data = {
-            'product_name': 'Helium Dewar',
-            'product_description': 'A dewar of helium',
-        }
-        url = reverse('product-list')
-        response = self.client.post(url, product_data, format='json')
-        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response status: {response.data}')
-        self.assertTrue('This field is required' in str(response.data['product_number']), f'Incorrect response data {response.data}')
-
     def testMissingProductName(self):
         '''
         Ensure insertion fails without product name
         '''
         product_data = {
-            'product_number': 'IFXP0000000001',
             'product_description': 'A dewar of helium',
         }
         url = reverse('product-list')
@@ -78,7 +64,6 @@ class TestProduct(APITestCase):
         Ensure insertion fails without product name
         '''
         product_data = {
-            'product_number': 'IFXP0000000001',
             'product_name': 'Helium Dewar',
         }
         url = reverse('product-list')
@@ -91,7 +76,6 @@ class TestProduct(APITestCase):
         Ensure that a product can be inserted with rates
         '''
         product_data = {
-            'product_number': 'IFXP0000000001',
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
             'rates': [
@@ -122,7 +106,6 @@ class TestProduct(APITestCase):
         Ensure that a product rates can be updated
         '''
         product_data = {
-            'product_number': 'IFXP0000000001',
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
             'rates': [
@@ -170,7 +153,6 @@ class TestProduct(APITestCase):
         Ensure that a product rates can be removed
         '''
         product_data = {
-            'product_number': 'IFXP0000000001',
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
             'rates': [

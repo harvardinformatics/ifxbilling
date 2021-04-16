@@ -1,6 +1,42 @@
 version: '3'
 
 services:
+  fiine-db:
+    image: mariadb
+    volumes:
+      - fiine-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=fiine
+      - MYSQL_DATABASE=fiine
+      - MYSQL_USER=fiine
+      - MYSQL_PASSWORD=fiine
+    command: '--character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci'
+    networks:
+      main:
+  fiine-drf:
+    image: fiine-drf
+    depends_on:
+      - fiine-db
+    volumes:
+      - ../fiine:/app
+    links:
+      - fiine-db
+    ports:
+      - 9090:80
+    environment:
+      - FIINE_IFX_APP_TOKEN=1f8c484b9bfd85931db928ea96f86533b81c02d8
+      - FIINE_USERNAME=fiine
+      - FIINE_PASSWORD=fiine
+      - FIINE_DATABASE=fiine
+      - FIINE_HOSTNAME=fiine-db
+      - FIINE_LOGLEVEL=DEBUG
+      - FIINE_DEBUG=TRUE
+      - FIINE_DJANGO_KEY=anweijfnvwoejvniejnvfwvijnf
+      - SMTP_SERVER=testsmtp
+      - IFX_REMOTE_USER=veradmin
+      - PYTHONUNBUFFERED=1
+    networks:
+      main:
   db:
     image: mariadb
     volumes:
@@ -12,10 +48,14 @@ services:
       - MYSQL_PASSWORD=ifxbilling
     ports:
       - 3307:3306
+    networks:
+      main:
   drf:
     image: ifxbilling
     depends_on:
       - db
+    links:
+      - fiine-drf
     volumes:
       - .:/app
     ports:
@@ -28,5 +68,14 @@ services:
       - IFXBILLING_DEBUG=TRUE
       - IFXBILLING_LOGLEVEL=DEBUG
       - IFXBILLING_DJANGO_KEY=anweijfnvwoejvniejnvfwvijnf
+      - IFXBILLING_IFX_APP_TOKEN=5780b7d2bd8b57a0af95b901aea5622a4923f9d2
+      - FIINE_API_BASE=http://fiine-drf/fiine/api
+    networks:
+      main:
+
 volumes:
   ifxbilling-data:
+  fiine-data:
+
+networks:
+  main:

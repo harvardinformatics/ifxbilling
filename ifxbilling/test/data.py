@@ -13,7 +13,9 @@ All rights reserved.
 from copy import deepcopy
 from ifxuser.models import Organization, UserAffiliation
 from django.contrib.auth import get_user_model
+from fiine.client import API as FiineAPI
 from ifxbilling import models
+
 
 ORGS = [
     {
@@ -101,6 +103,12 @@ def clearTestData():
     models.ProductUsage.objects.all().delete()
     models.Product.objects.all().delete()
     models.Account.objects.all().delete()
+
+    # Clear stuff from fiine
+    products = FiineAPI.listProducts()
+    for product in products:
+        FiineAPI.deleteProduct(product_number=product.product_number)
+
 
 
 

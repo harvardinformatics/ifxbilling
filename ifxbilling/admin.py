@@ -70,6 +70,14 @@ class UserAccountInlineAdmin(admin.TabularInline):
     extra = 0
 
 
+class RateInlineAdmin(admin.TabularInline):
+    '''
+    Inline for displaying rates with a Product
+    '''
+    model = models.Rate
+    extra = 0
+
+
 class ProductAdmin(admin.ModelAdmin):
     '''
     Admin products
@@ -93,37 +101,46 @@ class ProductAdmin(admin.ModelAdmin):
         'product_description',
      )
     list_filter = ('billing_calculator', )
+    inlines = (RateInlineAdmin,)
 
 
 admin.site.register(models.Product, ProductAdmin)
 
 
-class RateAdmin(admin.ModelAdmin):
+class TransactionInlineAdmin(admin.TabularInline):
     '''
-    Admin rates
+    For displaying transactions with BillingRecords
+    '''
+    model = models.Transaction
+    extra = 0
+
+class BillingRecordAdmin(admin.ModelAdmin):
+    '''
+    Admin for BillingRecords
     '''
     fields = (
-        'product',
-        'name',
-        'price',
-        'units',
-        'is_active',
+        'product_usage',
+        'account',
+        'charge',
+        'description',
+        'year',
+        'month',
+        'created',
+        'updated'
     )
     list_display = (
-        'id',
-        'product',
-        'name',
-        'price',
-        'units',
-        'is_active',
+        'product_usage',
+        'account',
+        'charge',
+        'description',
+        'month',
+        'year'
     )
-    ordering = ('product__product_name',)
+    ordering = ('year', 'month')
     search_fields = (
-        'product__product_name',
-        'product__product_description',
-        'name',
+        'account',
+        'product_usage__product__name',
+        'description',
      )
-    list_filter = ('is_active', 'product')
-
-
-admin.site.register(models.Rate, RateAdmin)
+    list_filter = ('year', 'month', 'product_usage__product__name', 'account__name')
+    inlines = (TransactionInlineAdmin,)
