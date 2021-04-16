@@ -17,6 +17,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers, viewsets
 from ifxuser.models import Organization
 from ifxbilling import models
+from ifxbilling import fiine
 
 
 logger = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ class ProductSerializer(serializers.ModelSerializer):
     '''
     Serializer for Products
     '''
-    product_number = serializers.CharField(max_length=14)
+    product_number = serializers.ReadOnlyField()
     product_name = serializers.CharField(max_length=50)
     product_description = serializers.CharField(max_length=200)
     billing_calculator = serializers.CharField(max_length=100, required=False)
@@ -116,9 +117,17 @@ class ProductSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         '''
-        Handle rates
+        Create new product in fiine first, then save any rates
         '''
-        product = models.Product.objects.create(**validated_data)
+        kwargs = {
+            'product_name': validated_data['product_name'],
+            'product_description': validated_data['product_description'],
+        }
+        if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
+            kwargs['billing_calculator'] = validated_data['billing_calculator']
+
+        product = fiine.createNewProduct(**kwargs)
+
         if 'rates' in self.initial_data and self.initial_data['rates']:
             for rate_data in self.initial_data['rates']:
                 try:
@@ -139,7 +148,7 @@ class ProductSerializer(serializers.ModelSerializer):
         '''
         Update product and rates
         '''
-        for attr in ['product_number', 'product_name', 'product_description', 'billing_calculator']:
+        for attr in ['product_name', 'product_description', 'billing_calculator']:
             setattr(instance, attr, validated_data[attr])
 
         instance.rate_set.all().delete()
