@@ -12,4 +12,4 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
-   ifxbilling.management.commands.applyDevData
+   ifxbilling.management.commands.applyDevBillingData

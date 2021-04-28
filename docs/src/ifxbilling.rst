@@ -24,6 +24,7 @@ Submodules
 
    ifxbilling.admin
    ifxbilling.calculator
+   ifxbilling.fiine
    ifxbilling.init
    ifxbilling.initDev
    ifxbilling.models
