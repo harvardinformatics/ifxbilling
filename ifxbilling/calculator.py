@@ -83,7 +83,7 @@ class BasicBillingCalculator():
         For a given ProductUsage, return the Account that should be used.  This is only called
         by createBillingRecordForUsage if an Account is not supplied.
         '''
-        user_account = product_usage.product_user.useraccount_set.filter(is_active=True).first()
+        user_account = product_usage.product_user.useraccount_set.filter(is_valid=True).first()
         return user_account.account
 
     def getBillingRecordDescription(self, product_usage):
