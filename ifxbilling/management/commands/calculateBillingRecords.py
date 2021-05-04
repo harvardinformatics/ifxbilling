@@ -22,9 +22,9 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         year = timezone.now().year
         month = timezone.now().month
-        if kwargs['month']:
+        if 'month' in kwargs and kwargs['month']:
             month = int(kwargs['month'])
-        if kwargs['year']:
+        if 'year' in kwargs and kwargs['year']:
             year = int(kwargs['year'])
         product_usages = ProductUsage.objects.filter(month=month, year=year)
         calculators = {}
