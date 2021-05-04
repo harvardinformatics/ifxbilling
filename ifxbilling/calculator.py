@@ -73,7 +73,7 @@ class BasicBillingCalculator():
             {
                 'charge': charge,
                 'description': description,
-                'user': user
+                'author': user
             }
         )
         return transactions_data
