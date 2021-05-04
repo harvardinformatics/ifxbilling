@@ -144,6 +144,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'description',
      )
     list_filter = ('year', 'month', 'product_usage__product__product_name', 'account__name')
+    readonly_fields = ('created', 'update',)
     inlines = (TransactionInlineAdmin,)
 
 admin.site.register(models.BillingRecord, BillingRecordAdmin)
