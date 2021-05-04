@@ -67,7 +67,7 @@ class BasicBillingCalculator():
 
         description = f'{product_usage.quantity} {product_usage.units} at {rate.price} per {rate.units}'
         charge = rate.price * product_usage.quantity
-        user = product_usage.user
+        user = product_usage.product_user
 
         transactions_data.append(
             {
