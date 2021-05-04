@@ -59,7 +59,7 @@ class BasicBillingCalculator():
         For a given ProductUsage, return the Account that should be used.  This is only called
         by createBillingRecordForUsage if an Account is not supplied.
         '''
-        return None
+        return ''
 
     def getBillingRecordDescription(self, product_usage):
         '''
@@ -80,6 +80,8 @@ class BasicBillingCalculator():
 
         If description is not specified, getBillingRecordDescription will be called.
         '''
+        if BillingRecord.objects.filter(product_usage=product_usage).exists():
+            raise Exception(f'Billing record already exists for usage {product_usage}')
         if not account:
             account = self.getAccountForProductUsage(product_usage)
         if not year:
