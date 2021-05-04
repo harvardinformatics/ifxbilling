@@ -143,7 +143,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'product_usage__product__name',
         'description',
      )
-    list_filter = ('year', 'month', 'product_usage__product__name', 'account__name')
+    list_filter = ('year', 'month', 'product_usage__product__product_name', 'account__name')
     inlines = (TransactionInlineAdmin,)
 
 admin.site.register(models.BillingRecord, BillingRecordAdmin)
