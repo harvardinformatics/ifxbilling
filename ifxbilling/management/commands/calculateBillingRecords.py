@@ -32,7 +32,8 @@ class Command(BaseCommand):
             try:
                 billing_calculator_name = product_usage.product.billing_calculator
                 if billing_calculator_name not in calculators:
-                    calculators[billing_calculator_name] = getClassFromName(billing_calculator_name)
+                     billing_calculator_class = getClassFromName(billing_calculator_name)
+                     calculators[billing_calculator_name] = billing_calculator_class()
                 billing_calculator = calculators[billing_calculator_name]
                 billing_calculator.createBillingRecordForUsage(product_usage)
             except Exception as e:
