@@ -143,7 +143,41 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'product_usage__product__name',
         'description',
      )
-    list_filter = ('year', 'month', 'product_usage__product__product_name', 'account__name')
+    list_filter = ('year', 'month', 'product_usage__product__product_name', 'account__name', 'account__root')
+    readonly_fields = ('created', 'updated',)
     inlines = (TransactionInlineAdmin,)
 
 admin.site.register(models.BillingRecord, BillingRecordAdmin)
+
+
+class ProductUsageAdmin(admin.ModelAdmin):
+    '''
+    Admin for ProductUsages
+    '''
+    fields = (
+        'product',
+        'product_user',
+        'year',
+        'month',
+        'quantity',
+        'units',
+        'created',
+    )
+    list_display = (
+        'product',
+        'product_user',
+        'quantity',
+        'units',
+        'month',
+        'year'
+    )
+    ordering = ('year', 'month')
+    search_fields = (
+        'product__product_name',
+        'product__product_number',
+        'product_user__full_name',
+     )
+    list_filter = ('year', 'month', 'product', 'product_user')
+    readonly_fields = ('created',)
+
+admin.site.register(models.ProductUsage, ProductUsageAdmin)

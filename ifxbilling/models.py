@@ -177,6 +177,9 @@ class Product(models.Model):
         help_text='Class to use for calculating charges for this product'
     )
 
+    def __str__(self):
+        return f'{self.product_name} ({self.product_number})'
+
 
 class Rate(models.Model):
     '''
@@ -210,6 +213,7 @@ class Rate(models.Model):
         default=True,
         help_text='Is this rate currently active?'
     )
+
 
 class AbstractProductUsage(models.Model):
     '''
@@ -254,6 +258,9 @@ class ProductUsage(AbstractProductUsage):
     '''
     class Meta:
         db_table = 'product_usage'
+
+    def __str__(self):
+        return f'{self.quantity} {self.units} of {self.product} for {self.product_user}'
 
 
 
