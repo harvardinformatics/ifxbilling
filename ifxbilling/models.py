@@ -214,6 +214,7 @@ class Rate(models.Model):
         help_text='Is this rate currently active?'
     )
 
+
 class AbstractProductUsage(models.Model):
     '''
     Abstract base class for any Product usage representing
