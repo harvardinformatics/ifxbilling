@@ -11,7 +11,31 @@ All rights reserved.
 @license: GPL v2.0
 '''
 import logging
+from importlib import import_module
 from ifxbilling.models import BillingRecord, Transaction
+
+
+def getClassFromName(dotted_path):
+    """
+    Utility that will return the class object for a fully qualified
+    classname
+    """
+    try:
+        module_path, class_name = dotted_path.rsplit('.', 1)
+        logging.debug(module_path)
+        logging.debug(class_name)
+    except ValueError as e:
+        msg = "%s doesn't look like a module path" % dotted_path
+        raise ImportError(msg) from e
+
+    module = import_module(module_path)
+
+    try:
+        return getattr(module, class_name)
+    except AttributeError as e:
+        msg = 'Module "%s" does not define a "%s" attribute/class' % (
+            module_path, class_name)
+        raise ImportError(msg) from e
 
 
 class BasicBillingCalculator():
@@ -43,13 +67,13 @@ class BasicBillingCalculator():
 
         description = f'{product_usage.quantity} {product_usage.units} at {rate.price} per {rate.units}'
         charge = rate.price * product_usage.quantity
-        user = product_usage.user
+        user = product_usage.product_user
 
         transactions_data.append(
             {
                 'charge': charge,
                 'description': description,
-                'user': user
+                'author': user
             }
         )
         return transactions_data
@@ -59,14 +83,19 @@ class BasicBillingCalculator():
         For a given ProductUsage, return the Account that should be used.  This is only called
         by createBillingRecordForUsage if an Account is not supplied.
         '''
-        return ''
+        if not product_usage.product_user:
+            raise Exception(f'No product user for {product_usage}')
+        user_account = product_usage.product_user.useraccount_set.filter(is_valid=True).first()
+        if not user_account:
+            raise Exception(f'Unable to find a user account record for {product_usage.product_user}')
+        return user_account.account
 
     def getBillingRecordDescription(self, product_usage):
         '''
         Get the description for the BillingRecord. This is only called
         by createBillingRecordForUsage if a description is not supplied.
         '''
-        return ''
+        return f'{product_usage.quantity} {product_usage.units} of {product_usage.product} for {product_usage.product_user} on {product_usage.created}'
 
     def createBillingRecordForUsage(self, product_usage, account=None, year=None, month=None, description=None, usage_data=None, recalculate=False):
         '''
