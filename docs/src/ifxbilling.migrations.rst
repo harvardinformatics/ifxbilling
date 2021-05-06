@@ -10,6 +10,6 @@ Submodules
 ----------
 
 .. toctree::
-   :maxdepth: 4
 
    ifxbilling.migrations.0001_initial
+   ifxbilling.migrations.0002_userproductaccount

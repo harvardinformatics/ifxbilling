@@ -72,6 +72,13 @@ PRODUCTS = [
         'product_number': 'IFXP0000000001',
         'product_name': 'Helium Dewar',
         'product_description': 'A dewar of helium',
+        'rates': [
+            {
+                'name': 'Harvard Internal',
+                'price': 100,
+                'units': 'ea',
+            }
+        ]
     }
 ]
 
@@ -80,6 +87,7 @@ PRODUCT_USAGES = [
         'product': 'Helium Dewar',
         'product_user': 'Slurpy Slurpiston',
         'quantity': 1,
+        'units': 'ea',
     }
 ]
 
@@ -87,6 +95,11 @@ def clearTestData():
     '''
     Clear all of the data from the database.  Called during setUp
     '''
+    models.BillingRecord.objects.all().delete()
+    models.Account.objects.all().delete()
+    models.ProductUsage.objects.all().delete()
+    models.Product.objects.all().delete()
+
     Organization.objects.all().delete()
     for user_data in USERS:
         try:
@@ -98,11 +111,6 @@ def clearTestData():
         get_user_model().objects.filter(username='john', email='john@snow.com').delete()
     except Exception:
         pass
-
-    models.BillingRecord.objects.all().delete()
-    models.ProductUsage.objects.all().delete()
-    models.Product.objects.all().delete()
-    models.Account.objects.all().delete()
 
     # Clear stuff from fiine
     products = FiineAPI.listProducts()
@@ -134,7 +142,12 @@ def init(types=None):
                 models.Account.objects.create(**data_copy)
         if 'Product' in types:
             for product_data in PRODUCTS:
-                models.Product.objects.create(**product_data)
+                data_copy = deepcopy(product_data)
+                rates_data = data_copy.pop('rates', None)
+                product = models.Product.objects.create(**data_copy)
+                for rate_data in rates_data:
+                    rate_data['product'] = product
+                    models.Rate.objects.create(**rate_data)
         if 'ProductUsage' in types:
             for product_usage_data in PRODUCT_USAGES:
                 data_copy = deepcopy(product_usage_data)
