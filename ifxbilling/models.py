@@ -215,6 +215,38 @@ class Rate(models.Model):
     )
 
 
+class UserProductAccount(models.Model):
+    '''
+    Provide accounts specific for a particular product
+    '''
+    class Meta:
+        db_table = 'user_product_account'
+
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE
+    )
+    percent = models.IntegerField(
+        help_text='Percent of charge that should be applied to this account for the user product',
+        null=False,
+        blank=False,
+        default=100,
+    )
+    is_valid = models.BooleanField(
+        null=False,
+        blank=False,
+        default=True
+    )
+
+
 class AbstractProductUsage(models.Model):
     '''
     Abstract base class for any Product usage representing
@@ -303,6 +335,9 @@ class BillingRecord(models.Model):
     )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Charge of {self.charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
 
 
 @with_author

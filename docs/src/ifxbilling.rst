@@ -10,7 +10,6 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 4
 
    ifxbilling.management
    ifxbilling.migrations
@@ -20,7 +19,6 @@ Submodules
 ----------
 
 .. toctree::
-   :maxdepth: 4
 
    ifxbilling.admin
    ifxbilling.calculator

@@ -10,6 +10,6 @@ Submodules
 ----------
 
 .. toctree::
-   :maxdepth: 4
 
    ifxbilling.management.commands.applyDevBillingData
+   ifxbilling.management.commands.calculateBillingRecords

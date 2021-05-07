@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_mysql',
+    'django_nose',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -157,3 +158,5 @@ REST_FRAMEWORK = {
 }
 
 FACILITY_NAME = 'Helium Recovery Service'
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
