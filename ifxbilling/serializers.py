@@ -16,6 +16,7 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import serializers, viewsets
 from ifxuser.models import Organization
+from fiine.client import API as FiineAPI
 from ifxbilling import models
 from ifxbilling import fiine
 
@@ -146,8 +147,13 @@ class ProductSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         '''
-        Update product and rates
+        Update product and rates.  Ensure updated in Fiine as well.
         '''
+        product = FiineAPI.readProduct(product_number=instance.product_number)
+        product.product_name = validated_data['product_name']
+        product.description = validated_data['product_description']
+        FiineAPI.updateProduct(**product.to_dict())
+
         for attr in ['product_name', 'product_description', 'billing_calculator']:
             setattr(instance, attr, validated_data[attr])
 
