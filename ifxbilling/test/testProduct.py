@@ -46,6 +46,7 @@ class TestProduct(APITestCase):
         response = self.client.post(url, product_data, format='json')
         self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
         self.assertTrue(response.data['billing_calculator'] == 'ifxbilling.calculator.BasicBillingCalculator', f'Incorrect response data {response.data}')
+        self.assertTrue(response.data['product_number'], f'Product number not set {response.data}')
 
     def testMissingProductName(self):
         '''

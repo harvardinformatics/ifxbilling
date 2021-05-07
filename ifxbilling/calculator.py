@@ -12,6 +12,7 @@ All rights reserved.
 '''
 import logging
 from importlib import import_module
+from django.db import transaction
 from ifxbilling.models import BillingRecord, Transaction
 
 
@@ -51,13 +52,15 @@ class BasicBillingCalculator():
     BillingRecords will be skipped.
     '''
 
-    def calculateCharges(self, product_usage, usage_data=None):
+    def calculateCharges(self, product_usage, percent, usage_data=None):
         '''
         Calculates one or more charges that will be used to create transactions
         using a product_usage and an optional usage_data dictionary.
 
         Returns an array of transaction data dictionaries that will include a
         charge, a user, and a description at least.
+
+        Charges are in pennies so fractions are rounded.
         '''
         product = product_usage.product
         rate = product.rate_set.get(is_active=True)
@@ -65,8 +68,11 @@ class BasicBillingCalculator():
             raise Exception(f'Units for product usage do not match the active rate for {product}')
         transactions_data = []
 
-        description = f'{product_usage.quantity} {product_usage.units} at {rate.price} per {rate.units}'
-        charge = rate.price * product_usage.quantity
+        percent_str = ''
+        if percent < 100:
+            percent_str = f'{percent}% of '
+        description = f'{percent_str}{product_usage.quantity} {product_usage.units} at {rate.price} per {rate.units}'
+        charge = round(rate.price * product_usage.quantity * percent / 100)
         user = product_usage.product_user
 
         transactions_data.append(
@@ -78,26 +84,78 @@ class BasicBillingCalculator():
         )
         return transactions_data
 
-    def getAccountForProductUsage(self, product_usage):
+    def getAccountPercentagesForProductUsage(self, product_usage):
         '''
-        For a given ProductUsage, return the Account that should be used.  This is only called
+        For a given ProductUsage, return an array of account (Account object) and percent that should be used.  This is only called
         by createBillingRecordForUsage if an Account is not supplied.
+
+        UserProductAccount is tested first, followed by UserAccount.  An exception is raised if neither attempt is successful.
         '''
+        account_percentages = []
         if not product_usage.product_user:
             raise Exception(f'No product user for {product_usage}')
-        user_account = product_usage.product_user.useraccount_set.filter(is_valid=True).first()
-        if not user_account:
-            raise Exception(f'Unable to find a user account record for {product_usage.product_user}')
-        return user_account.account
+        user_product_accounts = product_usage.product_user.userproductaccount_set.filter(product=product_usage.product, is_valid=True)
+        if user_product_accounts:
+            for user_product_account in user_product_accounts:
+                account_percentages.append(
+                    {
+                        'account': user_product_account.account,
+                        'percent': user_product_account.percent,
+                    }
+                )
+        else:
+            user_account = product_usage.product_user.useraccount_set.filter(is_valid=True).first()
+            if user_account:
+                account_percentages.append(
+                    {
+                        'account': user_account.account,
+                        'percent': 100,
+                    }
+                )
+            else:
+                raise Exception(f'Unable to find a user account record for {product_usage.product_user}')
+        return account_percentages
 
-    def getBillingRecordDescription(self, product_usage):
+    def getBillingRecordDescription(self, product_usage, percent):
         '''
         Get the description for the BillingRecord. This is only called
         by createBillingRecordForUsage if a description is not supplied.
         '''
-        return f'{product_usage.quantity} {product_usage.units} of {product_usage.product} for {product_usage.product_user} on {product_usage.created}'
+        percent_str = ''
+        if percent < 100:
+            percent_str = f'{percent}% of '
+        return f'{percent_str}{product_usage.quantity} {product_usage.units} of {product_usage.product} for {product_usage.product_user} on {product_usage.created}'
 
-    def createBillingRecordForUsage(self, product_usage, account=None, year=None, month=None, description=None, usage_data=None, recalculate=False):
+    def createBillingRecordsForUsage(self, product_usage, account_percentages=None, year=None, month=None, description=None, usage_data=None, recalculate=False):
+        '''
+        Determine the number of BillingRecords to create for this usage and then create each one.  If recalculate is True, existing records are removed.
+        Throws an Exception of a BillingRecord already exists for the product_usage
+        account_percentages should be a list of dicts consisting of an Account object and a numerical percent, a'la
+        [
+            {
+                'account': AccountObj,
+                'percent': 100
+            }
+        ]
+        List of new BillingRecords is returned.
+        '''
+        brs = []
+        with transaction.atomic():
+            if BillingRecord.objects.filter(product_usage=product_usage).exists():
+                if recalculate:
+                    BillingRecord.objects.filter(product_usage=product_usage).delete()
+                else:
+                    raise Exception(f'Billing record already exists for usage {product_usage}')
+
+            if not account_percentages:
+                account_percentages = self.getAccountPercentagesForProductUsage(product_usage)
+            for account_percentage in account_percentages:
+                account = account_percentage['account']
+                percent = account_percentage['percent']
+                brs.append(self.createBillingRecordForUsage(product_usage, account, percent, year, month, description, usage_data))
+        return brs
+
+    def createBillingRecordForUsage(self, product_usage, account, percent, year=None, month=None, description=None, usage_data=None):
         '''
         For the given ProductUsage, Account and the optional usage_data dictionary,
         calculate charge(s) and create a billing record.
@@ -109,34 +167,25 @@ class BasicBillingCalculator():
 
         If description is not specified, getBillingRecordDescription will be called.
         '''
-        if BillingRecord.objects.filter(product_usage=product_usage).exists():
-            raise Exception(f'Billing record already exists for usage {product_usage}')
-        if not account:
-            account = self.getAccountForProductUsage(product_usage)
         if not year:
             year = product_usage.year
         if not month:
             month = product_usage.month
         if not description:
-            description = self.getBillingRecordDescription(product_usage)
+            description = self.getBillingRecordDescription(product_usage, percent)
 
-        transactions_data = self.calculateCharges(product_usage, usage_data)
-        br = self.createBillingRecord(product_usage, account, year, month, transactions_data, description, recalculate)
+        transactions_data = self.calculateCharges(product_usage, percent, usage_data)
+        return self.createBillingRecord(product_usage, account, year, month, transactions_data, description)
 
-        return br
-
-    def createBillingRecord(self, product_usage, account, year, month, transactions_data, description=None, recalculate=False):
+    def createBillingRecord(self, product_usage, account, year, month, transactions_data, description=None):
         '''
         Create (and save) a BillingRecord and related Transactions.
         If an existing BillingRecord has the same product_usage and account an Exception will be thrown.
         '''
         billing_record = None
         try:
-            br = BillingRecord.objects.get(product_usage=product_usage, account=account)
-            if recalculate:
-                br.delete()
-            else:
-                raise Exception(f'Billing record for product usage {product_usage} and account {account} already exists.')
+            BillingRecord.objects.get(product_usage=product_usage, account=account)
+            raise Exception(f'Billing record for product usage {product_usage} and account {account} already exists.')
         except BillingRecord.DoesNotExist:
             pass
 
@@ -150,12 +199,12 @@ class BasicBillingCalculator():
                     description=description
                 )
                 billing_record.save()
-            transaction = Transaction(
+            trxn = Transaction(
                 billing_record=billing_record,
                 charge=transaction_data['charge'],
                 description=transaction_data['description'],
                 author=transaction_data['author']
             )
-            transaction.save()
+            trxn.save()
 
         return billing_record

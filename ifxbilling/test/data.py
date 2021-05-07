@@ -60,10 +60,47 @@ USERS = [
 
 ACCOUNTS = [
     {
+        'code': '370-11111-8100-000775-600200-0000-44075',
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'name': 'Alternate code',
+        'root': '44075',
+    },
+    {
         'code': '370-31230-8100-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'mycode',
         'root': '12345',
+    },
+    {
+        'code': '370-99999-8100-000775-600200-0000-44075',
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'name': 'Another code',
+        'root': '44075',
+    },
+]
+
+USER_ACCOUNTS = [
+    {
+        'user': 'Slurpy Slurpiston',
+        'account': 'mycode',
+        'is_valid': True,
+    }
+]
+
+USER_PRODUCT_ACCOUNTS = [
+    {
+        'user': 'Slurpy Slurpiston',
+        'account': 'Alternate code',
+        'product': 'Helium Dewar',
+        'percent': 25,
+        'is_valid': True,
+    },
+    {
+        'user': 'Slurpy Slurpiston',
+        'account': 'Another code',
+        'product': 'Helium Dewar',
+        'percent': 75,
+        'is_valid': True,
     }
 ]
 
@@ -72,6 +109,25 @@ PRODUCTS = [
         'product_number': 'IFXP0000000001',
         'product_name': 'Helium Dewar',
         'product_description': 'A dewar of helium',
+        'rates': [
+            {
+                'name': 'Harvard Internal',
+                'price': 100,
+                'units': 'ea',
+            }
+        ]
+    },
+    {
+        'product_number': 'IFXP0000000002',
+        'product_name': 'Helium Balloon',
+        'product_description': 'A balloon of helium',
+        'rates': [
+            {
+                'name': 'Harvard Internal',
+                'price': 1000,
+                'units': 'ea',
+            }
+        ]
     }
 ]
 
@@ -80,6 +136,7 @@ PRODUCT_USAGES = [
         'product': 'Helium Dewar',
         'product_user': 'Slurpy Slurpiston',
         'quantity': 1,
+        'units': 'ea',
     }
 ]
 
@@ -87,6 +144,11 @@ def clearTestData():
     '''
     Clear all of the data from the database.  Called during setUp
     '''
+    models.BillingRecord.objects.all().delete()
+    models.Account.objects.all().delete()
+    models.ProductUsage.objects.all().delete()
+    models.Product.objects.all().delete()
+
     Organization.objects.all().delete()
     for user_data in USERS:
         try:
@@ -98,11 +160,6 @@ def clearTestData():
         get_user_model().objects.filter(username='john', email='john@snow.com').delete()
     except Exception:
         pass
-
-    models.BillingRecord.objects.all().delete()
-    models.ProductUsage.objects.all().delete()
-    models.Product.objects.all().delete()
-    models.Account.objects.all().delete()
 
     # Clear stuff from fiine
     products = FiineAPI.listProducts()
@@ -134,10 +191,32 @@ def init(types=None):
                 models.Account.objects.create(**data_copy)
         if 'Product' in types:
             for product_data in PRODUCTS:
-                models.Product.objects.create(**product_data)
+                data_copy = deepcopy(product_data)
+                rates_data = data_copy.pop('rates', None)
+                product = models.Product.objects.create(**data_copy)
+                for rate_data in rates_data:
+                    rate_data['product'] = product
+                    models.Rate.objects.create(**rate_data)
         if 'ProductUsage' in types:
             for product_usage_data in PRODUCT_USAGES:
                 data_copy = deepcopy(product_usage_data)
                 data_copy['product'] = models.Product.objects.get(product_name=product_usage_data['product'])
                 data_copy['product_user'] = get_user_model().objects.get(full_name=product_usage_data['product_user'])
                 models.ProductUsage.objects.create(**data_copy)
+        if 'UserAccount' in types:
+            for user_account_data in USER_ACCOUNTS:
+                account = models.Account.objects.get(name=user_account_data['account'])
+                user = get_user_model().objects.get(full_name=user_account_data['user'])
+                models.UserAccount.objects.create(account=account, user=user, is_valid=user_account_data['is_valid'])
+        if 'UserProductAccount' in types:
+            for user_product_account_data in USER_PRODUCT_ACCOUNTS:
+                account = models.Account.objects.get(name=user_product_account_data['account'])
+                user = get_user_model().objects.get(full_name=user_product_account_data['user'])
+                product = models.Product.objects.get(product_name=user_product_account_data['product'])
+                models.UserProductAccount.objects.create(
+                    product=product,
+                    account=account,
+                    user=user,
+                    is_valid=user_product_account_data['is_valid'],
+                    percent=user_product_account_data['percent']
+                )
