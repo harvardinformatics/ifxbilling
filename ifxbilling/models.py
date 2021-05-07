@@ -336,6 +336,9 @@ class BillingRecord(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f'Charge of {self.charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
+
 
 @with_author
 class Transaction(models.Model):

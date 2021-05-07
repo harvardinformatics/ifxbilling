@@ -72,7 +72,7 @@ class BasicBillingCalculator():
         if percent < 100:
             percent_str = f'{percent}% of '
         description = f'{percent_str}{product_usage.quantity} {product_usage.units} at {rate.price} per {rate.units}'
-        charge = round(rate.price * product_usage.quantity * 100 / percent)
+        charge = round(rate.price * product_usage.quantity * percent / 100)
         user = product_usage.product_user
 
         transactions_data.append(

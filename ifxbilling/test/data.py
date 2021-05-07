@@ -60,10 +60,47 @@ USERS = [
 
 ACCOUNTS = [
     {
+        'code': '370-11111-8100-000775-600200-0000-44075',
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'name': 'Alternate code',
+        'root': '44075',
+    },
+    {
         'code': '370-31230-8100-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'mycode',
         'root': '12345',
+    },
+    {
+        'code': '370-99999-8100-000775-600200-0000-44075',
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'name': 'Another code',
+        'root': '44075',
+    },
+]
+
+USER_ACCOUNTS = [
+    {
+        'user': 'Slurpy Slurpiston',
+        'account': 'mycode',
+        'is_valid': True,
+    }
+]
+
+USER_PRODUCT_ACCOUNTS = [
+    {
+        'user': 'Slurpy Slurpiston',
+        'account': 'Alternate code',
+        'product': 'Helium Dewar',
+        'percent': 25,
+        'is_valid': True,
+    },
+    {
+        'user': 'Slurpy Slurpiston',
+        'account': 'Another code',
+        'product': 'Helium Dewar',
+        'percent': 75,
+        'is_valid': True,
     }
 ]
 
@@ -76,6 +113,18 @@ PRODUCTS = [
             {
                 'name': 'Harvard Internal',
                 'price': 100,
+                'units': 'ea',
+            }
+        ]
+    },
+    {
+        'product_number': 'IFXP0000000002',
+        'product_name': 'Helium Balloon',
+        'product_description': 'A balloon of helium',
+        'rates': [
+            {
+                'name': 'Harvard Internal',
+                'price': 1000,
                 'units': 'ea',
             }
         ]
@@ -154,3 +203,20 @@ def init(types=None):
                 data_copy['product'] = models.Product.objects.get(product_name=product_usage_data['product'])
                 data_copy['product_user'] = get_user_model().objects.get(full_name=product_usage_data['product_user'])
                 models.ProductUsage.objects.create(**data_copy)
+        if 'UserAccount' in types:
+            for user_account_data in USER_ACCOUNTS:
+                account = models.Account.objects.get(name=user_account_data['account'])
+                user = get_user_model().objects.get(full_name=user_account_data['user'])
+                models.UserAccount.objects.create(account=account, user=user, is_valid=user_account_data['is_valid'])
+        if 'UserProductAccount' in types:
+            for user_product_account_data in USER_PRODUCT_ACCOUNTS:
+                account = models.Account.objects.get(name=user_product_account_data['account'])
+                user = get_user_model().objects.get(full_name=user_product_account_data['user'])
+                product = models.Product.objects.get(product_name=user_product_account_data['product'])
+                models.UserProductAccount.objects.create(
+                    product=product,
+                    account=account,
+                    user=user,
+                    is_valid=user_product_account_data['is_valid'],
+                    percent=user_product_account_data['percent']
+                )

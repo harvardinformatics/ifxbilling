@@ -42,7 +42,7 @@ class TestCalculator(APITestCase):
         '''
         Ensure that a simple ProductUsage can be converted to a BillingRecord specifying only the product_usage.
         '''
-        data.init(types=['Account', 'Product', 'ProductUsage'])
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserAccount'])
         product_usage_data = data.PRODUCT_USAGES[0]
         product_usage = models.ProductUsage.objects.get(
             product__product_name=product_usage_data['product'],
@@ -57,3 +57,25 @@ class TestCalculator(APITestCase):
         br = brs[0]
         expected_charge = 100
         self.assertTrue(br.charge == expected_charge, f'Incorrect charge {br}')
+
+    def testUserProductAccountSplit(self):
+        '''
+        Ensure that a charge against a UserProductAccount with percentages creates split billing records.
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+        product_usage_data = data.PRODUCT_USAGES[0]
+        product_usage = models.ProductUsage.objects.get(
+            product__product_name=product_usage_data['product'],
+            product_user__full_name=product_usage_data['product_user'],
+            quantity=product_usage_data['quantity']
+        )
+
+        bbc = BasicBillingCalculator()
+        brs = bbc.createBillingRecordsForUsage(product_usage)
+        self.assertTrue(len(brs) == 2, f'Incorrect number of billing records returned {brs}')
+
+        for charge in [25, 75]:
+            try:
+                models.BillingRecord.objects.get(product_usage=product_usage, charge=charge)
+            except models.BillingRecord.DoesNotExist:
+                self.assertTrue(False, f'Unable to find billing record with charge {charge}\n{brs}')
