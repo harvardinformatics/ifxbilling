@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from ifxbilling import serializers
-from ifxbilling.views import get_remote_user_auth_token
+from ifxbilling.views import get_remote_user_auth_token, update_user_accounts
 
 
 # routers provide an easy way of automatically determining the URL conf.
@@ -19,5 +19,6 @@ router.register(r'billing-records', serializers.BillingRecordViewSet)
 urlpatterns = [
     path(r'ifxbilling/djadmin/', admin.site.urls),
     path(r'ifxbilling/api/obtain-auth-token/', get_remote_user_auth_token),
+    path(r'ifxbilling/api/update-user-accounts/', update_user_accounts, name='update-user-accounts'),
     path(r'ifxbilling/api/', include(router.urls)),
 ]
