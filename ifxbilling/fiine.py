@@ -12,10 +12,13 @@ All rights reserved.
 '''
 
 import logging
+import pytz
 from django.db import IntegrityError
+from django.contrib.auth import get_user_model
 from django.conf import settings
 from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotAuthenticated
+from ifxuser.models import Organization
 from fiine.client import API as FiineAPI
 from fiine.client import ApiException
 from ifxbilling import models
@@ -27,9 +30,95 @@ logger = logging.getLogger(__name__)
 def updateUserAccounts(user):
     '''
     For a single user retrieve account strings from fiine.
-    Remove any account string that are not represented in fiine.
+    Invalidate any account string that are not represented in fiine.
+    Account records may be created by this function, but Products will not be.
     '''
-    pass
+    ifxid = user.ifxid
+    fiine_person = FiineAPI.readPerson(ifxid=ifxid)
+    logger.debug('fiine_person retrieved for ifxid %s: %s', ifxid, str(fiine_person))
+
+    # Collect user accounts and facility accounts for this facility
+    fiine_accounts = [acct.to_dict() for acct in fiine_person.accounts]
+    for facility_account in fiine_person.facility_accounts:
+        if facility_account.facility == settings.FACILITY_NAME:
+            facility_account_data = facility_account.to_dict()
+            facility_account_data.pop('facility', None)
+            fiine_accounts.append(facility_account_data)
+    logger.debug('fiine_person has %d accounts', len(fiine_accounts))
+
+    product_accounts = [acct.to_dict() for acct in fiine_person.product_accounts]
+
+    # Go through fiine_accounts and product accounts. Create any missing Account objects or update with Fiine information
+    for person_account_data in fiine_accounts + product_accounts:
+        account_data = person_account_data['account']
+        try:
+            account = models.Account.objects.get(code=account_data['code'], organization__slug=account_data['organization'])
+
+            # Update some of the account fields if it's available
+            for field in ['name', 'active', 'valid_from', 'expiration_date']:
+                if field in account_data:
+                    setattr(account, field, account_data[field])
+
+        except models.Account.DoesNotExist:
+            account_data['organization'] = Organization.objects.get(slug=account_data.pop('organization'))
+            account_data.pop('id')
+            models.Account.objects.create(**account_data)
+
+    # Update existing UserAccounts (is_valid flag) or create new
+    for fiine_account_data in fiine_accounts:
+        try:
+            account = models.Account.objects.get(
+                organization__slug=fiine_account_data['account']['organization'],
+                code=fiine_account_data['account']['code']
+            )
+            user_account = models.UserAccount.objects.get(user=user, account=account)
+            user_account.is_valid = fiine_account_data['is_valid']
+            user_account.save()
+        except models.UserAccount.DoesNotExist:
+            models.UserAccount.objects.create(account=account, user=user, is_valid=fiine_account_data['is_valid'])
+
+    # Update UserProductAccounts (is_valid, percent) or create new
+    for product_account_data in product_accounts:
+        try:
+            account = models.Account.objects.get(
+                organization__slug=product_account_data['account']['organization'],
+                code=product_account_data['account']['code']
+            )
+            product = models.Product.objects.get(product_number=product_account_data['product']['product_number'])
+            user_product_account = models.UserProductAccount.objects.get(account=account, user=user, product=product)
+            user_product_account.is_valid = product_account_data['is_valid']
+            if 'percent' not in product_account_data:
+                product_account_data['percent'] = 100
+            user_product_account.percent = product_account_data['percent']
+            user_product_account.save()
+        except models.UserProductAccount.DoesNotExist:
+            models.UserProductAccount.objects.create(
+                user=user,
+                product=product,
+                account=account,
+                is_valid=product_account_data['is_valid'],
+                percent=product_account_data['percent']
+            )
+    user = get_user_model().objects.get(id=user.id)
+    return user
+
+
+def updateProducts():
+    '''
+    Get all of the products for this facility and update to apply any changes made in Fiine. Mainly product_name and product_description
+    '''
+    fiine_products = FiineAPI.listProducts(facility=settings.FACILITY_NAME)
+    for fiine_product in fiine_products:
+        try:
+            product = models.Product.objects.get(product_number=fiine_product.product_number)
+            for field in ['product_name', 'product_description']:
+                setattr(product, field, getattr(fiine_product, field))
+            product.save()
+        except models.Product.DoesNotExist:
+            fiine_product_data = fiine_product.to_dict()
+            fiine_product_data.pop('facility')
+            models.Product.objects.create(**fiine_product_data)
+
 
 def getExpenseCodeStatus(account):
     '''
