@@ -92,8 +92,8 @@ class Account(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     active = models.BooleanField(default=False)
-    valid_from = models.DateTimeField(default=timezone.now, blank=True)
-    expiration_date = models.DateTimeField(
+    valid_from = models.DateField(default=timezone.now, blank=True)
+    expiration_date = models.DateField(
         blank=True,
         null=True
     )
@@ -136,6 +136,9 @@ class UserAccount(models.Model):
         blank=False,
         default=True
     )
+    def __str__(self):
+        valid_str = 'Validated' if self.is_valid else 'Invalid'
+        return f'{valid_str} authorization of {self.account} for {self.user}'
 
 
 class Product(models.Model):
