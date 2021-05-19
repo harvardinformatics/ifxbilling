@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from ifxbilling.models import ProductUsage, BillingRecord
-from ifxbilling.calculator import getClassFromName
+from ifxbilling.calculator import getClassFromName, BasicBillingCalculator
 
 
 logger = logging.getLogger('ifxbilling')
@@ -53,7 +53,9 @@ class Command(BaseCommand):
         verbose = kwargs['verbose']
 
         product_usages = ProductUsage.objects.filter(month=month, year=year)
-        calculators = {}
+        calculators = {
+            'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
+        }
         for product_usage in product_usages:
             if BillingRecord.objects.filter(product_usage=product_usage).exists():
                 if recalculate:
