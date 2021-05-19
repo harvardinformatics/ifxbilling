@@ -119,7 +119,6 @@ class BasicBillingCalculator():
                 raise Exception(f'Unable to find a user account record for {product_usage.product_user}')
 
         logger.debug('Account percentages for %s: %s', str(product_usage), str(account_percentages))
-        raise Exception('Account percentages for %s: %s', str(product_usage), str(account_percentages))
         return account_percentages
 
     def getBillingRecordDescription(self, product_usage, percent):
