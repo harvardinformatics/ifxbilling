@@ -8,6 +8,7 @@ from io import StringIO
 from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
+from logging_tree import printout
 from ifxbilling.models import ProductUsage, BillingRecord
 from ifxbilling.calculator import getClassFromName, BasicBillingCalculator
 
@@ -52,6 +53,9 @@ class Command(BaseCommand):
         recalculate = kwargs['recalculate']
         verbose = kwargs['verbose']
 
+        if verbose:
+            printout()
+
         product_usages = ProductUsage.objects.filter(month=month, year=year)
         # calculators = {
         #     'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
@@ -69,7 +73,7 @@ class Command(BaseCommand):
                 #      calculators[billing_calculator_name] = billing_calculator_class()
                 # billing_calculator = calculators[billing_calculator_name]
                 billing_calculator = BasicBillingCalculator()
-                billing_calculator.createBillingRecordForUsage(product_usage)
+                billing_calculator.createBillingRecordsForUsage(product_usage)
             except Exception as e:
                 if verbose:
                     logger.exception(e)
