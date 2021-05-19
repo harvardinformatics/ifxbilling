@@ -199,7 +199,6 @@ class AccountUserAdmin(admin.ModelAdmin):
     Show accounts associated with users
     '''
     fields = (
-        'id',
         'ifxid',
         'first_name',
         'last_name',
@@ -208,7 +207,6 @@ class AccountUserAdmin(admin.ModelAdmin):
         'is_active',
     )
     list_display = (
-        'id',
         'ifxid',
         'first_name',
         'last_name',
