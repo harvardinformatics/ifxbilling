@@ -95,7 +95,7 @@ class BasicBillingCalculator():
         if not product_usage.product_user:
             raise Exception(f'No product user for {product_usage}')
         user_product_accounts = product_usage.product_user.userproductaccount_set.filter(product=product_usage.product, is_valid=True)
-        if user_product_accounts:
+        if len(user_product_accounts) > 0:
             for user_product_account in user_product_accounts:
                 account_percentages.append(
                     {
