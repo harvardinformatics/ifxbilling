@@ -128,8 +128,8 @@ class BasicBillingCalculator():
 
     def createBillingRecordsForUsage(self, product_usage, account_percentages=None, year=None, month=None, description=None, usage_data=None, recalculate=False):
         '''
-        Determine the number of BillingRecords to create for this usage and then create each one.  If recalculate is True, existing records are removed.
-        Throws an Exception of a BillingRecord already exists for the product_usage
+        Determine the number of BillingRecords to create for this usage and then creates each one.  If recalculate is True, existing records are removed.
+        Throws an Exception if a BillingRecord already exists for the product_usage
         account_percentages should be a list of dicts consisting of an Account object and a numerical percent, a'la
         [
             {

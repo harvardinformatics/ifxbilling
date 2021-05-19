@@ -45,6 +45,7 @@ class Command(BaseCommand):
             for user in get_user_model().objects.filter(ifxid__isnull=False):
                 try:
                     updateUserAccounts(user)
+                    successes += 1
                 except Exception as e:
                     errors.append(f'Unable to update {user}: {e}')
 
