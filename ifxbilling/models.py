@@ -12,6 +12,7 @@ All rights reserved.
 '''
 import re
 import logging
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import models
 from django.conf import settings
@@ -379,3 +380,11 @@ def transaction_post_save(sender, instance, **kwargs):
         billing_record_charge += trx.charge
     instance.billing_record.charge = billing_record_charge
     instance.billing_record.save()
+
+
+class AccountUser(get_user_model()):
+    '''
+    Proxy user that supports AccountUserAdmin
+    '''
+    class Meta:
+        proxy = True

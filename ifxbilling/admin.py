@@ -12,6 +12,7 @@ All rights reserved.
 '''
 import logging
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from ifxbilling import models
 
 
@@ -180,4 +181,47 @@ class ProductUsageAdmin(admin.ModelAdmin):
     list_filter = ('year', 'month', 'product', 'product_user')
     readonly_fields = ('created',)
 
+
 admin.site.register(models.ProductUsage, ProductUsageAdmin)
+
+
+class UserProductAccountInline(admin.TabularInline):
+    '''
+    Inline for UserProductAccounts
+    '''
+    model = models.UserProductAccount
+    autocomplete_fields = ('account', 'product')
+    extra = 0
+
+
+class AccountUserAdmin(admin.ModelAdmin):
+    '''
+    Show accounts associated with users
+    '''
+    fields = (
+        'id',
+        'ifxid',
+        'first_name',
+        'last_name',
+        'full_name',
+        'primary_affiliation',
+        'is_active',
+    )
+    list_display = (
+        'id',
+        'ifxid',
+        'first_name',
+        'last_name',
+        'full_name',
+        'primary_affiliation',
+        'is_active',
+    )
+    search_fields = (
+        'full_name',
+        'primary_affiliation__name',
+    )
+    list_filter = ('primary_affiliation', )
+    inlines = (UserAccountInlineAdmin, UserProductAccountInline)
+
+
+admin.site.register(models.AccountUser, AccountUserAdmin)
