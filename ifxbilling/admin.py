@@ -116,6 +116,7 @@ class TransactionInlineAdmin(admin.TabularInline):
     model = models.Transaction
     extra = 0
 
+
 class BillingRecordAdmin(admin.ModelAdmin):
     '''
     Admin for BillingRecords
@@ -185,12 +186,21 @@ class ProductUsageAdmin(admin.ModelAdmin):
 admin.site.register(models.ProductUsage, ProductUsageAdmin)
 
 
-class UserProductAccountInline(admin.TabularInline):
+class UserProductAccountInlineAdmin(admin.TabularInline):
     '''
     Inline for UserProductAccounts
     '''
     model = models.UserProductAccount
     autocomplete_fields = ('account', 'product')
+    extra = 0
+
+
+class ProductUsageInlineAdmin(admin.TabularInline):
+    '''
+    Inline for ProductUsage
+    '''
+    model = models.ProductUsage
+    autocomplete_fields = ('product',)
     extra = 0
 
 
@@ -219,7 +229,7 @@ class AccountUserAdmin(admin.ModelAdmin):
         'primary_affiliation__name',
     )
     list_filter = ('primary_affiliation', )
-    inlines = (UserAccountInlineAdmin, UserProductAccountInline)
+    inlines = (UserAccountInlineAdmin, UserProductAccountInlineAdmin)
 
 
 admin.site.register(models.AccountUser, AccountUserAdmin)
