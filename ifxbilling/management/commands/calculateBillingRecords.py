@@ -3,12 +3,16 @@
 '''
 Calculate billing records for the given year and month
 '''
+import logging
 from io import StringIO
 from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from ifxbilling.models import ProductUsage, BillingRecord
 from ifxbilling.calculator import getClassFromName
+
+
+logger = logging.getLogger()
 
 
 class Command(BaseCommand):
@@ -36,11 +40,17 @@ class Command(BaseCommand):
             action='store_true',
             help='Remove existing billing records and recalculate',
         )
+        parser.add_argument(
+            '--verbose',
+            action='store_true',
+            help='Report full exception for errors',
+        )
 
     def handle(self, *args, **kwargs):
         month = int(kwargs['month'])
         year = int(kwargs['year'])
         recalculate = kwargs['recalculate']
+        verbose = kwargs['verbose']
 
         product_usages = ProductUsage.objects.filter(month=month, year=year)
         calculators = {}
@@ -58,5 +68,8 @@ class Command(BaseCommand):
                 billing_calculator = calculators[billing_calculator_name]
                 billing_calculator.createBillingRecordForUsage(product_usage)
             except Exception as e:
-                print(f'Unable to create billing record for {product_usage}: {e}')
+                if verbose:
+                    logger.exception(e)
+                else:
+                    print(f'Unable to create billing record for {product_usage}: {e}')
 
