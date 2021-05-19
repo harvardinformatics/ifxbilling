@@ -3,6 +3,7 @@
 '''
 Calculate billing records for the given year and month
 '''
+import traceback
 import logging
 from io import StringIO
 from django.utils import timezone
@@ -69,7 +70,7 @@ class Command(BaseCommand):
                 billing_calculator.createBillingRecordForUsage(product_usage)
             except Exception as e:
                 if verbose:
-                    logger.exception(e)
+                    traceback.print_tb(e.__traceback__)
                 else:
                     print(f'Unable to create billing record for {product_usage}: {e}')
 
