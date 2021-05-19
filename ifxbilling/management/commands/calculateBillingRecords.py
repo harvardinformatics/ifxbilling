@@ -53,9 +53,9 @@ class Command(BaseCommand):
         verbose = kwargs['verbose']
 
         product_usages = ProductUsage.objects.filter(month=month, year=year)
-        calculators = {
-            'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
-        }
+        # calculators = {
+        #     'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
+        # }
         for product_usage in product_usages:
             if BillingRecord.objects.filter(product_usage=product_usage).exists():
                 if recalculate:
@@ -63,11 +63,12 @@ class Command(BaseCommand):
                 else:
                     continue
             try:
-                billing_calculator_name = product_usage.product.billing_calculator
-                if billing_calculator_name not in calculators:
-                     billing_calculator_class = getClassFromName(billing_calculator_name)
-                     calculators[billing_calculator_name] = billing_calculator_class()
-                billing_calculator = calculators[billing_calculator_name]
+                # billing_calculator_name = product_usage.product.billing_calculator
+                # if billing_calculator_name not in calculators:
+                #      billing_calculator_class = getClassFromName(billing_calculator_name)
+                #      calculators[billing_calculator_name] = billing_calculator_class()
+                # billing_calculator = calculators[billing_calculator_name]
+                billing_calculator = BasicBillingCalculator()
                 billing_calculator.createBillingRecordForUsage(product_usage)
             except Exception as e:
                 if verbose:
