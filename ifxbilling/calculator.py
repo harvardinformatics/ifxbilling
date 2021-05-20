@@ -16,6 +16,9 @@ from django.db import transaction
 from ifxbilling.models import BillingRecord, Transaction
 
 
+logger = logging.getLogger('ifxbilling')
+
+
 def getClassFromName(dotted_path):
     """
     Utility that will return the class object for a fully qualified
@@ -95,7 +98,7 @@ class BasicBillingCalculator():
         if not product_usage.product_user:
             raise Exception(f'No product user for {product_usage}')
         user_product_accounts = product_usage.product_user.userproductaccount_set.filter(product=product_usage.product, is_valid=True)
-        if user_product_accounts:
+        if len(user_product_accounts) > 0:
             for user_product_account in user_product_accounts:
                 account_percentages.append(
                     {
@@ -114,6 +117,8 @@ class BasicBillingCalculator():
                 )
             else:
                 raise Exception(f'Unable to find a user account record for {product_usage.product_user}')
+
+        logger.debug('Account percentages for %s: %s', str(product_usage), str(account_percentages))
         return account_percentages
 
     def getBillingRecordDescription(self, product_usage, percent):
@@ -149,6 +154,7 @@ class BasicBillingCalculator():
 
             if not account_percentages:
                 account_percentages = self.getAccountPercentagesForProductUsage(product_usage)
+            logger.debug('Creating %d billing records for product_usage %s', len(account_percentages), str(product_usage))
             for account_percentage in account_percentages:
                 account = account_percentage['account']
                 percent = account_percentage['percent']

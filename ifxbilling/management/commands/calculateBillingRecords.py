@@ -8,11 +8,12 @@ from io import StringIO
 from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
+from logging_tree import printout
 from ifxbilling.models import ProductUsage, BillingRecord
-from ifxbilling.calculator import getClassFromName
+from ifxbilling.calculator import getClassFromName, BasicBillingCalculator
 
 
-logger = logging.getLogger()
+logger = logging.getLogger('ifxbilling')
 
 
 class Command(BaseCommand):
@@ -52,8 +53,15 @@ class Command(BaseCommand):
         recalculate = kwargs['recalculate']
         verbose = kwargs['verbose']
 
+        if verbose:
+            printout()
+
+        successes = 0
+        errors = []
         product_usages = ProductUsage.objects.filter(month=month, year=year)
-        calculators = {}
+        calculators = {
+            'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
+        }
         for product_usage in product_usages:
             if BillingRecord.objects.filter(product_usage=product_usage).exists():
                 if recalculate:
@@ -63,13 +71,16 @@ class Command(BaseCommand):
             try:
                 billing_calculator_name = product_usage.product.billing_calculator
                 if billing_calculator_name not in calculators:
-                     billing_calculator_class = getClassFromName(billing_calculator_name)
-                     calculators[billing_calculator_name] = billing_calculator_class()
+                    billing_calculator_class = getClassFromName(billing_calculator_name)
+                    calculators[billing_calculator_name] = billing_calculator_class()
                 billing_calculator = calculators[billing_calculator_name]
-                billing_calculator.createBillingRecordForUsage(product_usage)
+                billing_calculator.createBillingRecordsForUsage(product_usage)
+                successes += 1
             except Exception as e:
                 if verbose:
                     logger.exception(e)
-                else:
-                    print(f'Unable to create billing record for {product_usage}: {e}')
+                errors.append(f'Unable to create billing record for {product_usage}: {e}')
 
+        print(f'{successes} product usages successfully processed')
+        if errors:
+            print('Errors: %s' % '\n'.join(errors))
