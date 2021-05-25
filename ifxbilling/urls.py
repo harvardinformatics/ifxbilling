@@ -14,7 +14,7 @@ router = routers.DefaultRouter()
 router.register(r'accounts', serializers.AccountViewSet)
 router.register(r'products', serializers.ProductViewSet)
 router.register(r'product-usages', serializers.ProductUsageViewSet)
-router.register(r'billing-records', serializers.BillingRecordViewSet)
+router.register(r'billing-records', serializers.BillingRecordViewSet, 'billing-record')
 
 urlpatterns = [
     path(r'ifxbilling/djadmin/', admin.site.urls),
