@@ -91,6 +91,12 @@ ACCOUNTS = [
         'name': 'Another code',
         'root': '44075',
     },
+    {
+        'code': '370-11111-8100-000775-600200-0000-33333',
+        'organization': 'Nobody Lab (a Harvard Laboratory)',
+        'name': 'Nobody lab code',
+        'root': '33333',
+    },
 ]
 
 USER_ACCOUNTS = [
@@ -115,7 +121,21 @@ USER_PRODUCT_ACCOUNTS = [
         'product': 'Helium Dewar',
         'percent': 75,
         'is_valid': True,
-    }
+    },
+    {
+        'user': 'Markos Hankin',
+        'account': 'Nobody lab code',
+        'product': 'Helium Dewar',
+        'percent': 100,
+        'is_valid': True,
+    },
+    {
+        'user': 'Markos Hankin',
+        'account': 'Another code',
+        'product': 'Helium Dewar',
+        'percent': 100,
+        'is_valid': True,
+    },
 ]
 
 PRODUCTS = [
@@ -151,7 +171,31 @@ PRODUCT_USAGES = [
         'product_user': 'Slurpy Slurpiston',
         'quantity': 1,
         'units': 'ea',
-    }
+    },
+    {
+        'product': 'Helium Dewar',
+        'product_user': 'Markos Hankin',
+        'quantity': 1,
+        'units': 'ea',
+        'year': 1900,
+        'month': 1
+    },
+    {
+        'product': 'Helium Dewar',
+        'product_user': 'Markos Hankin',
+        'quantity': 1,
+        'units': 'ea',
+        'year': 2020,
+        'month': 2
+    },
+    {
+        'product': 'Helium Dewar',
+        'product_user': 'Markos Hankin',
+        'quantity': 1,
+        'units': 'ea',
+        'year': 2021,
+        'month': 3
+    },
 ]
 
 def clearTestData():

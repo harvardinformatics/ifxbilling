@@ -338,5 +338,23 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for BillingRecords
     '''
-    queryset = models.BillingRecord.objects.all()
     serializer_class = BillingRecordSerializer
+
+    def get_queryset(self):
+        year = self.request.query_params.get('year')
+        month = self.request.query_params.get('month')
+        organization = self.request.query_params.get('organization')
+        root = self.request.query_params.get('root')
+
+        queryset = models.BillingRecord.objects.all()
+
+        if year:
+            queryset = queryset.filter(year=year)
+        if month:
+            queryset = queryset.filter(month=month)
+        if organization:
+            queryset = queryset.filter(account__organization__slug=organization)
+        if root:
+            queryset = queryset.filter(account__root=root)
+
+        return queryset
