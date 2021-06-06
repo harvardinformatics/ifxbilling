@@ -70,6 +70,7 @@ services:
       - IFXBILLING_DJANGO_KEY=anweijfnvwoejvniejnvfwvijnf
       - IFXBILLING_IFX_APP_TOKEN=5780b7d2bd8b57a0af95b901aea5622a4923f9d2
       - FIINE_API_BASE=http://fiine-drf/fiine/api
+      - IFX_REMOTE_USER=veradmin
     networks:
       main:
 
