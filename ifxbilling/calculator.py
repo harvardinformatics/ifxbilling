@@ -13,11 +13,12 @@ All rights reserved.
 import logging
 from importlib import import_module
 from django.db import transaction
-from ifxbilling.models import BillingRecord, Transaction
+from ifxbilling.models import BillingRecord, Transaction, BillingRecordState
+from ifxuser.models import Organization
 
 
 logger = logging.getLogger('ifxbilling')
-
+initial_state = 'PENDING LAB APPROVAL'
 
 def getClassFromName(dotted_path):
     """
@@ -202,9 +203,18 @@ class BasicBillingCalculator():
                     account=account,
                     year=year,
                     month=month,
-                    description=description
+                    description=description,
+                    current_state=initial_state
                 )
                 billing_record.save()
+                billing_record_state = BillingRecordState(
+                    billing_record=billing_record,
+                    name=initial_state,
+                    user=product_usage.product_user,
+                    #TODO: add approvers
+                    comment='created by billing calculator'
+                )
+                billing_record_state.save()
             trxn = Transaction(
                 billing_record=billing_record,
                 charge=transaction_data['charge'],

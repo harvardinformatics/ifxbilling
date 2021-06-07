@@ -221,6 +221,19 @@ class TransactionSerializer(viewsets.ModelViewSet):
         fields = ('id', 'charge', 'description', 'created', 'author')
         read_only_fields = ('id', 'created', 'author')
 
+class BillingRecordStateSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for billing record state
+    '''
+    name = serializers.CharField(max_length=100)
+    user = serializers.SlugRelatedField(slug_field='full_name', queryset=get_user_model().objects.all())
+    approvers = serializers.SlugRelatedField(slug_field='full_name', queryset=get_user_model().objects.all(), many=True)
+    comment = serializers.CharField(max_length=1000, required=False)
+
+    class Meta:
+        model = models.BillingRecordState
+        fields = ('id', 'name', 'user', 'approvers', 'comment', 'created', 'updated' )
+        read_only_fields = ('id', 'created', 'updated')
 
 class BillingRecordSerializer(serializers.ModelSerializer):
     '''
@@ -232,14 +245,16 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     product_usage = ProductUsageSerializer(read_only=True)
     charge = serializers.IntegerField(read_only=True)
     description = serializers.CharField(max_length=200, required=False, allow_blank=True)
-    year = serializers.IntegerField(required=False)
-    month = serializers.IntegerField(required=False)
+    year = serializers.IntegerField()
+    month = serializers.IntegerField()
     transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
     account = serializers.SlugRelatedField(slug_field='slug', queryset=models.Account.objects.all())
+    current_state = serializers.CharField(max_length=200, allow_blank=True)
+    billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
 
     class Meta:
         model = models.BillingRecord
-        fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'created', 'updated')
+        fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'current_state', 'billing_record_states', 'created', 'updated')
         read_only_fields = ('id', 'created', 'updated')
 
     @transaction.atomic
