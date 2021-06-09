@@ -351,7 +351,8 @@ class BillingRecord(models.Model):
         Creates a billing record state and sets the current_state value
         '''
         logger.info(f'Setting state {name} for billing record {self} with approvers {approvers}')
-        rs = BillingRecordState(name=name, user=user, billing_record=self, comment=comment)
+        user_obj = get_user_model().objects.get(username=user)
+        rs = BillingRecordState(name=name, user=user_obj, billing_record=self, comment=comment)
         rs.save()
         # Set approvers if needed
         if approvers is not None:
