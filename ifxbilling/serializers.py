@@ -209,7 +209,7 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
     serializer_class = ProductUsageSerializer
 
 
-class TransactionSerializer(viewsets.ModelViewSet):
+class TransactionSerializer(serializers.ModelSerializer):
     '''
     Serilizer for BillingRecord Transactions.
     '''
@@ -247,14 +247,14 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     description = serializers.CharField(max_length=200, required=False, allow_blank=True)
     year = serializers.IntegerField()
     month = serializers.IntegerField()
-    transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
     account = serializers.SlugRelatedField(slug_field='slug', queryset=models.Account.objects.all())
+    transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
     current_state = serializers.CharField(max_length=200, allow_blank=True)
     billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
 
     class Meta:
         model = models.BillingRecord
-        fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'current_state', 'billing_record_states', 'created', 'updated')
+        fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'transactions', 'current_state', 'billing_record_states', 'created', 'updated')
         read_only_fields = ('id', 'created', 'updated')
 
     @transaction.atomic
@@ -273,6 +273,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         # Check for product_usage, fetch and add to validated_data
         if 'product_usage' not in self.initial_data \
             or not self.initial_data['product_usage'] \
+            or not 'id' in self.initial_data['product_usage'] \
             or not self.initial_data['product_usage']['id']:
             raise serializers.ValidationError(
                 detail={
@@ -294,9 +295,16 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         # Create the billing record.  Charge will be 0
         billing_record = models.BillingRecord.objects.create(**validated_data)
 
+        # Set any states that exist
+        if 'billing_record_states' in self.initial_data:
+            billing_record_states_data = self.initial_data['billing_record_states']
+            for state_data in billing_record_states_data:
+                billing_record.setState(**state_data)
+
         # Set the transactions to get the actual charge
         transactions_data = self.initial_data['transactions']
         for transaction_data in transactions_data:
+            transaction_data['author'] = get_user_model().objects.get(id=transaction_data['author'])
             models.Transaction.objects.create(**transaction_data, billing_record=billing_record)
 
         return billing_record
@@ -313,6 +321,12 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 }
             )
 
+        if 'billing_record_states' not in self.initial_data:
+            raise serializers.ValidationError(
+                detail={
+                    'billing_record_states': 'Billing record must have at least one billing record state'
+                }
+            )
         # Check for product_usage, fetch and add to validated_data
         if 'product_usage' not in self.initial_data \
             or not self.initial_data['product_usage'] \
@@ -345,6 +359,12 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         for transaction_data in transactions_data:
             if 'id' not in transaction_data:
                 models.Transaction.objects.create(**transaction_data, billing_record=instance)
+
+        # Only add new billing record states.  Old ones cannot be removed.
+        billing_record_states_data = self.initial_data['billing_record_states']
+        for state_data in billing_record_states_data:
+            if 'id' not in state_data:
+                instance.setState(**state_data)
 
         return instance
 
