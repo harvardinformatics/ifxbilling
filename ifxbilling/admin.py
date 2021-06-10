@@ -116,6 +116,13 @@ class TransactionInlineAdmin(admin.TabularInline):
     model = models.Transaction
     extra = 0
 
+class BillingRecordStateInlineAdmin(admin.TabularInline):
+    '''
+    For displaying billing record states with BillingRecords
+    '''
+    model = models.BillingRecordState
+    autocomplete_fields = ('billing_record',)
+    extra = 0
 
 class BillingRecordAdmin(admin.ModelAdmin):
     '''
@@ -128,6 +135,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'description',
         'year',
         'month',
+        'current_state',
         'created',
         'updated'
     )
@@ -137,7 +145,8 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'charge',
         'description',
         'month',
-        'year'
+        'year',
+        'current_state'
     )
     ordering = ('year', 'month')
     search_fields = (
@@ -147,7 +156,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
      )
     list_filter = ('year', 'month', 'product_usage__product__product_name', 'account__name', 'account__root')
     readonly_fields = ('created', 'updated',)
-    inlines = (TransactionInlineAdmin,)
+    inlines = (TransactionInlineAdmin, BillingRecordStateInlineAdmin)
 
 admin.site.register(models.BillingRecord, BillingRecordAdmin)
 

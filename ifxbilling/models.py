@@ -337,12 +337,109 @@ class BillingRecord(models.Model):
         help_text='Month in which the billing applies',
         default=thisMonth
     )
+    current_state = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Name of the most recent BillingRecordState'
+    )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    def setState(self, name, user, approvers=None, comment=None):
+        '''
+        Creates a billing record state and sets the current_state value
+        '''
+        logger.info(f'Setting state {name} for billing record {self} with approvers {approvers}')
+        user_obj = get_user_model().objects.get(username=user)
+        rs = BillingRecordState(name=name, user=user_obj, billing_record=self, comment=comment)
+        rs.save()
+        # Set approvers if needed
+        if approvers is not None:
+            if not isinstance(approvers, list):
+                approvers = [approvers]
+            for approver in approvers:
+                rs.approvers.add(approver)
+
+        self.current_state = name
+        self.save()
+
+    def getCurrentBillingRecordState(self):
+        """
+        Returns the most recent BillingRecordState
+        """
+        rs = BillingRecordState.objects.filter(billing_record=self, name=self.current_state).order_by('-created')[0]
+        return rs
+
+    def canApprove(self, user):
+        """
+        Return true if the user can provide approval for the current billing
+        record state.
+
+        Default behavior is to match the latest request state approver, or be an admin
+        """
+        rs = self.getCurrentBillingRecordState()
+        # Is user SuperUser, or an explicit approver on the request
+        return user.is_superuser or rs.approvers.filter(ifxid=user.ifxid).exists()
+
+    def approve(self, user, newstate, approvers=None, comment=None):
+        """
+        If the user can approve this, set state to approved.
+        """
+        if self.canApprove(user):
+            self.setState(newstate, user, approvers, comment)
+        else:
+            raise Exception('User %s cannot approve this billing record.' % str(user))
 
     def __str__(self):
         return f'Charge of {self.charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
 
+class BillingRecordState(models.Model):
+    """
+    Various states of a particular billing record.  Is used to keep a history of state changes for the billing record.
+    """
+    class Meta:
+        db_table = 'billing_record_state'
+        ordering = ('-created',)
+
+    name = models.CharField(
+        max_length=100,
+        blank=False,
+        null=False,
+        default=None,
+        help_text='Name of the state'
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=False,
+        null=False,
+        default=None,
+        help_text='User that inserted the state',
+        on_delete=models.CASCADE
+    )
+
+    billing_record = models.ForeignKey(
+        BillingRecord,
+        on_delete=models.CASCADE
+    )
+
+    approvers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name='billing_record_state_approvers'
+    )
+
+    comment = models.CharField(
+        max_length=1000,
+        blank=True,
+        null=True,
+        help_text='Any message associated with the state'
+    )
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    updated = models.DateTimeField(auto_now=True)
 
 @with_author
 class Transaction(models.Model):

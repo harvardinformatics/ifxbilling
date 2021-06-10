@@ -33,7 +33,7 @@ DB_PASSWORD = os.environ.get('IFXBILLING_PASSWORD', 'ifxbilling')
 DB_DATABASE = os.environ.get('IFXBILLING_DATABASE', 'ifxbilling')
 DB_HOSTNAME = os.environ.get('IFXBILLING_HOSTNAME', 'ifxbilling')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 IFX_APP = {
     'token': os.environ.get('IFXBILLING_IFX_APP_TOKEN'),
