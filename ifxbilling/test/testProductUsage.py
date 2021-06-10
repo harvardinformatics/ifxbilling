@@ -50,7 +50,9 @@ class TestProductUsage(APITestCase):
 
         product_usage_data = {
             'product': 'Helium Dewar',
-            'product_user': 'Slurpy Slurpiston',
+            'product_user': {
+                'ifxid': 'IFXIDX000000001'
+            },
             'quantity': 1,
         }
         url = reverse('productusage-list')
@@ -67,8 +69,11 @@ class TestProductUsage(APITestCase):
         '''
         data.init()
 
+
         product_usage_data = {
-            'product_user': 'Slurpy Slurpiston',
+            'product_user': {
+                'ifxid': 'IFXIDX000000001',
+            },
             'quantity': 1,
         }
         url = reverse('productusage-list')

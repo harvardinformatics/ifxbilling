@@ -45,7 +45,9 @@ class TestBillingRecord(APITestCase):
         account = models.Account.objects.first()
 
         billing_record_data = {
-            'account': account.slug,
+            'account': {
+                'id': account.id,
+            },
             'product_usage': {
                 'id': product_usage.id
             },
@@ -54,11 +56,13 @@ class TestBillingRecord(APITestCase):
             'transactions': [
                 {
                     'charge': 100,
-                    'description': 'Dewar charge'
+                    'description': 'Dewar charge',
+                    'author': self.superuser.id,
                 },
                 {
                     'charge': -10,
-                    'description': '10%% off coupon'
+                    'description': '10%% off coupon',
+                    'author': self.superuser.id,
                 }
             ]
         }
@@ -88,7 +92,9 @@ class TestBillingRecord(APITestCase):
         account = models.Account.objects.first()
 
         billing_record_data = {
-            'account': account.slug,
+            'account': {
+                'id': account.id,
+            },
             'product_usage': {
                 'id': product_usage.id
             },
@@ -98,7 +104,7 @@ class TestBillingRecord(APITestCase):
         url = reverse('billing-record-list')
         response = self.client.post(url, billing_record_data, format='json')
         self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect status {response.data}')
-        self.assertTrue('Billing record must have at least one transaction' in str(response.data['transactions']), f'Incorrect response {response.data}')
+        self.assertTrue('Billing record must have at least one transaction' in str(response.data), f'Incorrect response {response.data}')
 
     def testFilterBillingRecords(self):
         '''
@@ -111,7 +117,9 @@ class TestBillingRecord(APITestCase):
         account = models.Account.objects.first()
 
         billing_record_data = {
-            'account': account.slug,
+            'account': {
+                'id': account.id,
+            },
             'product_usage': {
                 'id': product_usage.id
             },
@@ -120,11 +128,13 @@ class TestBillingRecord(APITestCase):
             'transactions': [
                 {
                     'charge': 100,
-                    'description': 'Dewar charge'
+                    'description': 'Dewar charge',
+                    'author': self.superuser.id,
                 },
                 {
                     'charge': -10,
-                    'description': '10%% off coupon'
+                    'description': '10%% off coupon',
+                    'author': self.superuser.id,
                 }
             ]
         }
