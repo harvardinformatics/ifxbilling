@@ -35,8 +35,8 @@ class AccountSerializer(serializers.ModelSerializer):
     account_type = serializers.ChoiceField(choices=('Expense Code', 'PO'), required=False)
     root = serializers.CharField(max_length=5)
     active = serializers.BooleanField(required=False)
-    valid_from = serializers.DateTimeField(required=False)
-    expiration_date = serializers.DateTimeField(required=False)
+    valid_from = serializers.DateField(required=False)
+    expiration_date = serializers.DateField(required=False)
 
     class Meta:
         model = models.Account
@@ -194,7 +194,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     units = serializers.CharField(max_length=100, required=False)
     # The product should probably be connected by product_number, but, within a given application, names should be unique.
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
-    product_user = UserSerializer(source='productuser_set', many=False, read_only=True)
+    product_user = UserSerializer(many=False, read_only=True)
 
     class Meta:
         model = models.ProductUsage
@@ -298,7 +298,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     description = serializers.CharField(max_length=200, required=False, allow_blank=True)
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
-    account = AccountSerializer(source='account_set', many=False, read_only=True)
+    account = AccountSerializer(many=False, read_only=True)
     transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
     current_state = serializers.CharField(max_length=200, allow_blank=True, required=False)
     billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
@@ -376,7 +376,6 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         for transaction_data in transactions_data:
             transaction_data['author'] = get_user_model().objects.get(id=transaction_data['author'])
             models.Transaction.objects.create(**transaction_data, billing_record=billing_record)
-
         return billing_record
 
     @transaction.atomic
