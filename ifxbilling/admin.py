@@ -104,6 +104,7 @@ class ProductAdmin(admin.ModelAdmin):
      )
     list_filter = ('billing_calculator', )
     inlines = (RateInlineAdmin,)
+    readonly_fields = ('product_number',)
 
 
 admin.site.register(models.Product, ProductAdmin)
