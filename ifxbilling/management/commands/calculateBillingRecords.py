@@ -61,6 +61,7 @@ class Command(BaseCommand):
         calculators = {
             'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
         }
+        usage_data = {}
         for product_usage in product_usages:
             if BillingRecord.objects.filter(product_usage=product_usage).exists():
                 if recalculate:
@@ -73,7 +74,7 @@ class Command(BaseCommand):
                     billing_calculator_class = getClassFromName(billing_calculator_name)
                     calculators[billing_calculator_name] = billing_calculator_class()
                 billing_calculator = calculators[billing_calculator_name]
-                billing_calculator.createBillingRecordsForUsage(product_usage)
+                billing_calculator.createBillingRecordsForUsage(product_usage, usage_data=usage_data)
                 successes += 1
             except Exception as e:
                 if verbose:
