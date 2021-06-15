@@ -52,9 +52,6 @@ class Command(BaseCommand):
         recalculate = kwargs['recalculate']
         verbose = kwargs['verbose']
 
-        if verbose:
-            printout()
-
         successes = 0
         errors = []
         product_usages = ProductUsage.objects.filter(month=month, year=year)
