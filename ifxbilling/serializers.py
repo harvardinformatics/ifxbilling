@@ -244,8 +244,7 @@ class BillingRecordListSerializer(serializers.ListSerializer):
     def update(self, instances, validated_data):
         results = []
         for i, instance in enumerate(instances):
-            inst = models.BillingRecord.objects.get(id=instance)
-            results.append(self.child.update(inst, validated_data[i], i))
+            results.append(self.child.update(instance, validated_data[i], i))
         return results
 
 class BillingRecordSerializer(serializers.ModelSerializer):
@@ -414,7 +413,8 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def bulk_update(self, request, *args, **kwargs):
-        instances = [int(r['id']) for r in request.data]
+        ids = [int(r['id']) for r in request.data]
+        instances = models.BillingRecord.objects.filter(id__in=ids)
         serializer = self.get_serializer(instances, data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
