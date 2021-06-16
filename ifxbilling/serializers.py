@@ -18,6 +18,7 @@ from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from ifxuser.models import Organization
+from ifxuser.serializers import UserSerializer
 from fiine.client import API as FiineAPI
 from ifxbilling import models
 from ifxbilling import fiine
@@ -36,8 +37,8 @@ class AccountSerializer(serializers.ModelSerializer):
     account_type = serializers.ChoiceField(choices=('Expense Code', 'PO'), required=False)
     root = serializers.CharField(max_length=5)
     active = serializers.BooleanField(required=False)
-    valid_from = serializers.DateTimeField(required=False)
-    expiration_date = serializers.DateTimeField(required=False)
+    valid_from = serializers.DateField(required=False)
+    expiration_date = serializers.DateField(required=False)
 
     class Meta:
         model = models.Account
@@ -195,12 +196,62 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     units = serializers.CharField(max_length=100, required=False)
     # The product should probably be connected by product_number, but, within a given application, names should be unique.
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
-    product_user = serializers.SlugRelatedField(slug_field='full_name', queryset=get_user_model().objects.all())
+    product_user = UserSerializer(many=False, read_only=True)
 
     class Meta:
         model = models.ProductUsage
         fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created')
         read_only_fields = ('id', 'created')
+
+    @transaction.atomic
+    def create(self, validated_data):
+        # Pop the user
+        if not 'product_user' in self.initial_data:
+            raise serializers.ValidationError(
+                detail={
+                    'product_user': 'product_user must be set'
+                }
+            )
+        product_user_data = self.initial_data['product_user']
+        try:
+            product_user_ifxid = product_user_data['ifxid']
+            product_user = get_user_model().objects.get(ifxid=product_user_ifxid)
+            validated_data['product_user'] = product_user
+        except get_user_model().DoesNotExist:
+            raise serializers.ValidationError(
+                detail={
+                    'product_user': f'Cannot find product user with ifxid {product_user_ifxid}'
+                }
+            )
+        product_usage = models.ProductUsage.objects.create(**validated_data)
+        return product_usage
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        if not 'product_user' in self.initial_data:
+            raise serializers.ValidationError(
+                detail={
+                    'product_user': 'product_user must be set'
+                }
+            )
+        product_user_data = self.initial_data['product_user']
+        try:
+            product_user_ifxid = product_user_data['ifxid']
+            product_user = get_user_model().objects.get(ifxid=product_user_ifxid)
+            validated_data['product_user'] = product_user
+        except get_user_model().DoesNotExist:
+            raise serializers.ValidationError(
+                detail={
+                    'product_user': f'Cannot find product user with ifxid {product_user_ifxid}'
+                }
+            )
+
+        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user']:
+            if attr in validated_data:
+                setattr(instance, attr, validated_data[attr])
+
+        instance.save()
+        return instance
 
 
 class ProductUsageViewSet(viewsets.ModelViewSet):
@@ -257,11 +308,11 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     product_usage = ProductUsageSerializer(read_only=True)
     charge = serializers.IntegerField(read_only=True)
     description = serializers.CharField(max_length=200, required=False, allow_blank=True)
-    year = serializers.IntegerField()
-    month = serializers.IntegerField()
-    account = serializers.SlugRelatedField(slug_field='slug', queryset=models.Account.objects.all())
+    year = serializers.IntegerField(required=False)
+    month = serializers.IntegerField(required=False)
+    account = AccountSerializer(many=False, read_only=True)
     transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
-    current_state = serializers.CharField(max_length=200, allow_blank=True)
+    current_state = serializers.CharField(max_length=200, allow_blank=True, required=False)
     billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
 
     class Meta:
@@ -280,6 +331,13 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 detail={
                     'transactions': 'Billing record must have at least one transaction'
+                }
+            )
+
+        if 'account' not in self.initial_data:
+            raise serializers.ValidationError(
+                detail={
+                    'account': 'Billing record requires an account'
                 }
             )
 
@@ -305,6 +363,18 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 }
             )
 
+        account_data = self.initial_data['account']
+        try:
+            account_id = account_data['id']
+            account = models.Account.objects.get(id=account_id)
+            validated_data['account'] = account
+        except models.Account.DoesNotExist:
+            raise serializers.ValidationError(
+                detail={
+                    'account': f'Cannot find expense code / PO with account id {account_id}'
+                }
+            )
+
         # Create the billing record.  Charge will be 0
         billing_record = models.BillingRecord.objects.create(**validated_data)
 
@@ -319,7 +389,6 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         for transaction_data in transactions_data:
             transaction_data['author'] = get_user_model().objects.get(id=transaction_data['author'])
             models.Transaction.objects.create(**transaction_data, billing_record=billing_record)
-
         return billing_record
 
     @transaction.atomic
