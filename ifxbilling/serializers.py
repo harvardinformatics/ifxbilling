@@ -15,6 +15,8 @@ import logging
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import serializers, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from ifxuser.models import Organization
 from fiine.client import API as FiineAPI
 from ifxbilling import models
@@ -235,6 +237,16 @@ class BillingRecordStateSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'user', 'approvers', 'comment', 'created', 'updated' )
         read_only_fields = ('id', 'created', 'updated')
 
+class BillingRecordListSerializer(serializers.ListSerializer):
+    '''
+    Serializer for list of billing records for bulk update.
+    '''
+    def update(self, instances, validated_data):
+        results = []
+        for i, instance in enumerate(instances):
+            results.append(self.child.update(instance, validated_data[i], i))
+        return results
+
 class BillingRecordSerializer(serializers.ModelSerializer):
     '''
     Serializer for billing records.  BillingRecords should mostly be created
@@ -256,6 +268,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         model = models.BillingRecord
         fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'transactions', 'current_state', 'billing_record_states', 'created', 'updated')
         read_only_fields = ('id', 'created', 'updated')
+        list_serializer_class = BillingRecordListSerializer
 
     @transaction.atomic
     def create(self, validated_data):
@@ -310,33 +323,36 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         return billing_record
 
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data, bulk_id=None):
         '''
         Ensure the BillingRecord is composed of transactions
         '''
-        if 'transactions' not in self.initial_data:
+        initial_data = self.initial_data
+        if bulk_id is not None:
+            initial_data = self.initial_data[bulk_id]
+        if 'transactions' not in initial_data:
             raise serializers.ValidationError(
                 detail={
                     'transactions': 'Billing record must have at least one transaction'
                 }
             )
 
-        if 'billing_record_states' not in self.initial_data:
+        if 'billing_record_states' not in initial_data:
             raise serializers.ValidationError(
                 detail={
                     'billing_record_states': 'Billing record must have at least one billing record state'
                 }
             )
         # Check for product_usage, fetch and add to validated_data
-        if 'product_usage' not in self.initial_data \
-            or not self.initial_data['product_usage'] \
-            or not self.initial_data['product_usage']['id']:
+        if 'product_usage' not in initial_data \
+            or not initial_data['product_usage'] \
+            or not initial_data['product_usage']['id']:
             raise serializers.ValidationError(
                 detail={
                     'product_usage': 'An existing product usage must be defined.'
                 }
             )
-        product_usage_id = self.initial_data['product_usage']['id']
+        product_usage_id = initial_data['product_usage']['id']
         try:
             product_usage = models.ProductUsage.objects.get(id=int(product_usage_id))
             validated_data['product_usage'] = product_usage
@@ -355,18 +371,19 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         instance.save()
 
         # Only add new transactions.  Old ones cannot be removed.
-        transactions_data = self.initial_data['transactions']
+        transactions_data = initial_data['transactions']
         for transaction_data in transactions_data:
             if 'id' not in transaction_data:
                 models.Transaction.objects.create(**transaction_data, billing_record=instance)
 
         # Only add new billing record states.  Old ones cannot be removed.
-        billing_record_states_data = self.initial_data['billing_record_states']
+        billing_record_states_data = initial_data['billing_record_states']
         for state_data in billing_record_states_data:
             if 'id' not in state_data:
                 instance.setState(**state_data)
 
         return instance
+
 
 
 class BillingRecordViewSet(viewsets.ModelViewSet):
@@ -393,3 +410,12 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(account__root=root)
 
         return queryset
+
+    @action(detail=False, methods=['post'])
+    def bulk_update(self, request, *args, **kwargs):
+        ids = [int(r['id']) for r in request.data]
+        instances = models.BillingRecord.objects.filter(id__in=ids)
+        serializer = self.get_serializer(instances, data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
