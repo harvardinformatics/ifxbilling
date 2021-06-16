@@ -12,8 +12,24 @@ All rights reserved.
 '''
 import logging
 from django.contrib import admin
-from django.contrib.auth import get_user_model
+from django.contrib.admin.widgets import AutocompleteSelect
+from django.forms import TextInput
+from django import forms
+from django.db.models import CharField
 from ifxbilling import models
+
+class AccountInlineForm(forms.ModelForm):
+    '''
+    Just makes the account field widget larger
+    '''
+    class Meta:
+        widgets = {
+            'account': AutocompleteSelect(
+                models.UserAccount._meta.get_field('account').remote_field,
+                admin.site,
+                attrs={'style': 'width: 500px'}
+            ),
+        }
 
 
 logger = logging.getLogger(__name__)
@@ -26,6 +42,7 @@ class UserAccountInlineAdmin(admin.TabularInline):
     model = models.UserAccount
     autocomplete_fields = ('user', 'account')
     extra = 0
+    form = AccountInlineForm
 
 
 class AccountAdmin(admin.ModelAdmin):
@@ -67,6 +84,9 @@ class AccountAdmin(admin.ModelAdmin):
     list_filter = ('account_type', 'active', 'organization__name')
     readonly_fields = ('created', 'updated')
     inlines = (UserAccountInlineAdmin,)
+    formfield_overrides = {
+        CharField: {'widget': TextInput(attrs={'size':'60'})},
+    }
 
 
 admin.site.register(models.Account, AccountAdmin)
@@ -203,6 +223,7 @@ class UserProductAccountInlineAdmin(admin.TabularInline):
     model = models.UserProductAccount
     autocomplete_fields = ('account', 'product')
     extra = 0
+    form = AccountInlineForm
 
 
 class ProductUsageInlineAdmin(admin.TabularInline):
