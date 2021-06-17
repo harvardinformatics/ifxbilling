@@ -99,6 +99,11 @@ class Account(models.Model):
         null=True
     )
     slug = models.CharField(max_length=100, unique=True, help_text='EC or PO + institution')
+    funding_category = models.CharField(
+        blank=True,
+        null=True,
+        max_length=100
+    )
 
     def __str__(self):
         return '%s (%s) an %s %s' % (self.code, self.name, 'active' if self.active else 'inactive', self.account_type)
@@ -179,6 +184,11 @@ class Product(models.Model):
         blank=True,
         default='ifxbilling.calculator.BasicBillingCalculator',
         help_text='Class to use for calculating charges for this product'
+    )
+    reporting_group = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
     )
 
     def __str__(self):
@@ -318,6 +328,12 @@ class BillingRecord(models.Model):
         blank=False,
         default=0,
         help_text='Sum of charge records in pennies'
+    )
+    percent = models.IntegerField(
+        help_text='Percent of total product usage cost that this charge represents, defaults to 100%',
+        null=False,
+        blank=False,
+        default=100,
     )
     description = models.CharField(
         max_length=200,
