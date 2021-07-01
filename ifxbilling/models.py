@@ -12,6 +12,7 @@ All rights reserved.
 '''
 import re
 import logging
+from enum import Enum
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import models
@@ -28,6 +29,11 @@ logger = logging.getLogger('__name__')
 EXPENSE_CODE_RE = re.compile(r'\d{3}-\d{5}-\d{4}-\d{6}-\d{6}-\d{4}-\d{5}')
 EXPENSE_CODE_SANS_OBJECT_RE = re.compile(r'\d{3}-\d{5}-\d{6}-\d{6}-\d{4}-\d{5}')
 
+def thisDate():
+    '''
+    Callable for setting date
+    '''
+    return timezone.now().date()
 
 def thisYear():
     '''
@@ -50,6 +56,72 @@ class Account(models.Model):
     class Meta:
         db_table = "account"
         unique_together = ('code', 'organization')
+
+    class ExpenseCodeFields():
+        '''
+        Fields for expense codes
+        '''
+        TUB = {
+            'index': 0,
+            'length': 3,
+        }
+        ORG = {
+            'index': 1,
+            'length': 5,
+        }
+        OBJECT_CODE = {
+            'index': 2,
+            'length': 4,
+        }
+        FUND = {
+            'index': 3,
+            'length': 6,
+        }
+        ACTIVITY = {
+            'index': 4,
+            'length': 6,
+        }
+        SUB_ACTIVITY = {
+            'index': 5,
+            'length': 4,
+        }
+        ROOT = {
+            'index': 6,
+            'length': 5,
+        }
+        @classmethod
+        def all(cls):
+            '''
+            Return all of the fields in order
+            '''
+            return [
+                cls.TUB,
+                cls.ORG,
+                cls.OBJECT_CODE,
+                cls.FUND,
+                cls.ACTIVITY,
+                cls.SUB_ACTIVITY,
+                cls.ROOT,
+            ]
+
+    @classmethod
+    def replaceField(cls, expense_code_string, field_name, newstr):
+        '''
+        Replace a named field in an expense code, e.g.
+        Account.replaceField('000-00000-0000-00000-000000-00000', Account.ExpenseCodeFields.OBJECT_CODE, '1234')
+        Expense code string must be dash separated and have all 7 fields
+        New string must match the field length
+        '''
+        fields = expense_code_string.split('-')
+        if len(fields) != 7:
+            raise Exception(f'Expense code {expense_code_string} does not have 7 fields')
+        if not 'index' in field_name or not 'length' in field_name:
+            raise Exception(f'Field name must have an "index" and a "length"')
+        if len(newstr) != field_name['length']:
+            raise Exception(f'New string length {len(newstr)} does not match field name length {field_name["length"]}')
+
+        fields[field_name['index']] = newstr
+        return '-'.join(fields)
 
     code = models.CharField(
         max_length=50,
@@ -93,7 +165,7 @@ class Account(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     active = models.BooleanField(default=False)
-    valid_from = models.DateField(default=timezone.now, blank=True)
+    valid_from = models.DateField(default=thisDate, blank=True)
     expiration_date = models.DateField(
         blank=True,
         null=True
