@@ -296,6 +296,8 @@ class AbstractProductUsage(models.Model):
         help_text='Units of quantity'
     )
     created = models.DateTimeField(auto_now_add=True)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True, blank=True)
 
 
 class ProductUsage(AbstractProductUsage):
@@ -306,7 +308,7 @@ class ProductUsage(AbstractProductUsage):
         db_table = 'product_usage'
 
     def __str__(self):
-        return f'{self.quantity} {self.units} of {self.product} for {self.product_user}'
+        return f'{self.quantity} {self.units} of {self.product} for {self.product_user} on {self.start_date}'
 
 
 
@@ -336,9 +338,10 @@ class BillingRecord(models.Model):
         default=100,
     )
     description = models.CharField(
-        max_length=200,
+        max_length=255,
         blank=True,
         null=True,
+        default='',
         help_text='Description of the billing record.'
     )
     year = models.IntegerField(
@@ -409,6 +412,15 @@ class BillingRecord(models.Model):
 
     def __str__(self):
         return f'Charge of {self.charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
+
+@receiver(post_save, sender=BillingRecord)
+def billing_record_post_save(sender, instance, **kwargs):
+    """
+    Add description to BillingRecord if null
+    """
+    if not instance.description:
+        instance.description = instance.__str__()
+        instance.save()
 
 class BillingRecordState(models.Model):
     """
