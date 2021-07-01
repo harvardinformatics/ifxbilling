@@ -122,16 +122,6 @@ class BasicBillingCalculator():
         logger.debug('Account percentages for %s: %s', str(product_usage), str(account_percentages))
         return account_percentages
 
-    def getBillingRecordDescription(self, product_usage, percent):
-        '''
-        Get the description for the BillingRecord. This is only called
-        by createBillingRecordForUsage if a description is not supplied.
-        '''
-        percent_str = ''
-        if percent < 100:
-            percent_str = f'{percent}% of '
-        return f'{percent_str}{product_usage.quantity} {product_usage.units} of {product_usage.product} for {product_usage.product_user} on {product_usage.created}'
-
     def createBillingRecordsForUsage(self, product_usage, account_percentages=None, year=None, month=None, description=None, usage_data=None, recalculate=False):
         '''
         Determine the number of BillingRecords to create for this usage and then creates each one.  If recalculate is True, existing records are removed.
@@ -172,14 +162,11 @@ class BasicBillingCalculator():
         If account is not specified, then getAccountForProductUsage will be called.  If account
         is specified, then it will override any data in product_usage.
 
-        If description is not specified, getBillingRecordDescription will be called.
         '''
         if not year:
             year = product_usage.year
         if not month:
             month = product_usage.month
-        if not description:
-            description = self.getBillingRecordDescription(product_usage, percent)
 
         transactions_data = self.calculateCharges(product_usage, percent, usage_data)
         return self.createBillingRecord(product_usage, account, year, month, transactions_data, description)
