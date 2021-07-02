@@ -56,7 +56,7 @@ def updateUserAccounts(user):
     fiine_accounts = [acct.to_dict() for acct in map(replaceObjectCodeInFiineAccount, fiine_person.accounts)]
     for facility_account in fiine_person.facility_accounts:
         if facility_account.facility == settings.FACILITY.NAME:
-            facility_account_data = replaceObjectCodeInFiineAccount(facility_account_data)
+            facility_account = replaceObjectCodeInFiineAccount(facility_account)
             facility_account_data = facility_account.to_dict()
             facility_account_data.pop('facility', None)
             fiine_accounts.append(facility_account_data)
