@@ -17,3 +17,4 @@ Submodules
    ifxbilling.test.testBillingRecord
    ifxbilling.test.testProduct
    ifxbilling.test.testProductUsage
+   ifxbilling.test.testUpdateUserAccounts

@@ -13,6 +13,7 @@ All rights reserved.
 
 import logging
 import pytz
+from copy import deepcopy
 from django.db import IntegrityError
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -26,6 +27,19 @@ from ifxbilling import models
 
 logger = logging.getLogger(__name__)
 
+def replaceObjectCodeInFiineAccount(acct_data):
+    '''
+    Replace object code if settings.FACILITY.OBJECT_CODE exists
+    Expense code should be in acct_data.account.code (it should be an account from FiineAPI)
+    '''
+    if hasattr(settings.FACILITY, 'OBJECT_CODE') and settings.FACILITY.OBJECT_CODE:
+        acct_data.account.code = models.Account.replaceField(
+            acct_data.account.code,
+            models.Account.ExpenseCodeFields.OBJECT_CODE,
+            settings.FACILITY.OBJECT_CODE
+        )
+    return acct_data
+
 
 def updateUserAccounts(user):
     '''
@@ -38,21 +52,23 @@ def updateUserAccounts(user):
     logger.debug('fiine_person retrieved for ifxid %s: %s', ifxid, str(fiine_person))
 
     # Collect user accounts and facility accounts for this facility
-    fiine_accounts = [acct.to_dict() for acct in fiine_person.accounts]
+    # Substitute object code for this facility if it has one
+    fiine_accounts = [acct.to_dict() for acct in map(replaceObjectCodeInFiineAccount, fiine_person.accounts)]
     for facility_account in fiine_person.facility_accounts:
-        if facility_account.facility == settings.FACILITY_NAME:
+        if facility_account.facility == settings.FACILITY.NAME:
+            facility_account = replaceObjectCodeInFiineAccount(facility_account)
             facility_account_data = facility_account.to_dict()
             facility_account_data.pop('facility', None)
             fiine_accounts.append(facility_account_data)
     logger.debug('fiine_person has %d accounts', len(fiine_accounts))
 
-    product_accounts = [acct.to_dict() for acct in fiine_person.product_accounts]
+    product_accounts = [acct.to_dict() for acct in map(replaceObjectCodeInFiineAccount, fiine_person.product_accounts)]
 
     # Go through fiine_accounts and product accounts. Create any missing Account objects or update with Fiine information
     for person_account_data in fiine_accounts + product_accounts:
         account_data = person_account_data['account']
         try:
-            account = models.Account.objects.get(code=account_data['code'], organization__slug=account_data['organization'])
+            account = models.Account.objects.get(code=account_data['code'], organization__name=account_data['organization'])
 
             # Update some of the account fields if it's available
             for field in ['name', 'active', 'valid_from', 'expiration_date']:
@@ -60,20 +76,27 @@ def updateUserAccounts(user):
                     setattr(account, field, account_data[field])
 
         except models.Account.DoesNotExist:
-            account_data['organization'] = Organization.objects.get(slug=account_data.pop('organization'))
-            account_data.pop('id')
-            models.Account.objects.create(**account_data)
+            try:
+                acct_copy = deepcopy(account_data)
+                name = acct_copy.pop('organization')
+                acct_copy['organization'] = Organization.objects.get(name=name, org_tree='Harvard')
+            except Organization.DoesNotExist:
+                raise Exception(f'Unable to find organization {name}')
+            acct_copy.pop('id')
+            models.Account.objects.create(**acct_copy)
 
     # Update existing UserAccounts (is_valid flag) or create new
     for fiine_account_data in fiine_accounts:
         try:
             account = models.Account.objects.get(
-                organization__slug=fiine_account_data['account']['organization'],
+                organization__name=fiine_account_data['account']['organization'],
                 code=fiine_account_data['account']['code']
             )
             user_account = models.UserAccount.objects.get(user=user, account=account)
             user_account.is_valid = fiine_account_data['is_valid']
             user_account.save()
+        except models.Account.DoesNotExist:
+            raise Exception(f"For some reason account cannot be found from org {fiine_account_data['account']} and code {fiine_account_data['account']['code']}")
         except models.UserAccount.DoesNotExist:
             models.UserAccount.objects.create(account=account, user=user, is_valid=fiine_account_data['is_valid'])
 
@@ -81,7 +104,7 @@ def updateUserAccounts(user):
     for product_account_data in product_accounts:
         try:
             account = models.Account.objects.get(
-                organization__slug=product_account_data['account']['organization'],
+                organization__name=product_account_data['account']['organization'],
                 code=product_account_data['account']['code']
             )
             product = models.Product.objects.get(product_number=product_account_data['product']['product_number'])
@@ -107,7 +130,7 @@ def updateProducts():
     '''
     Get all of the products for this facility and update to apply any changes made in Fiine. Mainly product_name and product_description
     '''
-    fiine_products = FiineAPI.listProducts(facility=settings.FACILITY_NAME)
+    fiine_products = FiineAPI.listProducts(facility=settings.FACILITY.NAME)
     for fiine_product in fiine_products:
         try:
             product = models.Product.objects.get(product_number=fiine_product.product_number)
@@ -135,7 +158,7 @@ def createNewProduct(product_name, product_description, billing_calculator=None)
     if products:
         raise IntegrityError(f'Product with name {product_name} exists in fiine.')
 
-    facility = settings.FACILITY_NAME
+    facility = settings.FACILITY.NAME
 
     try:
         product_obj = FiineAPI.createProduct(
