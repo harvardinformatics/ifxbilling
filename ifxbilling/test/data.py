@@ -21,7 +21,7 @@ FIINE_TEST_USER = 'Derpy Derpiston'  # Full name of Fiine Person that is also an
 FIINE_TEST_ACCOUNT = {
     'name': 'Test account',
     'code': '000-00000-0000-000000-000000-0000-00000',
-    'organization': 'Derpiston Lab (a Test Laboratory)',
+    'organization': 'Derpiston Lab (a Harvard Laboratory)',
 }
 FIINE_TEST_PRODUCT = 'Test Product'
 
@@ -40,7 +40,7 @@ ORGS = [
     {
         'name': 'Derpiston Lab',
         'rank': 'lab',
-        'org_tree': 'Test'
+        'org_tree': 'Harvard'
     }
 ]
 

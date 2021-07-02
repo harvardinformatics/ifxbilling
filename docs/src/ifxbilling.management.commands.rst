@@ -13,3 +13,4 @@ Submodules
 
    ifxbilling.management.commands.applyDevBillingData
    ifxbilling.management.commands.calculateBillingRecords
+   ifxbilling.management.commands.updateUserAccounts
