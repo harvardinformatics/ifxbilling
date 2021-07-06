@@ -161,6 +161,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'updated'
     )
     list_display = (
+        'id',
         'product_usage',
         'account',
         'charge',
