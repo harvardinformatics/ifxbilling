@@ -268,6 +268,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     '''
     charge = serializers.IntegerField()
     description = serializers.CharField(max_length=200)
+    author = UserSerializer(read_only=True)
 
     class Meta:
         model = models.Transaction
