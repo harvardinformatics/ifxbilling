@@ -159,6 +159,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'current_state',
         'created',
         'updated',
+        'percent',
     )
     list_display = (
         'id',
