@@ -315,10 +315,25 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
     current_state = serializers.CharField(max_length=200, allow_blank=True, required=False)
     billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
+    percent = serializers.IntegerField(required=False)
 
     class Meta:
         model = models.BillingRecord
-        fields = ('id', 'account', 'product_usage', 'charge', 'description', 'year', 'month', 'transactions', 'current_state', 'billing_record_states', 'created', 'updated')
+        fields = (
+            'id',
+            'account',
+            'product_usage',
+            'charge',
+            'description',
+            'year',
+            'month',
+            'transactions',
+            'current_state',
+            'billing_record_states',
+            'created',
+            'updated',
+            'percent',
+        )
         read_only_fields = ('id', 'created', 'updated')
         list_serializer_class = BillingRecordListSerializer
 
@@ -434,7 +449,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 }
             )
 
-        for attr in ['account', 'charge', 'description', 'year', 'month', 'product_usage']:
+        for attr in ['account', 'charge', 'description', 'year', 'month', 'product_usage', 'percent']:
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 
