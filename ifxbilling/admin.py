@@ -158,24 +158,29 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'month',
         'current_state',
         'created',
-        'updated'
+        'updated',
+        'percent',
     )
     list_display = (
+        'id',
         'product_usage',
         'account',
         'charge',
-        'description',
+        'percent',
         'month',
         'year',
-        'current_state'
-    )
-    ordering = ('year', 'month')
-    search_fields = (
-        'account',
-        'product_usage__product__name',
+        'current_state',
         'description',
+    )
+    ordering = ('year', 'month', 'product_usage__id')
+    search_fields = (
+        'account__name',
+        'account__code',
+        'product_usage__product__product_name',
+        'description',
+        'id',
      )
-    list_filter = ('year', 'month', 'product_usage__product__product_name', 'account__name', 'account__root')
+    list_filter = ('year', 'month', 'account__root', 'product_usage__product__product_name', 'account__name')
     readonly_fields = ('created', 'updated',)
     inlines = (TransactionInlineAdmin, BillingRecordStateInlineAdmin)
 
