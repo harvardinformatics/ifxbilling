@@ -178,6 +178,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'account__code',
         'product_usage__product__product_name',
         'description',
+        'id',
      )
     list_filter = ('year', 'month', 'account__root', 'product_usage__product__product_name', 'account__name')
     readonly_fields = ('created', 'updated',)
