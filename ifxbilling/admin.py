@@ -172,13 +172,14 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'current_state',
         'description',
     )
-    ordering = ('year', 'month')
+    ordering = ('year', 'month', 'product_usage__id')
     search_fields = (
-        'account',
+        'account__name',
+        'account__code',
         'product_usage__product__name',
         'description',
      )
-    list_filter = ('year', 'month', 'product_usage__product__product_name', 'account__name', 'account__root')
+    list_filter = ('year', 'month', 'account__root', 'product_usage__product__product_name', 'account__name')
     readonly_fields = ('created', 'updated',)
     inlines = (TransactionInlineAdmin, BillingRecordStateInlineAdmin)
 
