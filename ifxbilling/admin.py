@@ -176,7 +176,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
     search_fields = (
         'account__name',
         'account__code',
-        'product_usage__product__name',
+        'product_usage__product__product_name',
         'description',
      )
     list_filter = ('year', 'month', 'account__root', 'product_usage__product__product_name', 'account__name')
