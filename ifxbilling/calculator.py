@@ -169,16 +169,16 @@ class BasicBillingCalculator():
             month = product_usage.month
 
         transactions_data = self.calculateCharges(product_usage, percent, usage_data)
-        return self.createBillingRecord(product_usage, account, year, month, transactions_data, description)
+        return self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, description)
 
-    def createBillingRecord(self, product_usage, account, year, month, transactions_data, description=None):
+    def createBillingRecord(self, product_usage, account, year, month, transactions_data, percent, description=None):
         '''
         Create (and save) a BillingRecord and related Transactions.
         If an existing BillingRecord has the same product_usage and account an Exception will be thrown.
         '''
         billing_record = None
         try:
-            BillingRecord.objects.get(product_usage=product_usage, account=account)
+            BillingRecord.objects.get(product_usage=product_usage, account=account, percent=percent)
             raise Exception(f'Billing record for product usage {product_usage} and account {account} already exists.')
         except BillingRecord.DoesNotExist:
             pass
@@ -191,7 +191,8 @@ class BasicBillingCalculator():
                     year=year,
                     month=month,
                     description=description,
-                    current_state=initial_state
+                    current_state=initial_state,
+                    percent=percent
                 )
                 billing_record.save()
                 billing_record_state = BillingRecordState(
