@@ -158,17 +158,18 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'month',
         'current_state',
         'created',
-        'updated'
+        'updated',
     )
     list_display = (
         'id',
         'product_usage',
         'account',
         'charge',
-        'description',
+        'percent',
         'month',
         'year',
-        'current_state'
+        'current_state',
+        'description',
     )
     ordering = ('year', 'month')
     search_fields = (
