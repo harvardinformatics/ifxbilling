@@ -494,7 +494,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         if root:
             queryset = queryset.filter(account__root=root)
 
-        return queryset
+        return queryset.order_by('id')
 
     @action(detail=False, methods=['post'])
     def bulk_update(self, request, *args, **kwargs):
