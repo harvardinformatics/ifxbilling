@@ -55,7 +55,8 @@ class TestProductUsage(APITestCase):
                 'ifxid': 'IFXIDX000000001'
             },
             'quantity': 1,
-            'start_date': timezone.make_aware(datetime(2021, 2, 1))
+            'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+            'description': 'Howdy',
         }
         url = reverse('productusage-list')
         response = self.client.post(url, product_usage_data, format='json')
@@ -64,6 +65,7 @@ class TestProductUsage(APITestCase):
         product_usage = ProductUsage.objects.get(id=response.data['id'])
         self.assertTrue(product_usage.year == timezone.now().year, f'Year not properly set {product_usage.year}')
         self.assertTrue(product_usage.month == timezone.now().month, f'Month not properly set {product_usage.year}')
+        self.assertTrue(product_usage.description == 'Howdy', f'Incorrect product usage description {product_usage.description}')
 
     def testMissingProduct(self):
         '''

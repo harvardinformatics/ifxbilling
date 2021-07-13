@@ -391,7 +391,7 @@ class ProductUsage(AbstractProductUsage):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return
+        return self.description
 
 
 
