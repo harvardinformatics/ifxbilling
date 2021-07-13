@@ -194,6 +194,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
     fields = (
         'product',
         'product_user',
+        'description',
         'year',
         'month',
         'quantity',
@@ -206,7 +207,8 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'quantity',
         'units',
         'month',
-        'year'
+        'year',
+        'description',
     )
     ordering = ('year', 'month')
     search_fields = (
