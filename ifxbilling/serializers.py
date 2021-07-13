@@ -14,6 +14,7 @@ import re
 import logging
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -197,16 +198,17 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     # The product should probably be connected by product_number, but, within a given application, names should be unique.
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
     product_user = UserSerializer(many=False, read_only=True)
+    start_date = serializers.DateTimeField(required=False)
 
     class Meta:
         model = models.ProductUsage
-        fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created')
+        fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created', 'start_date')
         read_only_fields = ('id', 'created')
 
     @transaction.atomic
     def create(self, validated_data):
         # Pop the user
-        if not 'product_user' in self.initial_data:
+        if 'product_user' not in self.initial_data:
             raise serializers.ValidationError(
                 detail={
                     'product_user': 'product_user must be set'
@@ -223,12 +225,14 @@ class ProductUsageSerializer(serializers.ModelSerializer):
                     'product_user': f'Cannot find product user with ifxid {product_user_ifxid}'
                 }
             )
+        if 'start_date' not in validated_data:
+            validated_data['start_date'] = timezone.now()
         product_usage = models.ProductUsage.objects.create(**validated_data)
         return product_usage
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        if not 'product_user' in self.initial_data:
+        if 'product_user' not in self.initial_data:
             raise serializers.ValidationError(
                 detail={
                     'product_user': 'product_user must be set'
@@ -246,7 +250,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
                 }
             )
 
-        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user']:
+        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date']:
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 

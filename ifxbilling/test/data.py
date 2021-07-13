@@ -10,8 +10,10 @@ Created on  2021-02-10
 All rights reserved.
 @license: GPL v2.0
 '''
+from datetime import datetime
 from copy import deepcopy
 from ifxuser.models import Organization, UserAffiliation
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from fiine.client import API as FiineAPI
 from ifxbilling import models
@@ -171,6 +173,7 @@ PRODUCT_USAGES = [
         'product_user': 'Slurpy Slurpiston',
         'quantity': 1,
         'units': 'ea',
+        'start_date': timezone.make_aware(datetime(2021, 2, 1))
     },
     {
         'product': 'Helium Dewar',
@@ -178,7 +181,8 @@ PRODUCT_USAGES = [
         'quantity': 1,
         'units': 'ea',
         'year': 1900,
-        'month': 1
+        'month': 1,
+        'start_date': timezone.make_aware(datetime(1900, 1, 1))
     },
     {
         'product': 'Helium Dewar',
@@ -186,7 +190,8 @@ PRODUCT_USAGES = [
         'quantity': 1,
         'units': 'ea',
         'year': 2020,
-        'month': 2
+        'month': 2,
+        'start_date': timezone.make_aware(datetime(2020, 2, 1))
     },
     {
         'product': 'Helium Dewar',
@@ -194,7 +199,8 @@ PRODUCT_USAGES = [
         'quantity': 1,
         'units': 'ea',
         'year': 2021,
-        'month': 3
+        'month': 3,
+        'start_date': timezone.make_aware(datetime(2020, 3, 1))
     },
 ]
 
