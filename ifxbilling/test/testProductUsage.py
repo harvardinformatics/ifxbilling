@@ -10,6 +10,7 @@ Created on  2021-02-10
 All rights reserved.
 @license: GPL v2.0
 '''
+from datetime import datetime
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
@@ -54,6 +55,7 @@ class TestProductUsage(APITestCase):
                 'ifxid': 'IFXIDX000000001'
             },
             'quantity': 1,
+            'start_date': timezone.make_aware(datetime(2021, 2, 1))
         }
         url = reverse('productusage-list')
         response = self.client.post(url, product_usage_data, format='json')
@@ -75,6 +77,7 @@ class TestProductUsage(APITestCase):
                 'ifxid': 'IFXIDX000000001',
             },
             'quantity': 1,
+            'start_date': timezone.make_aware(datetime(2021, 2, 1))
         }
         url = reverse('productusage-list')
         response = self.client.post(url, product_usage_data, format='json')
