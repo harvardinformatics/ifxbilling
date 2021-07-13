@@ -367,6 +367,12 @@ class AbstractProductUsage(models.Model):
         default='ea',
         help_text='Units of quantity'
     )
+    description = models.CharField(
+        max_length=2000,
+        null=True,
+        blank=True,
+        help_text='Description of usage'
+    )
     created = models.DateTimeField(auto_now_add=True)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True)
@@ -379,8 +385,13 @@ class ProductUsage(AbstractProductUsage):
     class Meta:
         db_table = 'product_usage'
 
+    def save(self, *args, **kwargs):
+        if not self.description:
+            self.description = f'{self.quantity} {self.units} of {self.product} for {self.product_user} on {self.start_date}'
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f'{self.quantity} {self.units} of {self.product} for {self.product_user} on {self.start_date}'
+        return self.description
 
 
 
