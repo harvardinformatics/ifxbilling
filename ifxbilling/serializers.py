@@ -199,10 +199,11 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
     product_user = UserSerializer(many=False, read_only=True)
     start_date = serializers.DateTimeField(required=False)
+    description = serializers.CharField(max_length=2000, required=False)
 
     class Meta:
         model = models.ProductUsage
-        fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created', 'start_date')
+        fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created', 'start_date', 'description')
         read_only_fields = ('id', 'created')
 
     @transaction.atomic
@@ -250,7 +251,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
                 }
             )
 
-        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date']:
+        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date', 'description']:
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 
