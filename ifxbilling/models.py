@@ -354,7 +354,7 @@ class AbstractProductUsage(models.Model):
         help_text='Month in which the usage occurs',
         default=thisMonth
     )
-    quantity = models.IntegerField(
+    quantity = models.BigIntegerField(
         null=False,
         blank=False,
         default=1,
