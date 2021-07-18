@@ -23,6 +23,7 @@ from ifxuser.serializers import UserSerializer
 from fiine.client import API as FiineAPI
 from ifxbilling import models
 from ifxbilling import fiine
+from ifxbilling.permissions import BillingRecordUpdatePermissions
 
 
 logger = logging.getLogger(__name__)
@@ -415,7 +416,9 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data, bulk_id=None):
         '''
-        Ensure the BillingRecord is composed of transactions
+        Ensure the BillingRecord is composed of transactions.
+        Only the account and description may be modified.  Transactions and billing record states may be added.
+        Added billing record states will be used to call setState
         '''
         initial_data = self.initial_data
         if bulk_id is not None:
@@ -454,7 +457,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 }
             )
 
-        for attr in ['account', 'charge', 'description', 'year', 'month', 'product_usage', 'percent']:
+        for attr in ['account', 'description']:
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 
@@ -470,6 +473,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         billing_record_states_data = initial_data['billing_record_states']
         for state_data in billing_record_states_data:
             if 'id' not in state_data:
+                # TODO: Fetch the user record based on the username in the state_data
                 instance.setState(**state_data)
 
         return instance
@@ -481,6 +485,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
     ViewSet for BillingRecords
     '''
     serializer_class = BillingRecordSerializer
+    permission_classes = [BillingRecordUpdatePermissions]
 
     def get_queryset(self):
         year = self.request.query_params.get('year')

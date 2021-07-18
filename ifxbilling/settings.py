@@ -157,6 +157,7 @@ REST_FRAMEWORK = {
     ],
 }
 
+
 class FACILITY():
     '''
     Facility data
@@ -164,3 +165,10 @@ class FACILITY():
     NAME = 'Helium Recovery Service'
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
+
+class GROUPS():
+    '''
+    Group names
+    '''
+    ADMIN_GROUP_NAME = 'Admin'
