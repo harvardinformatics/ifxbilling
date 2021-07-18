@@ -15,7 +15,9 @@ from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.utils import timezone
+from django.conf import settings
 from ifxbilling.test import data
 from ifxbilling import models
 
@@ -29,6 +31,9 @@ class TestBillingRecord(APITestCase):
         '''
         data.clearTestData()
         self.superuser = get_user_model().objects.create_superuser('john', 'john@snow.com', 'johnpassword')
+        admin_group, created = Group.objects.get_or_create(name=settings.GROUPS.ADMIN_GROUP_NAME)
+        self.superuser.groups.add(admin_group)
+
         self.token = Token(user=self.superuser)
         self.token.save()
         self.client.login(username='john', password='johnpassword')
