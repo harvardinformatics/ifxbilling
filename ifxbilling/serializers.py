@@ -358,7 +358,10 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         '''
         Return user that should be the author or updated_by value.  If real_author_ifxid is in initial_data, get that user
         '''
-        real_user_ifxid = self.initial_data.get('real_user_ifxid')
+        if isinstance(self.initial_data, list):
+            real_user_ifxid = self.initial_data[0].get('real_user_ifxid')
+        else:
+            real_user_ifxid = self.initial_data.get('real_user_ifxid')
         if real_user_ifxid:
             current_user = self.get_current_user()
             if current_user.username == 'fiine':
@@ -432,8 +435,6 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         '''
         Ensure that BillingRecord is composed of transactions.
         '''
-        current_username = self.get_current_user().username
-
         # Fail if transactions are missing
         if 'transactions' not in self.initial_data:
             raise serializers.ValidationError(
@@ -510,7 +511,6 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         Only the account and description may be modified.  Transactions and billing record states may be added.
         Added billing record states will be used to call setState
         '''
-        current_username = self.get_current_user().username
         initial_data = self.initial_data
         if bulk_id is not None:
             initial_data = self.initial_data[bulk_id]
