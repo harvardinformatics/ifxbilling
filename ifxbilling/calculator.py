@@ -13,8 +13,8 @@ All rights reserved.
 import logging
 from importlib import import_module
 from django.db import transaction
-from ifxbilling.models import BillingRecord, Transaction, BillingRecordState
 from ifxuser.models import Organization
+from ifxbilling.models import BillingRecord, Transaction, BillingRecordState
 
 
 logger = logging.getLogger('ifxbilling')

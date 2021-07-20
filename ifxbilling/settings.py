@@ -25,7 +25,6 @@ SECRET_KEY = os.environ.get('IFXBILLING_DJANGO_KEY','lkoqwimoismoaiwelj23ajsd')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('IFXBILLING_DEBUG', 'FALSE')
 
-IFXBILLING_DEFAULT_USERNAME = 'veradmin'
 IFXBILLING_PROCESSOR_MODULE = 'test'
 AUTH_USER_MODEL = 'ifxuser.IfxUser'
 DB_USERNAME = os.environ.get('IFXBILLING_USERNAME', 'ifxbilling')
@@ -172,3 +171,9 @@ class GROUPS():
     Group names
     '''
     ADMIN_GROUP_NAME = 'Admin'
+
+
+AUTHOR_IGNORE_MODELS = [
+    'ifxbilling.BillingRecord',
+    'ifxbilling.Transaction',
+]
