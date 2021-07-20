@@ -403,6 +403,30 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 )
         return author
 
+    def get_state_username(self, state_data):
+        '''
+        Username should be from current user unless logged in user is fiine and an IFXID is set
+        '''
+        current_user = self.get_current_user()
+        state_username = current_user.username
+        if 'user' in state_data and state_data['user'] and state_data['user'] != current_user.username:
+            if current_user.username == 'fiine':
+                try:
+                    state_username = get_user_model().objects.get(ifxid=state_data['user']).username
+                except get_user_model().DoesNotExist:
+                    raise serializers.ValidationError(
+                        detail={
+                            'states': f'Unable to find user with ifxid {state_data["user"]}'
+                        }
+                    )
+            else:
+                raise serializers.ValidationError(
+                    detail={
+                        'states': f'Current user {current_user} cannot set states with other users'
+                    }
+                )
+        return state_username
+
     @transaction.atomic
     def create(self, validated_data):
         '''
@@ -469,14 +493,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         if 'billing_record_states' in self.initial_data:
             billing_record_states_data = self.initial_data['billing_record_states']
             for state_data in billing_record_states_data:
-                if 'user' not in state_data or not state_data['user']:
-                    state_data['user'] = current_username
-                if current_username not in ['fiine', state_data['user']]:
-                    raise serializers.ValidationError(
-                        detail={
-                            'billing_record_states': 'BillingRecord state cannot be set by another user'
-                        }
-                    )
+                state_data['user'] = self.get_state_username(state_data)
                 billing_record.setState(**state_data)
 
         # Set the transactions to get the actual charge
@@ -550,14 +567,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         billing_record_states_data = initial_data['billing_record_states']
         for state_data in billing_record_states_data:
             if 'id' not in state_data:
-                if 'user' not in state_data or not state_data['user']:
-                    state_data['user'] = current_username
-                if current_username not in ['fiine', state_data['user']]:
-                    raise serializers.ValidationError(
-                        detail={
-                            'billing_record_states': f'User {current_username} cannot set billing record state for other users'
-                        }
-                    )
+                state_data['user'] = self.get_state_username(state_data)
                 instance.setState(**state_data)
 
         return instance
