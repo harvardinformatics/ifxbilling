@@ -354,14 +354,11 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         '''
         return self.context['request'].user
 
-    def get_billing_record_author(self):
+    def get_billing_record_author(self, initial_data):
         '''
         Return user that should be the author or updated_by value.  If real_author_ifxid is in initial_data, get that user
         '''
-        if isinstance(self.initial_data, list):
-            real_user_ifxid = self.initial_data[0].get('real_user_ifxid')
-        else:
-            real_user_ifxid = self.initial_data.get('real_user_ifxid')
+        real_user_ifxid = initial_data.get('real_user_ifxid')
         if real_user_ifxid:
             current_user = self.get_current_user()
             if current_user.username == 'fiine':
@@ -552,7 +549,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 
-        validated_data['updated_by'] = self.get_billing_record_author()
+        validated_data['updated_by'] = self.get_billing_record_author(initial_data)
 
         instance.save()
 
