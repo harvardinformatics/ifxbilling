@@ -292,7 +292,7 @@ class BillingRecordStateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.BillingRecordState
-        fields = ('id', 'name', 'user', 'approvers', 'comment', 'created', 'updated' )
+        fields = ('id', 'name', 'user', 'approvers', 'comment', 'created', 'updated')
         read_only_fields = ('id', 'created', 'updated')
 
 class BillingRecordListSerializer(serializers.ListSerializer):
@@ -311,6 +311,9 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     by BillingCalculators.  They may be created manually, but this is probably
     mostly for display of full objects.  List displays should probably be populated
     with custom SQL.
+
+    If real_user_ifxid is in the initial_data dict and the logged in user is fiine,
+    the ifxid will be used to set the 'author' or 'updated_by' value
     '''
     product_usage = ProductUsageSerializer(read_only=True)
     charge = serializers.IntegerField(read_only=True)
@@ -322,6 +325,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     current_state = serializers.CharField(max_length=200, allow_blank=True, required=False)
     billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
     percent = serializers.IntegerField(required=False)
+    author = UserSerializer(read_only=True)
 
     class Meta:
         model = models.BillingRecord
@@ -339,9 +343,89 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             'created',
             'updated',
             'percent',
+            'author',
         )
         read_only_fields = ('id', 'created', 'updated')
         list_serializer_class = BillingRecordListSerializer
+
+    def get_current_user(self):
+        '''
+        Return the current user
+        '''
+        return self.context['request'].user
+
+    def get_billing_record_author(self, initial_data):
+        '''
+        Return user that should be the author or updated_by value.  If real_author_ifxid is in initial_data, get that user
+        '''
+        real_user_ifxid = initial_data.get('real_user_ifxid')
+        if real_user_ifxid:
+            current_user = self.get_current_user()
+            if current_user.username == 'fiine':
+                try:
+                    author = get_user_model().objects.get(ifxid=real_user_ifxid)
+                    return author
+                except get_user_model().DoesNotExist:
+                    raise serializers.ValidationError(
+                        detail={
+                            'real_user_ifxid': f'Cannot find user with ifxid {real_user_ifxid}'
+                        }
+                    )
+            else:
+                raise serializers.ValidationError(
+                    detail={
+                        'real_user_ifxid': f'User {current_user} cannot set a different author'
+                    }
+                )
+        else:
+            return self.get_current_user()
+
+    def get_transaction_author(self, transaction_data):
+        '''
+        Determine author for a transaction
+        '''
+        current_user = self.get_current_user()
+        author = current_user
+        if 'author' in transaction_data and transaction_data['author'] and 'ifxid' in transaction_data['author'] and transaction_data['author']['ifxid']:
+            try:
+                author = get_user_model().objects.get(ifxid=transaction_data['author']['ifxid'])
+            except get_user_model().DoesNotExist:
+                raise serializers.ValidationError(
+                    detail={
+                        'transactions': f'Cannot find transaction author with ifxid {transaction_data["author"]["ifxid"]}'
+                    }
+                )
+            if current_user.username not in ['fiine', author.username]:
+                raise serializers.ValidationError(
+                    detail={
+                        'transactions': f'User {current_user} cannot set transaction author to other users'
+                    }
+                )
+        return author
+
+    def get_state_username(self, state_data):
+        '''
+        Username should be from current user unless logged in user is fiine and an IFXID is set
+        '''
+        current_user = self.get_current_user()
+        state_username = current_user.username
+        if 'user' in state_data and state_data['user'] and state_data['user'] != current_user.username:
+            if current_user.username == 'fiine':
+                try:
+                    state_username = get_user_model().objects.get(ifxid=state_data['user']).username
+                except get_user_model().DoesNotExist:
+                    raise serializers.ValidationError(
+                        detail={
+                            'states': f'Unable to find user with ifxid {state_data["user"]}'
+                        }
+                    )
+            else:
+                raise serializers.ValidationError(
+                    detail={
+                        'states': f'Current user {current_user} cannot set states with other users'
+                    }
+                )
+        return state_username
 
     @transaction.atomic
     def create(self, validated_data):
@@ -397,6 +481,9 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 }
             )
 
+        # Set the "author"
+        validated_data['author'] = self.get_billing_record_author(self.initial_data)
+
         # Create the billing record.  Charge will be 0
         billing_record = models.BillingRecord.objects.create(**validated_data)
 
@@ -404,12 +491,13 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         if 'billing_record_states' in self.initial_data:
             billing_record_states_data = self.initial_data['billing_record_states']
             for state_data in billing_record_states_data:
+                state_data['user'] = self.get_state_username(state_data)
                 billing_record.setState(**state_data)
 
         # Set the transactions to get the actual charge
         transactions_data = self.initial_data['transactions']
         for transaction_data in transactions_data:
-            transaction_data['author'] = get_user_model().objects.get(id=transaction_data['author'])
+            transaction_data['author'] = self.get_transaction_author(transaction_data)
             models.Transaction.objects.create(**transaction_data, billing_record=billing_record)
         return billing_record
 
@@ -461,23 +549,25 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 
+        validated_data['updated_by'] = self.get_billing_record_author(initial_data)
+
         instance.save()
 
         # Only add new transactions.  Old ones cannot be removed.
         transactions_data = initial_data['transactions']
         for transaction_data in transactions_data:
             if 'id' not in transaction_data:
+                transaction_data['author'] = self.get_transaction_author(transaction_data)
                 models.Transaction.objects.create(**transaction_data, billing_record=instance)
 
         # Only add new billing record states.  Old ones cannot be removed.
         billing_record_states_data = initial_data['billing_record_states']
         for state_data in billing_record_states_data:
             if 'id' not in state_data:
-                # TODO: Fetch the user record based on the username in the state_data
+                state_data['user'] = self.get_state_username(state_data)
                 instance.setState(**state_data)
 
         return instance
-
 
 
 class BillingRecordViewSet(viewsets.ModelViewSet):
@@ -508,6 +598,9 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def bulk_update(self, request, *args, **kwargs):
+        '''
+        Call serializer update on an array of billing records
+        '''
         ids = [int(r['id']) for r in request.data]
         instances = models.BillingRecord.objects.filter(id__in=ids)
         serializer = self.get_serializer(instances, data=request.data, many=True)

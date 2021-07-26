@@ -12,7 +12,6 @@ All rights reserved.
 '''
 import re
 import logging
-from enum import Enum
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import models
@@ -394,7 +393,7 @@ class ProductUsage(AbstractProductUsage):
         return self.description
 
 
-
+@with_author
 class BillingRecord(models.Model):
     '''
     Summary charge for a thing to an account.
@@ -595,4 +594,7 @@ class AccountUser(get_user_model()):
     Proxy user that supports AccountUserAdmin
     '''
     class Meta:
+        '''
+        It's a proxy
+        '''
         proxy = True
