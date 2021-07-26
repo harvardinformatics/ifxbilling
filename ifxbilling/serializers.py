@@ -482,7 +482,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             )
 
         # Set the "author"
-        validated_data['author'] = self.get_billing_record_author()
+        validated_data['author'] = self.get_billing_record_author(self.initial_data)
 
         # Create the billing record.  Charge will be 0
         billing_record = models.BillingRecord.objects.create(**validated_data)

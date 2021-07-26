@@ -207,7 +207,7 @@ class TestBillingRecord(APITestCase):
             'billing_record_states': [
                 {
                     'name': 'INIT',
-                    'user': data.USERS[0]['username'] # sslurpiston
+                    'user': data.USERS[0]['ifxid'] # sslurpiston
                 },
                 {
                     'name': 'FINAL',
@@ -216,7 +216,7 @@ class TestBillingRecord(APITestCase):
         }
         url = reverse('billing-record-list')
         response = self.client.post(url, billing_record_data, format='json')
-        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response.data}')
 
         billing_record_state_data = response.data['billing_record_states']
         self.assertTrue(len(billing_record_state_data) == 2, f'Incorrect number of billing record states {len(billing_record_state_data)}')
