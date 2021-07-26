@@ -30,7 +30,13 @@ class TestBillingRecord(APITestCase):
         setup
         '''
         data.clearTestData()
-        self.superuser = get_user_model().objects.create_superuser('john', 'john@snow.com', 'johnpassword')
+
+        # This needs to be fiine for the author tests to work
+        self.superuser = get_user_model().objects.create_superuser('fiine', 'john@snow.com', 'johnpassword')
+        self.superuser.ifxid = 'IFXIDX999999999'
+        self.superuser.full_name = 'John Snow'
+        self.superuser.save()
+
         admin_group, created = Group.objects.get_or_create(name=settings.GROUPS.ADMIN_GROUP_NAME)
         self.superuser.groups.add(admin_group)
 
@@ -62,12 +68,10 @@ class TestBillingRecord(APITestCase):
                 {
                     'charge': 100,
                     'description': 'Dewar charge',
-                    'author': self.superuser.id,
                 },
                 {
                     'charge': -10,
                     'description': '10%% off coupon',
-                    'author': self.superuser.id,
                 }
             ]
         }
@@ -85,6 +89,143 @@ class TestBillingRecord(APITestCase):
         # Check that the year and month are set
         self.assertTrue(response.data['year'] == timezone.now().year, f'Incorrect year setting {response.data}')
         self.assertTrue(response.data['month'] == timezone.now().month, f'Incorrect month setting {response.data}')
+
+    def testDifferentAuthor(self):
+        '''
+        Ensure that when real_user_ifxid is set, it will be the author of the BillingRecord
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage'])
+
+        # Get the real author
+        author = get_user_model().objects.get(username=data.USERS[0]['username']) # sslurpiston
+
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        account = models.Account.objects.first()
+
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                },
+                {
+                    'charge': -10,
+                    'description': '10%% off coupon',
+                }
+            ],
+            'real_user_ifxid': author.ifxid
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+
+        # Check that the author is the specified user
+        billing_record_data = response.data
+        self.assertTrue(billing_record_data['author']['username'] == author.username, f'Incorrect author set {billing_record_data["author"]}')
+
+    def testDifferentAuthorTransaction(self):
+        '''
+        Ensure that different authors can be set on transactions
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage'])
+
+        # Get the real author
+        author = get_user_model().objects.get(username=data.USERS[0]['username']) # sslurpiston
+
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        account = models.Account.objects.first()
+
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                    'author': {
+                        'ifxid': author.ifxid
+                    }
+                },
+            ],
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+
+        # Check that the author is the specified user
+        transaction_data = response.data['transactions'][0]
+        self.assertTrue(transaction_data['author']['username'] == author.username, f'Incorrect author set {transaction_data["author"]}')
+
+    def testDifferentAuthorSetState(self):
+        '''
+        Ensure that when new states are created, authors are properly set.
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage'])
+
+        # Get the real author
+        author = get_user_model().objects.get(username=data.USERS[0]['username']) # sslurpiston
+
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        account = models.Account.objects.first()
+
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                },
+                {
+                    'charge': -10,
+                    'description': '10%% off coupon',
+                }
+            ],
+            'billing_record_states': [
+                {
+                    'name': 'INIT',
+                    'user': data.USERS[0]['ifxid'] # sslurpiston
+                },
+                {
+                    'name': 'FINAL',
+                }
+            ]
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response.data}')
+
+        billing_record_state_data = response.data['billing_record_states']
+        self.assertTrue(len(billing_record_state_data) == 2, f'Incorrect number of billing record states {len(billing_record_state_data)}')
+
+        # Check that the author is the specified user
+        final_state = billing_record_state_data[0]
+        init_state = billing_record_state_data[1]
+        self.assertTrue(final_state['user'] == self.superuser.full_name, f'Incorrect user on billing record state {final_state}')
+        self.assertTrue(init_state['user'] == data.USERS[0]['full_name'], f'Incorrect user on billing record state {init_state}')
 
     def testNoTransactions(self):
         '''
@@ -134,12 +275,10 @@ class TestBillingRecord(APITestCase):
                 {
                     'charge': 100,
                     'description': 'Dewar charge',
-                    'author': self.superuser.id,
                 },
                 {
                     'charge': -10,
                     'description': '10%% off coupon',
-                    'author': self.superuser.id,
                 }
             ]
         }

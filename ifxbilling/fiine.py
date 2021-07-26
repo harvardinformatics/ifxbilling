@@ -140,6 +140,8 @@ def updateProducts():
         except models.Product.DoesNotExist:
             fiine_product_data = fiine_product.to_dict()
             fiine_product_data.pop('facility')
+            fiine_product_data.pop('object_code_category')
+            fiine_product_data.pop('reporting_group')
             models.Product.objects.create(**fiine_product_data)
 
 
