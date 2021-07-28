@@ -19,7 +19,7 @@ class BillingRecordUpdatePermissions(permissions.IsAuthenticated):
         '''
         if request.method == 'DELETE':
             return False
-        if request.method in ['PUT', 'POST']:
+        if request.method in ['PUT', 'POST', 'GET']:
             return Roles.userIsAdmin(request.user) or request.user.username == 'fiine'
 
         return False
