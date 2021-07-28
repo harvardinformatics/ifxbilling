@@ -58,6 +58,10 @@ class TestCalculator(APITestCase):
         expected_charge = 100
         self.assertTrue(br.charge == expected_charge, f'Incorrect charge {br}')
 
+        price = product_usage.product.rate_set.first().price
+        units = product_usage.product.rate_set.first().units
+        self.assertTrue(br.rate == f'{price} {units}', f'Incorrect billing record rate {br.rate}')
+
     def testUserProductAccountSplit(self):
         '''
         Ensure that a charge against a UserProductAccount with percentages creates split billing records.
