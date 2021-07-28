@@ -13,7 +13,6 @@ All rights reserved.
 import logging
 from importlib import import_module
 from django.db import transaction
-from ifxuser.models import Organization
 from ifxbilling.models import BillingRecord, Transaction, BillingRecordState
 
 
@@ -55,6 +54,27 @@ class BasicBillingCalculator():
     created.  Otherwise, ProductUsages with existing
     BillingRecords will be skipped.
     '''
+    def getRateDescription(self, rate):
+        '''
+        Text description of rate for use in txn rate and description.
+        Empty string is returned if rate.price or rate.units is None.
+        '''
+        desc = ''
+        if rate.price is not None and rate.units is not None:
+            if rate.units == 'ea':
+                desc = f'{rate.price} {rate.units}'
+            else:
+                desc = f'{rate.price} per {rate.units}'
+        return desc
+
+    def getRateDescriptionFromTransactions(self, transactions_data):
+        '''
+        Get the rate description for the BillingRecord from the transactions_data.
+        Basically just picking the first one.  If there are no transactions an exception is raised.
+        '''
+        if not transactions_data:
+            raise Exception('No transactions.  Cannot set a rate on the billing record.')
+        return transactions_data[0]['rate']
 
     def calculateCharges(self, product_usage, percent, usage_data=None):
         '''
@@ -70,12 +90,14 @@ class BasicBillingCalculator():
         rate = product.rate_set.get(is_active=True)
         if rate.units != product_usage.units:
             raise Exception(f'Units for product usage do not match the active rate for {product}')
+        rate_desc = self.getRateDescription(rate)
+
         transactions_data = []
 
         percent_str = ''
         if percent < 100:
             percent_str = f'{percent}% of '
-        description = f'{percent_str}{product_usage.quantity} {product_usage.units} at {rate.price} per {rate.units}'
+        description = f'{percent_str}{product_usage.quantity} {product_usage.units} at {rate_desc}'
         charge = round(rate.price * product_usage.quantity * percent / 100)
         user = product_usage.product_user
 
@@ -83,7 +105,8 @@ class BasicBillingCalculator():
             {
                 'charge': charge,
                 'description': description,
-                'author': user
+                'author': user,
+                'rate': rate_desc,
             }
         )
         return transactions_data
@@ -169,9 +192,10 @@ class BasicBillingCalculator():
             month = product_usage.month
 
         transactions_data = self.calculateCharges(product_usage, percent, usage_data)
-        return self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, description)
+        rate = self.getRateDescriptionFromTransactions(transactions_data)
+        return self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, rate, description)
 
-    def createBillingRecord(self, product_usage, account, year, month, transactions_data, percent, description=None):
+    def createBillingRecord(self, product_usage, account, year, month, transactions_data, percent, rate, description=None):
         '''
         Create (and save) a BillingRecord and related Transactions.
         If an existing BillingRecord has the same product_usage and account an Exception will be thrown.
@@ -192,7 +216,8 @@ class BasicBillingCalculator():
                     month=month,
                     description=description,
                     current_state=initial_state,
-                    percent=percent
+                    percent=percent,
+                    rate=rate,
                 )
                 billing_record.save()
                 billing_record_state = BillingRecordState(

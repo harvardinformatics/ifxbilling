@@ -444,6 +444,12 @@ class BillingRecord(models.Model):
         null=True,
         help_text='Name of the most recent BillingRecordState'
     )
+    rate = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Text description of the rate used to calculate the charge'
+    )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -572,6 +578,12 @@ class Transaction(models.Model):
         null=False,
         default=None,
         help_text='Reason for this charge.'
+    )
+    rate = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Text description of the rate used to calculate the charge'
     )
     created = models.DateTimeField(auto_now_add=True)
 
