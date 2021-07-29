@@ -232,7 +232,8 @@ class BasicBillingCalculator():
                 billing_record=billing_record,
                 charge=transaction_data['charge'],
                 description=transaction_data['description'],
-                author=transaction_data['author']
+                author=transaction_data['author'],
+                rate=transaction_data['rate'],
             )
             trxn.save()
 
