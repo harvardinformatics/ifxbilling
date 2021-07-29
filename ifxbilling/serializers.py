@@ -278,8 +278,8 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Transaction
-        fields = ('id', 'charge', 'description', 'created', 'author')
-        read_only_fields = ('id', 'created', 'author')
+        fields = ('id', 'charge', 'description', 'created', 'author', 'rate')
+        read_only_fields = ('id', 'created', 'author', 'rate')
 
 class BillingRecordStateSerializer(serializers.ModelSerializer):
     '''
@@ -344,8 +344,9 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             'updated',
             'percent',
             'author',
+            'rate',
         )
-        read_only_fields = ('id', 'created', 'updated')
+        read_only_fields = ('id', 'created', 'updated', 'rate')
         list_serializer_class = BillingRecordListSerializer
 
     def get_current_user(self):
