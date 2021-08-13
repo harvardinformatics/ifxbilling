@@ -516,7 +516,7 @@ def billing_record_pre_delete(sender, instance, **kwargs):
     """
     Prevent delete of BillingRecord
     """
-    raise ProtectedError('Billing Records can not be deleted.')
+    raise ProtectedError('Billing Records can not be deleted.', instance)
 
 class BillingRecordState(models.Model):
     """
