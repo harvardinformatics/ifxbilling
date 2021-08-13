@@ -17,6 +17,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
 from ifxbilling.init import main as init_production
 from ifxbilling.init import USER_APP_MODEL
+from ifxbilling.models import Product
 
 
 
@@ -27,6 +28,7 @@ def main():
     modelsForFixture = init_production()
     modelsForFixture[USER_APP_MODEL].extend(initUsers())
     modelsForFixture['authtoken.Token'] = initTokens()
+    modelsForFixture['ifxbilling.Product'] = initProducts()
     return modelsForFixture
 
 def initUsers():
@@ -68,4 +70,21 @@ def initTokens():
         Token.objects.filter(user=user).update(key=tokendata['token'])
         pks.append(obj.pk)
 
+    return pks
+
+def initProducts():
+    '''
+    This is really just for an ifxbilling test
+    '''
+    pks = []
+    products = [
+        {
+            'product_name': 'Test Product',
+            'product_number': 'IFXP0000000001',
+            'product_description': 'Test Product'
+        }
+    ]
+    for product_data in products:
+        (obj, created) = Product.objects.get_or_create(**product_data)
+        pks.append(obj.pk)
     return pks

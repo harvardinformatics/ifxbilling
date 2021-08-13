@@ -32,5 +32,6 @@ RUN --mount=type=ssh pip install --upgrade pip && \
 CMD ./wait-for-it.sh -t 60 db:3306 && \
     ./manage.py makemigrations && \
     ./manage.py migrate && \
+    ./manage.py applyDevBillingData && \
     ./manage.py runserver 0.0.0.0:80 --insecure
 

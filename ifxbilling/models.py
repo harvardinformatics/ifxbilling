@@ -17,7 +17,8 @@ from django.utils import timezone
 from django.db import models
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
+from django.db.models import ProtectedError
 from django.dispatch import receiver
 from author.decorators import with_author
 from ifxuser.models import Organization
@@ -509,6 +510,13 @@ def billing_record_post_save(sender, instance, **kwargs):
     if not instance.description:
         instance.description = instance.__str__()
         instance.save()
+
+@receiver(pre_delete, sender=BillingRecord)
+def billing_record_pre_delete(sender, instance, **kwargs):
+    """
+    Prevent delete of BillingRecord
+    """
+    raise ProtectedError('Billing Records can not be deleted.', instance)
 
 class BillingRecordState(models.Model):
     """
