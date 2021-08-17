@@ -48,6 +48,33 @@ def thisMonth():
     '''
     return timezone.now().month
 
+class Facility(models.Model):
+    '''
+    Facility, roughly equivalent to an application
+    '''
+    class Meta:
+        db_table = 'facility'
+        verbose_name_plural = 'facilities'
+
+    name = models.CharField(
+        max_length=200,
+        unique=True,
+        help_text='Name of the facility (e.g. Helium Recovery Service)'
+    )
+    application_username = models.CharField(
+        max_length=50,
+        help_text='Username that permits logging in to the facility application (e.g. nice)'
+    )
+    credit_code = models.CharField(
+        max_length=50,
+        help_text='Credit code to receive funds from billing for product usages.',
+    )
+    invoice_prefix = models.CharField(
+        max_length=50,
+        help_text='Prefix used in the invoice names for the facility.',
+    )
+    def __str__(self):
+        return self.name
 
 class Account(models.Model):
     """
@@ -256,6 +283,10 @@ class Product(models.Model):
         blank=True,
         default='ifxbilling.calculator.BasicBillingCalculator',
         help_text='Class to use for calculating charges for this product'
+    )
+    facility = models.ForeignKey(
+        Facility,
+        on_delete=models.CASCADE
     )
     reporting_group = models.CharField(
         max_length=100,

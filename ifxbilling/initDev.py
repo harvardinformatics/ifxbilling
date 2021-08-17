@@ -17,7 +17,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
 from ifxbilling.init import main as init_production
 from ifxbilling.init import USER_APP_MODEL
-from ifxbilling.models import Product
+from ifxbilling.models import Product, Facility
 
 
 
@@ -28,6 +28,7 @@ def main():
     modelsForFixture = init_production()
     modelsForFixture[USER_APP_MODEL].extend(initUsers())
     modelsForFixture['authtoken.Token'] = initTokens()
+    modelsForFixture['ifxbilling.Facility'] = initFacilities()
     modelsForFixture['ifxbilling.Product'] = initProducts()
     return modelsForFixture
 
@@ -70,6 +71,36 @@ def initTokens():
         Token.objects.filter(user=user).update(key=tokendata['token'])
         pks.append(obj.pk)
 
+    return pks
+
+def initFacilities():
+    '''
+    Create some dummy facilites
+    '''
+    pks = []
+    facilities = [
+        {
+            'name': 'Liquid Nitrogen Service',
+            'application_username': 'hers',
+            'credit_code': '370-32556-8254-018485-627258-0000-00000',
+            'invoice_prefix': 'LN2'
+        },
+        {
+            'name': 'Helium Recovery Service',
+            'application_username': 'hers',
+            'credit_code': '370-32556-8254-018485-627247-0000-00000',
+            'invoice_prefix': 'HE'
+        },
+        {
+            'name': 'Research Computing Storage',
+            'application_username': 'coldfront',
+            'credit_code': '370-32760-8254-018541-629404-0000-00000',
+            'invoice_prefix': 'RC'
+        },
+    ]
+    for facility in facilities:
+        (obj, created) = Facility.objects.get_or_create(**facility)
+        pks.append(obj.pk)
     return pks
 
 def initProducts():
