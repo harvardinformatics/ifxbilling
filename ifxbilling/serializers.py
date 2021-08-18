@@ -28,6 +28,45 @@ from ifxbilling.permissions import BillingRecordUpdatePermissions
 
 logger = logging.getLogger(__name__)
 
+class FacilitySerializer(serializers.ModelSerializer):
+    '''
+    Serializer for Facility
+    '''
+    class Meta:
+        model = models.Facility
+        fields = (
+            'id',
+            'name',
+            'application_username',
+            'invoice_prefix'
+        )
+
+
+class FacilityViewSet(viewsets.ModelViewSet):
+    '''
+    Viewset for Facility
+    '''
+    serializer_class = FacilitySerializer
+
+    def list(self, request):
+        return super().list(self, request)
+
+    def get_queryset(self):
+        '''
+        Allow query by name, application_username
+        '''
+        name = self.request.query_params.get('name')
+        application_username = self.request.query_params.get('application_username')
+
+        facilities = models.Facility.objects.all()
+
+        if name:
+            facilities = facilities.filter(name=name)
+        elif application_username:
+            facilities = facilities.filter(application_username=application_username)
+
+        return facilities
+
 
 class AccountSerializer(serializers.ModelSerializer):
     '''
@@ -112,6 +151,7 @@ class ProductSerializer(serializers.ModelSerializer):
     product_number = serializers.ReadOnlyField()
     product_name = serializers.CharField(max_length=50)
     product_description = serializers.CharField(max_length=200)
+    facility = serializers.SlugRelatedField(slug_field='name', queryset=models.Facility.objects.all())
     billing_calculator = serializers.CharField(max_length=100, required=False)
     rates = RateSerializer(many=True, read_only=True, source='rate_set')
 
@@ -582,6 +622,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         year = self.request.query_params.get('year')
         month = self.request.query_params.get('month')
         organization = self.request.query_params.get('organization')
+        facility = self.request.query_params.get('facility')
         root = self.request.query_params.get('root')
 
         queryset = models.BillingRecord.objects.all()
@@ -592,6 +633,8 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(month=month)
         if organization:
             queryset = queryset.filter(account__organization__slug=organization)
+        if facility:
+            queryset = queryset.filter(product_usage__product__facility__name=facility)
         if root:
             queryset = queryset.filter(account__root=root)
 

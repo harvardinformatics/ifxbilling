@@ -18,6 +18,41 @@ from django import forms
 from django.db.models import CharField
 from ifxbilling import models
 
+class FacilityProductInlineAdmin(admin.TabularInline):
+    '''
+    List products for a Facility
+    '''
+    model = models.Product
+    extra = 0
+
+
+class FacilityAdmin(admin.ModelAdmin):
+    '''
+    Admin for Facilities
+    '''
+    fields = (
+        'name',
+        'application_username',
+        'credit_code',
+        'invoice_prefix'
+    )
+    list_display = (
+        'id',
+        'name',
+        'application_username',
+        'credit_code',
+        'invoice_prefix'
+    )
+    ordering = ('name',)
+    search_fields = (
+        'name',
+    )
+    inlines = [FacilityProductInlineAdmin]
+
+
+admin.site.register(models.Facility, FacilityAdmin)
+
+
 class AccountInlineForm(forms.ModelForm):
     '''
     Just makes the account field widget larger
@@ -108,19 +143,25 @@ class ProductAdmin(admin.ModelAdmin):
         'product_number',
         'product_name',
         'product_description',
+        'facility',
         'billing_calculator',
+        'reporting_group'
     )
     list_display = (
         'id',
         'product_number',
         'product_name',
         'product_description',
+        'facility'
     )
     ordering = ('product_number',)
     search_fields = (
         'product_number',
         'product_name',
         'product_description',
+        'billing_calculator',
+        'facility',
+        'reporting_group'
      )
     list_filter = ('billing_calculator', )
     inlines = (RateInlineAdmin,)

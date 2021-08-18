@@ -13,6 +13,7 @@ from ifxbilling.views import get_remote_user_auth_token, update_user_accounts
 router = routers.DefaultRouter()
 router.register(r'accounts', serializers.AccountViewSet)
 router.register(r'products', serializers.ProductViewSet)
+router.register(r'facilities', serializers.FacilityViewSet, 'facility')
 router.register(r'product-usages', serializers.ProductUsageViewSet)
 router.register(r'billing-records', serializers.BillingRecordViewSet, 'billing-record')
 
