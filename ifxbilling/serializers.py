@@ -634,7 +634,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         if organization:
             queryset = queryset.filter(account__organization__slug=organization)
         if facility:
-            queryset = queryset.filter(product_usage__product__facility=facility)
+            queryset = queryset.filter(product_usage__product__facility__name=facility)
         if root:
             queryset = queryset.filter(account__root=root)
 
