@@ -326,6 +326,11 @@ class Rate(models.Model):
         default=None,
         help_text='Unit for price (e.g. ea)'
     )
+    max_qty = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text='Price applys to this number or units or less'
+    )
     is_active = models.BooleanField(
         default=True,
         help_text='Is this rate currently active?'
