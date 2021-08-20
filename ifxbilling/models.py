@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.db import models
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save
 from django.db.models import ProtectedError
 from django.dispatch import receiver
 from author.decorators import with_author
@@ -535,6 +535,12 @@ class BillingRecord(models.Model):
         else:
             raise Exception('User %s cannot approve this billing record.' % str(user))
 
+    def delete(self):
+        """
+        Prevent delete of BillingRecord
+        """
+        raise ProtectedError('Billing Records can not be deleted.', self)
+
     def __str__(self):
         return f'Charge of {self.charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
 
@@ -547,12 +553,7 @@ def billing_record_post_save(sender, instance, **kwargs):
         instance.description = instance.__str__()
         instance.save()
 
-@receiver(pre_delete, sender=BillingRecord)
-def billing_record_pre_delete(sender, instance, **kwargs):
-    """
-    Prevent delete of BillingRecord
-    """
-    raise ProtectedError('Billing Records can not be deleted.', instance)
+
 
 class BillingRecordState(models.Model):
     """
