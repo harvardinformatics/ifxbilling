@@ -367,6 +367,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
     percent = serializers.IntegerField(required=False)
     author = UserSerializer(read_only=True)
+    active = serializers.BooleanField(required=False)
 
     class Meta:
         model = models.BillingRecord
@@ -386,6 +387,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             'percent',
             'author',
             'rate',
+            'active'
         )
         read_only_fields = ('id', 'created', 'updated', 'rate')
         list_serializer_class = BillingRecordListSerializer
@@ -625,6 +627,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         organization = self.request.query_params.get('organization')
         facility = self.request.query_params.get('facility')
         root = self.request.query_params.get('root')
+        active = self.request.query_params.get('active')
 
         queryset = models.BillingRecord.objects.all()
 
@@ -638,6 +641,8 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(product_usage__product__facility__name=facility)
         if root:
             queryset = queryset.filter(account__root=root)
+        if active:
+            queryset = queryset.filter(active=active)
 
         return queryset.order_by('id')
 

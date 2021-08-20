@@ -38,7 +38,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--recalculate',
             action='store_true',
-            help='Remove existing billing records and recalculate',
+            help='Set existing billing records to inactive and recalculate',
         )
         parser.add_argument(
             '--verbose',
@@ -60,9 +60,10 @@ class Command(BaseCommand):
         }
         usage_data = {}
         for product_usage in product_usages:
-            if BillingRecord.objects.filter(product_usage=product_usage).exists():
+            if BillingRecord.objects.filter(product_usage=product_usage, active=True).exists():
                 if recalculate:
-                    BillingRecord.objects.filter(product_usage=product_usage).delete()
+                    # set to inactive
+                    BillingRecord.objects.filter(product_usage=product_usage).update(active=False)
                 else:
                     continue
             try:

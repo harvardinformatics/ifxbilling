@@ -160,9 +160,9 @@ class BasicBillingCalculator():
         '''
         brs = []
         with transaction.atomic():
-            if BillingRecord.objects.filter(product_usage=product_usage).exists():
+            if BillingRecord.objects.filter(product_usage=product_usage, active=True).exists():
                 if recalculate:
-                    BillingRecord.objects.filter(product_usage=product_usage).delete()
+                    BillingRecord.objects.filter(product_usage=product_usage).update(active=False)
                 else:
                     raise Exception(f'Billing record already exists for usage {product_usage}')
 
@@ -202,8 +202,8 @@ class BasicBillingCalculator():
         '''
         billing_record = None
         try:
-            BillingRecord.objects.get(product_usage=product_usage, account=account, percent=percent)
-            raise Exception(f'Billing record for product usage {product_usage} and account {account} already exists.')
+            BillingRecord.objects.get(product_usage=product_usage, account=account, percent=percent, active=True)
+            raise Exception(f'An active billing record for product usage {product_usage} and account {account} already exists.')
         except BillingRecord.DoesNotExist:
             pass
 
@@ -218,6 +218,7 @@ class BasicBillingCalculator():
                     current_state=initial_state,
                     percent=percent,
                     rate=rate,
+                    active=True
                 )
                 billing_record.save()
                 billing_record_state = BillingRecordState(
