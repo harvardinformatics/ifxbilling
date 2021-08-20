@@ -27,6 +27,14 @@ FIINE_TEST_ACCOUNT = {
 }
 FIINE_TEST_PRODUCT = 'Test Product'
 
+FACILITIES = [
+    {
+        'name': 'Helium Recovery Service',
+        'application_username': 'hers',
+        'credit_code': '370-32556-8254-018485-627247-0000-00000',
+        'invoice_prefix': 'HE'
+    }
+]
 
 ORGS = [
     {
@@ -151,7 +159,8 @@ PRODUCTS = [
                 'price': 100,
                 'units': 'ea',
             }
-        ]
+        ],
+        'facility': 'Helium Recovery Service',
     },
     {
         'product_number': 'IFXP0000000002',
@@ -163,7 +172,8 @@ PRODUCTS = [
                 'price': 1000,
                 'units': 'ea',
             }
-        ]
+        ],
+        'facility': 'Helium Recovery Service',
     }
 ]
 
@@ -212,6 +222,7 @@ def clearTestData():
     models.Account.objects.all().delete()
     models.ProductUsage.objects.all().delete()
     models.Product.objects.all().delete()
+    models.Facility.objects.all().delete()
 
     Organization.objects.all().delete()
     for user_data in USERS:
@@ -247,6 +258,8 @@ def init(types=None):
     for user in get_user_model().objects.all():
         if user.username in ('sslurpiston', 'dderpiston'):
             UserAffiliation.objects.create(user=user, organization=org, role='member')
+    for facility_data in FACILITIES:
+        models.Facility.objects.create(**facility_data)
 
     if types:
         if 'Account' in types:
@@ -257,6 +270,7 @@ def init(types=None):
         if 'Product' in types:
             for product_data in PRODUCTS:
                 data_copy = deepcopy(product_data)
+                data_copy['facility'] = models.Facility.objects.get(name=data_copy.pop('facility'))
                 rates_data = data_copy.pop('rates', None)
                 product = models.Product.objects.create(**data_copy)
                 for rate_data in rates_data:
