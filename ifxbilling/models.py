@@ -539,10 +539,12 @@ class BillingRecord(models.Model):
         """
         Prevent delete of BillingRecord
         """
-        raise ProtectedError('Billing Records can not be deleted.', self)
+        if self.current_state and self.current_state not in ['INIT', 'PENDING_LAB_APPROVAL']:
+            raise ProtectedError('Billing Records can not be deleted.', self)
 
     def __str__(self):
         return f'Charge of {self.charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
+
 
 @receiver(post_save, sender=BillingRecord)
 def billing_record_post_save(sender, instance, **kwargs):

@@ -112,10 +112,12 @@ def initProducts():
         {
             'product_name': 'Test Product',
             'product_number': 'IFXP0000000001',
-            'product_description': 'Test Product'
+            'product_description': 'Test Product',
+            'facility': 'Helium Recovery Service'
         }
     ]
     for product_data in products:
+        product_data['facility'] = Facility.objects.get(name=product_data.pop('facility'))
         (obj, created) = Product.objects.get_or_create(**product_data)
         pks.append(obj.pk)
     return pks
