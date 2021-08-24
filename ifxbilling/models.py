@@ -179,7 +179,8 @@ class Account(models.Model):
         null=True,
         help_text='Short, human readable name for this code'
     )
-    root = models.IntegerField(
+    root = models.CharField(
+        max_length=5,
         blank=True,
         null=True,
         default=None,
