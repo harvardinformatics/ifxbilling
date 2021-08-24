@@ -44,6 +44,7 @@ class TestProductUsage(APITestCase):
             'product_number': 'IFXP0000000001',
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
+            'facility': 'Liquid Nitrogen Service',
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
