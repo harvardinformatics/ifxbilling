@@ -27,7 +27,7 @@ build: drf
 drf:
 	docker build -t $(DRFIMAGE) -f $(DRFFILE) $(DRFBUILDARGS) .
 test: drf
-	docker-compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./manage.py test -v 2; docker-compose down
+	docker-compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -t 30 fiine-drf:80 -- ./manage.py test -v 2; docker-compose down
 prod:
 	docker build -t $(PRODIMAGE) $(PRODBUILDARGS) .
 	docker push $(PRODIMAGE)

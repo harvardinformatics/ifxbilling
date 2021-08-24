@@ -18,6 +18,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.utils import timezone
 from django.conf import settings
+from django.db.models import ProtectedError
 from ifxbilling.test import data
 from ifxbilling import models
 
@@ -296,3 +297,90 @@ class TestBillingRecord(APITestCase):
         # Check that the year and month are set
         self.assertTrue(response.data['year'] == timezone.now().year, f'Incorrect year setting {response.data}')
         self.assertTrue(response.data['month'] == timezone.now().month, f'Incorrect month setting {response.data}')
+
+    def testDelete(self):
+        '''
+        Ensure that billing records can be deleted if state is PENDING_LAB_APPROVAL
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        account = models.Account.objects.first()
+
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                },
+                {
+                    'charge': -10,
+                    'description': '10%% off coupon',
+                }
+            ],
+            'billing_record_states': [
+                {
+                    'name': 'PENDING_LAB_APPROVAL'
+                }
+            ]
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+        self.assertTrue(response.data['current_state'] == 'PENDING_LAB_APPROVAL', f'Incorrect billing record state {response.data["current_state"]}')
+
+        try:
+            self.assertTrue(models.BillingRecord.objects.get(id=int(response.data['id'])).delete() is None)
+        except Exception as e:
+            self.assertTrue(False, f'Error deleting billing record {e}')
+
+    def testDeleteFail(self):
+        '''
+        Ensure that billing records cannot be deleted if state is FINAL
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        account = models.Account.objects.first()
+
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                },
+                {
+                    'charge': -10,
+                    'description': '10%% off coupon',
+                }
+            ],
+            'billing_record_states': [
+                {
+                    'name': 'FINAL'
+                }
+            ]
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+        self.assertTrue(response.data['current_state'] == 'FINAL', f'Incorrect billing record state {response.data["current_state"]}')
+        br = models.BillingRecord.objects.get(id=int(response.data['id']))
+        self.assertRaises(ProtectedError, br.delete)

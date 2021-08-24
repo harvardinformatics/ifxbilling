@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.db import models
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save
 from django.db.models import ProtectedError
 from django.dispatch import receiver
 from author.decorators import with_author
@@ -326,6 +326,11 @@ class Rate(models.Model):
         default=None,
         help_text='Unit for price (e.g. ea)'
     )
+    max_qty = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text='Price applys to this number or units or less'
+    )
     is_active = models.BooleanField(
         default=True,
         help_text='Is this rate currently active?'
@@ -530,8 +535,16 @@ class BillingRecord(models.Model):
         else:
             raise Exception('User %s cannot approve this billing record.' % str(user))
 
+    def delete(self):
+        """
+        Prevent delete of BillingRecord
+        """
+        if self.current_state and self.current_state not in ['INIT', 'PENDING_LAB_APPROVAL']:
+            raise ProtectedError('Billing Records can not be deleted.', self)
+
     def __str__(self):
         return f'Charge of {self.charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
+
 
 @receiver(post_save, sender=BillingRecord)
 def billing_record_post_save(sender, instance, **kwargs):
@@ -542,12 +555,7 @@ def billing_record_post_save(sender, instance, **kwargs):
         instance.description = instance.__str__()
         instance.save()
 
-@receiver(pre_delete, sender=BillingRecord)
-def billing_record_pre_delete(sender, instance, **kwargs):
-    """
-    Prevent delete of BillingRecord
-    """
-    raise ProtectedError('Billing Records can not be deleted.', instance)
+
 
 class BillingRecordState(models.Model):
     """

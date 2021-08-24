@@ -114,6 +114,8 @@ def updateUserAccounts(user):
                 product_account_data['percent'] = 100
             user_product_account.percent = product_account_data['percent']
             user_product_account.save()
+        except models.Product.DoesNotExist as e:
+            raise Exception(f"Product with number {product_account_data['product']['product_number']} is missing") from e
         except models.UserProductAccount.DoesNotExist:
             models.UserProductAccount.objects.create(
                 user=user,
@@ -133,16 +135,21 @@ def updateProducts():
     fiine_products = FiineAPI.listProducts(facility=settings.FACILITY.NAME)
     for fiine_product in fiine_products:
         try:
+            logger.error(f'updating {fiine_product.product_number}')
             product = models.Product.objects.get(product_number=fiine_product.product_number)
             for field in ['product_name', 'product_description']:
                 setattr(product, field, getattr(fiine_product, field))
             product.save()
         except models.Product.DoesNotExist:
             fiine_product_data = fiine_product.to_dict()
-            fiine_product_data.pop('facility')
-            fiine_product_data.pop('object_code_category')
-            fiine_product_data.pop('reporting_group')
-            models.Product.objects.create(**fiine_product_data)
+            try:
+                facility_name = fiine_product_data.pop('facility')
+                fiine_product_data['facility'] = models.Facility.objects.get(name=facility_name)
+                fiine_product_data.pop('object_code_category')
+                fiine_product_data.pop('reporting_group')
+                models.Product.objects.create(**fiine_product_data)
+            except models.Facility.DoesNotExist as e:
+                raise Exception(f'Cannot find facility {facility_name}')
 
 
 def getExpenseCodeStatus(account):
@@ -152,7 +159,7 @@ def getExpenseCodeStatus(account):
     pass
 
 
-def createNewProduct(product_name, product_description, billing_calculator=None):
+def createNewProduct(product_name, product_description, facility, billing_calculator=None):
     '''
     Creates product record in fiine, and creates the local record with product number
     '''
@@ -160,18 +167,17 @@ def createNewProduct(product_name, product_description, billing_calculator=None)
     if products:
         raise IntegrityError(f'Product with name {product_name} exists in fiine.')
 
-    facility = settings.FACILITY.NAME
-
     try:
         product_obj = FiineAPI.createProduct(
             product_name=product_name,
             product_description=product_description,
-            facility=facility,
+            facility=facility.name,
         )
         product = models.Product(
             product_number=product_obj.product_number,
             product_name=product_obj.product_name,
             product_description=product_obj.product_description,
+            facility=facility,
         )
         if billing_calculator:
             product.billing_calculator = billing_calculator
