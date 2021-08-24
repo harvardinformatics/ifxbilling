@@ -109,12 +109,12 @@ def initProducts():
     '''
     pks = []
     products = [
-        {
-            'product_name': 'Test Product',
-            'product_number': 'IFXP0000000001',
-            'product_description': 'Test Product',
-            'facility': 'Helium Recovery Service'
-        }
+        # {
+        #     'product_name': 'Test Product',
+        #     'product_number': 'IFXP0000000001',
+        #     'product_description': 'Test Product',
+        #     'facility': 'Liquid Nitrogen Service'
+        # }
     ]
     for product_data in products:
         product_data['facility'] = Facility.objects.get(name=product_data.pop('facility'))

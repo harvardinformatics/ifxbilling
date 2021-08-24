@@ -33,7 +33,13 @@ FACILITIES = [
         'application_username': 'hers',
         'credit_code': '370-32556-8254-018485-627247-0000-00000',
         'invoice_prefix': 'HE'
-    }
+    },
+    {
+        'name': 'Liquid Nitrogen Service',
+        'application_username': 'hers',
+        'credit_code': '370-32556-8254-018485-627258-0000-00000',
+        'invoice_prefix': 'LN2'
+    },
 ]
 
 ORGS = [

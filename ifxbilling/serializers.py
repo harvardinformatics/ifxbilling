@@ -158,7 +158,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates')
+        fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility')
         read_only_fields = ('id',)
 
     @transaction.atomic
@@ -169,6 +169,7 @@ class ProductSerializer(serializers.ModelSerializer):
         kwargs = {
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
+            'facility': validated_data['facility'],
         }
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             kwargs['billing_calculator'] = validated_data['billing_calculator']

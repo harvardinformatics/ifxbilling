@@ -38,9 +38,11 @@ class TestProduct(APITestCase):
         '''
         Insert a minimal Product
         '''
+        data.init()
         product_data = {
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
+            'facility': 'Liquid Nitrogen Service',
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
@@ -52,8 +54,10 @@ class TestProduct(APITestCase):
         '''
         Ensure insertion fails without product name
         '''
+        data.init()
         product_data = {
             'product_description': 'A dewar of helium',
+            'facility': 'Liquid Nitrogen Service',
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
@@ -64,8 +68,10 @@ class TestProduct(APITestCase):
         '''
         Ensure insertion fails without product name
         '''
+        data.init()
         product_data = {
             'product_name': 'Helium Dewar',
+            'facility': 'Liquid Nitrogen Service',
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
@@ -76,9 +82,11 @@ class TestProduct(APITestCase):
         '''
         Ensure that a product can be inserted with rates
         '''
+        data.init()
         product_data = {
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
+            'facility': 'Liquid Nitrogen Service',
             'rates': [
                 {
                     'name': 'Helium Dewar Internal Rate',
@@ -106,9 +114,11 @@ class TestProduct(APITestCase):
         '''
         Ensure that a product rates can be updated
         '''
+        data.init()
         product_data = {
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
+            'facility': 'Liquid Nitrogen Service',
             'rates': [
                 {
                     'name': 'Helium Dewar Internal Rate',
@@ -153,9 +163,11 @@ class TestProduct(APITestCase):
         '''
         Ensure that a product rates can be removed
         '''
+        data.init()
         product_data = {
             'product_name': 'Helium Dewar',
             'product_description': 'A dewar of helium',
+            'facility': 'Liquid Nitrogen Service',
             'rates': [
                 {
                     'name': 'Helium Dewar Internal Rate',
