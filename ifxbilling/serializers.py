@@ -631,8 +631,10 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(year=year)
         if month:
             queryset = queryset.filter(month=month)
+        logger.info('Before org', queryset)
         if organization:
-            queryset = queryset.filter(account__organization=organization)
+            queryset = queryset.filter(account__organization__slug=organization)
+            logger.info('in org', organization, queryset)
         if facility:
             queryset = queryset.filter(product_usage__product__facility__name=facility)
         if root:
