@@ -18,7 +18,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from ifxbilling.test import data
-from ifxbilling.models import UserAccount
+from ifxbilling.models import UserAccount, Account
 
 class TestUnauthorized(APITestCase):
     '''
@@ -130,4 +130,34 @@ class TestUnauthorized(APITestCase):
         url = reverse('unauthorized')
         response = self.client.get(url)
         unauthorized = response.data
-        self.assertTrue(len(unauthorized) == 1, f'Incorrect number of unauthorized users {unauthorized}')
+        self.assertTrue(len(unauthorized) == 2, f'Incorrect number of unauthorized users {unauthorized}')
+
+    def testInactiveExpenseCode(self):
+        '''
+        Ensure that user with a valid user account, but inactive expense code is returned
+        '''
+        data.init(['Account', 'Product', 'UserAccount'])
+
+        ifxid_with_user_account = 'IFXIDX000000001'
+        ifxid_without_user_account = 'IFXIDX000000002'
+        for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
+            product_usage_data = {
+                'product': 'Helium Dewar',
+                'product_user': {
+                    'ifxid': ifxid
+                },
+                'quantity': 1,
+                'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+                'description': 'Howdy',
+            }
+            url = reverse('productusage-list')
+            response = self.client.post(url, product_usage_data, format='json')
+            self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.status_code}')
+
+        # Set accounts invalid
+        Account.objects.all().update(active=False)
+
+        url = reverse('unauthorized')
+        response = self.client.get(url)
+        unauthorized = response.data
+        self.assertTrue(len(unauthorized) == 2, f'Incorrect number of unauthorized users {unauthorized}')

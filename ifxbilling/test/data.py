@@ -97,24 +97,28 @@ ACCOUNTS = [
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'Alternate code',
         'root': '44075',
+        'active': True,
     },
     {
         'code': '370-31230-8100-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'mycode',
         'root': '12345',
+        'active': True,
     },
     {
         'code': '370-99999-8100-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'Another code',
         'root': '44075',
+        'active': True,
     },
     {
         'code': '370-11111-8100-000775-600200-0000-33333',
         'organization': 'Nobody Lab (a Harvard Laboratory)',
         'name': 'Nobody lab code',
         'root': '33333',
+        'active': True,
     },
 ]
 

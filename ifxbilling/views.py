@@ -94,8 +94,17 @@ def unauthorized(request):
     results = []
 
     for pu in models.ProductUsage.objects.filter(year=year, month=month):
-        if not pu.product_user.useraccount_set.filter(is_valid=True).exists() and \
-            not pu.product_user.userproductaccount_set.filter(is_valid=True, product=pu.product).exists():
+        valid_account_exists = False
+
+        # Check that both the account is valid and the user's use of the account is valid
+        for ua in pu.product_user.useraccount_set.filter(is_valid=True):
+            if ua.account.active:
+                valid_account_exists = True
+        for upa in pu.product_user.userproductaccount_set.filter(is_valid=True, product=pu.product):
+            if upa.account.active:
+                valid_account_exists = True
+
+        if not valid_account_exists:
             results.append(
                 {
                     'user': {
