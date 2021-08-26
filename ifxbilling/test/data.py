@@ -67,7 +67,8 @@ USERS = [
         'last_name': 'Slurpiston',
         'full_name': 'Slurpy Slurpiston',
         'email': 'sslurpiston@gmail.com',
-        'ifxid': 'IFXIDX000000001'
+        'ifxid': 'IFXIDX000000001',
+        'primary_affiliation': 'Kitzmiller Lab',
     },
     {
         'username': 'dderpiston',
@@ -75,7 +76,8 @@ USERS = [
         'last_name': 'Derpiston',
         'full_name': 'Derpy Derpiston',
         'email': 'dderpiston@gmail.com',
-        'ifxid': 'IFXIDX000000002'
+        'ifxid': 'IFXIDX000000002',
+        'primary_affiliation': 'Kitzmiller Lab',
     },
     {
         'username': 'mhankin',
@@ -85,6 +87,7 @@ USERS = [
         'email': 'mhankin@gmail.com',
         'ifxid': 'IFXIDX000000003',
         'is_staff': True,
+        'primary_affiliation': 'Kitzmiller Lab',
     },
 ]
 
@@ -94,24 +97,28 @@ ACCOUNTS = [
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'Alternate code',
         'root': '44075',
+        'active': True,
     },
     {
         'code': '370-31230-8100-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'mycode',
         'root': '12345',
+        'active': True,
     },
     {
         'code': '370-99999-8100-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'Another code',
         'root': '44075',
+        'active': True,
     },
     {
         'code': '370-11111-8100-000775-600200-0000-33333',
         'organization': 'Nobody Lab (a Harvard Laboratory)',
         'name': 'Nobody lab code',
         'root': '33333',
+        'active': True,
     },
 ]
 
@@ -230,12 +237,13 @@ def clearTestData():
     models.Product.objects.all().delete()
     models.Facility.objects.all().delete()
 
-    Organization.objects.all().delete()
     for user_data in USERS:
         try:
             get_user_model().objects.get(ifxid=user_data['ifxid']).delete()
         except get_user_model().DoesNotExist:
             pass
+
+    Organization.objects.all().delete()
 
     try:
         get_user_model().objects.filter(username='john', email='john@snow.com').delete()
@@ -256,14 +264,12 @@ def init(types=None):
     Initialize organizations and users.  If types is set, initialize those as well.
     types will be processed in order, so child objects will need to be after parents.
     '''
-    for user_data in USERS:
-        get_user_model().objects.create(**user_data)
     for org_data in ORGS:
         Organization.objects.create(**org_data)
-    org = Organization.objects.get(name='Kitzmiller Lab')
-    for user in get_user_model().objects.all():
-        if user.username in ('sslurpiston', 'dderpiston'):
-            UserAffiliation.objects.create(user=user, organization=org, role='member')
+    for original_user_data in USERS:
+        user_data = deepcopy(original_user_data)
+        user_data['primary_affiliation'] = Organization.objects.get(name=user_data.pop('primary_affiliation'))
+        get_user_model().objects.create(**user_data)
     for facility_data in FACILITIES:
         models.Facility.objects.create(**facility_data)
 

@@ -7,11 +7,14 @@ Common views for expense codes
 import logging
 import json
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from ifxbilling.fiine import updateUserAccounts
+from ifxbilling import models
+
 
 logger = logging.getLogger(__name__)
 
@@ -78,3 +81,48 @@ def update_user_accounts(request):
     else:
         return Response(data={'successes': successes})
 
+
+
+@api_view(('GET',))
+def unauthorized(request):
+    '''
+    Return a list of product usages for which there is no expense code authorized
+    '''
+    year = request.GET.get('year', timezone.now().year)
+    month = request.GET.get('month', timezone.now().month)
+
+    results = []
+
+    for pu in models.ProductUsage.objects.filter(year=year, month=month):
+        valid_account_exists = False
+
+        # Check that both the account is valid and the user's use of the account is valid
+        for ua in pu.product_user.useraccount_set.filter(is_valid=True):
+            if ua.account.active:
+                valid_account_exists = True
+        for upa in pu.product_user.userproductaccount_set.filter(is_valid=True, product=pu.product):
+            if upa.account.active:
+                valid_account_exists = True
+
+        if not valid_account_exists:
+            results.append(
+                {
+                    'user': {
+                        'ifxid': pu.product_user.ifxid,
+                        'full_name': pu.product_user.full_name,
+                        'primary_email': pu.product_user.email,
+                        'primary_affiliation': pu.product_user.primary_affiliation.slug,
+                        'user_accounts': [str(ua.account) for ua in pu.product_user.useraccount_set.all()],
+                        'user_product_accounts': [str(ua.account) for ua in pu.product_user.userproductaccount_set.all()]
+                    },
+                    'product': {
+                        'product_name': pu.product.product_name,
+                        'product_description': pu.product.product_description,
+                    },
+                    'quantity': pu.quantity,
+                    'units': pu.units,
+                    'description': pu.description,
+                }
+            )
+
+    return Response(data=results)
