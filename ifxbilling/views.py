@@ -111,7 +111,7 @@ def unauthorized(request):
                         'ifxid': pu.product_user.ifxid,
                         'full_name': pu.product_user.full_name,
                         'primary_email': pu.product_user.email,
-                        'primary_affiliation': pu.product_user.primary_affiliation.slug,
+                        'primary_affiliation': pu.product_user.primary_affiliation.slug if pu.product_user.primary_affiliation else '',
                         'user_accounts': [str(ua.account) for ua in pu.product_user.useraccount_set.all()],
                         'user_product_accounts': [str(ua.account) for ua in pu.product_user.userproductaccount_set.all()]
                     },
