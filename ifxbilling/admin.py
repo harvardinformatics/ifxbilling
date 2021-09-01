@@ -181,7 +181,7 @@ class TransactionInlineAdmin(admin.TabularInline):
     def formfield_for_dbfield(self, db_field, **kwargs):
         formfield = super().formfield_for_dbfield(db_field, **kwargs)
         if db_field.name == 'comment':
-            formfield.widget = forms.Textarea(attrs=formfield.widget.attrs)
+            formfield.widget = forms.Textarea(attrs={'cols': 20, 'rows': 3})
         return formfield
 
 
