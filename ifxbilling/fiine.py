@@ -22,6 +22,7 @@ from rest_framework.exceptions import ValidationError, NotAuthenticated
 from ifxuser.models import Organization
 from fiine.client import API as FiineAPI
 from fiine.client import ApiException
+from ifxvalidcode.ec_functions import ExpenseCodeFields
 from ifxbilling import models
 
 
@@ -33,9 +34,9 @@ def replaceObjectCodeInFiineAccount(acct_data):
     Expense code should be in acct_data.account.code (it should be an account from FiineAPI)
     '''
     if hasattr(settings.FACILITY, 'OBJECT_CODE') and settings.FACILITY.OBJECT_CODE:
-        acct_data.account.code = models.Account.replaceField(
+        acct_data.account.code = ExpenseCodeFields.replace_field(
             acct_data.account.code,
-            models.Account.ExpenseCodeFields.OBJECT_CODE,
+            ExpenseCodeFields.OBJECT_CODE,
             settings.FACILITY.OBJECT_CODE
         )
     return acct_data
