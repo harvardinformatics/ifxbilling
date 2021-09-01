@@ -177,13 +177,20 @@ class TransactionInlineAdmin(admin.TabularInline):
     '''
     model = models.Transaction
     extra = 0
+    autocomplete_fields = ('author', )
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        formfield = super().formfield_for_dbfield(db_field, **kwargs)
+        if db_field.name == 'comment':
+            formfield.widget = forms.Textarea(attrs={'cols': 20, 'rows': 3})
+        return formfield
+
 
 class BillingRecordStateInlineAdmin(admin.TabularInline):
     '''
     For displaying billing record states with BillingRecords
     '''
     model = models.BillingRecordState
-    autocomplete_fields = ('billing_record',)
+    autocomplete_fields = ('billing_record', 'approvers', 'user')
     extra = 0
 
 class BillingRecordAdmin(admin.ModelAdmin):
@@ -261,6 +268,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
      )
     list_filter = ('year', 'month', 'product', 'product_user')
     readonly_fields = ('created',)
+    autocomplete_fields = ('product_user', )
 
 
 admin.site.register(models.ProductUsage, ProductUsageAdmin)
