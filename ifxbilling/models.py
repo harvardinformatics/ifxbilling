@@ -504,7 +504,9 @@ def billing_record_post_save(sender, instance, **kwargs):
         instance.description = instance.__str__()
         instance.save()
 
+    post_save.disconnect(billing_record_post_save, sender=BillingRecord)
     reset_billing_record_charge(instance)
+    post_save.connect(billing_record_post_save, sender=BillingRecord)
 
 
 
