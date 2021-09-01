@@ -59,6 +59,7 @@ def reset_billing_record_charge(billing_record):
     for trx in sorted(transactions, key=lambda transaction: transaction.created):
         billing_record_charge += trx.charge
     billing_record.charge = billing_record_charge
+    billing_record.description = str(billing_record)
     billing_record.save()
 
 
@@ -500,10 +501,6 @@ def billing_record_post_save(sender, instance, **kwargs):
     """
     Add description to BillingRecord if null, reset charge on billing record
     """
-    if not instance.description:
-        instance.description = instance.__str__()
-        instance.save()
-
     post_save.disconnect(billing_record_post_save, sender=BillingRecord)
     reset_billing_record_charge(instance)
     post_save.connect(billing_record_post_save, sender=BillingRecord)
