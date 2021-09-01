@@ -175,20 +175,9 @@ class TransactionInlineAdmin(admin.TabularInline):
     '''
     For displaying transactions with BillingRecords
     '''
-    class Meta:
-        '''
-        Set autocomplete for author
-        '''
-        widgets = {
-            'author': AutocompleteSelect(
-                models.Transaction._meta.get_field('author').remote_field,
-                admin.site,
-                attrs={'style': 'width: 500px'}
-            ),
-        }
-
     model = models.Transaction
     extra = 0
+    autocomplete_fields = ('author', 'last_updated_by')
     def formfield_for_dbfield(self, db_field, **kwargs):
         formfield = super().formfield_for_dbfield(db_field, **kwargs)
         if db_field.name == 'comment':
