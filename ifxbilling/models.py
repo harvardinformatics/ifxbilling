@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.db import models
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.db.models import ProtectedError
 from django.dispatch import receiver
 from author.decorators import with_author
@@ -47,6 +47,20 @@ def thisMonth():
     Callable for setting default month
     '''
     return timezone.now().month
+
+
+def reset_billing_record_charge(billing_record):
+    '''
+    For a given billing record, update the charge based on the billing record
+    transactions
+    '''
+    billing_record_charge = 0
+    transactions = billing_record.transaction_set.all()
+    for trx in sorted(transactions, key=lambda transaction: transaction.created):
+        billing_record_charge += trx.charge
+    billing_record.charge = billing_record_charge
+    billing_record.save()
+
 
 class Facility(models.Model):
     '''
@@ -484,11 +498,13 @@ class BillingRecord(models.Model):
 @receiver(post_save, sender=BillingRecord)
 def billing_record_post_save(sender, instance, **kwargs):
     """
-    Add description to BillingRecord if null
+    Add description to BillingRecord if null, reset charge on billing record
     """
     if not instance.description:
         instance.description = instance.__str__()
         instance.save()
+
+    reset_billing_record_charge(instance)
 
 
 
@@ -575,12 +591,15 @@ def transaction_post_save(sender, instance, **kwargs):
     """
     Recalculate the BillingRecord charge
     """
-    billing_record_charge = 0
-    transactions = instance.billing_record.transaction_set.all()
-    for trx in sorted(transactions, key=lambda transaction: transaction.created):
-        billing_record_charge += trx.charge
-    instance.billing_record.charge = billing_record_charge
-    instance.billing_record.save()
+    reset_billing_record_charge(instance.billing_record)
+
+
+@receiver(post_delete, sender=Transaction)
+def transaction_post_delete(sender, instance, **kwargs):
+    """
+    Recalculate the BillingRecord charge
+    """
+    reset_billing_record_charge(instance.billing_record)
 
 
 class AccountUser(get_user_model()):
