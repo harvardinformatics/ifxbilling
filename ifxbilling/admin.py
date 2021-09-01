@@ -177,7 +177,7 @@ class TransactionInlineAdmin(admin.TabularInline):
     '''
     model = models.Transaction
     extra = 0
-    autocomplete_fields = ('author', 'last_updated_by')
+    autocomplete_fields = ('author', )
     def formfield_for_dbfield(self, db_field, **kwargs):
         formfield = super().formfield_for_dbfield(db_field, **kwargs)
         if db_field.name == 'comment':
