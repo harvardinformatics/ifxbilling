@@ -19,11 +19,11 @@ from fiine.client import API as FiineAPI
 from ifxbilling import models
 
 
-FIINE_TEST_USER = 'Derpy Derpiston'  # Full name of Fiine Person that is also an ifxbilling test person
+FIINE_TEST_USER = 'Slurpy Slurpiston'  # Full name of Fiine Person that is also an ifxbilling test person
 FIINE_TEST_ACCOUNT = {
-    'name': 'Test account',
-    'code': '000-00000-0000-000000-000000-0000-00000',
-    'organization': 'Derpiston Lab (a Harvard Laboratory)',
+    'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+    'name': 'mycode',
+    'code': '370-31230-8100-000775-600200-0000-44075',
 }
 FIINE_TEST_PRODUCT = 'Test Product'
 
@@ -67,7 +67,7 @@ USERS = [
         'last_name': 'Slurpiston',
         'full_name': 'Slurpy Slurpiston',
         'email': 'sslurpiston@gmail.com',
-        'ifxid': 'IFXIDX000000001',
+        'ifxid': 'IFXID000000000D',
         'primary_affiliation': 'Kitzmiller Lab',
     },
     {
@@ -76,7 +76,7 @@ USERS = [
         'last_name': 'Derpiston',
         'full_name': 'Derpy Derpiston',
         'email': 'dderpiston@gmail.com',
-        'ifxid': 'IFXIDX000000002',
+        'ifxid': 'IFXID000000000E',
         'primary_affiliation': 'Kitzmiller Lab',
     },
     {
@@ -85,7 +85,7 @@ USERS = [
         'last_name': 'Hankin',
         'full_name': 'Markos Hankin',
         'email': 'mhankin@gmail.com',
-        'ifxid': 'IFXIDX000000003',
+        'ifxid': 'IFXID000000000F',
         'is_staff': True,
         'primary_affiliation': 'Kitzmiller Lab',
     },
@@ -253,7 +253,7 @@ def clearTestData():
     # Clear stuff from fiine
     products = FiineAPI.listProducts()
     for product in products:
-        if not product.product_name == FIINE_TEST_PRODUCT:
+        if product.product_name == 'Helium Dewar Test':
             FiineAPI.deleteProduct(product_number=product.product_number)
 
 

@@ -4,7 +4,7 @@ services:
   fiine-db:
     image: mariadb
     volumes:
-      - fiine-data:/var/lib/mysql
+      - fiine-test-data:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD=fiine
       - MYSQL_DATABASE=fiine
@@ -76,7 +76,7 @@ services:
 
 volumes:
   ifxbilling-data:
-  fiine-data:
+  fiine-test-data:
 
 networks:
   main:

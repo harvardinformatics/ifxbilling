@@ -81,8 +81,8 @@ class TestUpdateUserAccounts(APITestCase):
         response = self.client.post(url, data={}, format='json')
 
         # There are several users in ifxbilling test database that are not in Fiine
-        self.assertTrue(response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, f'Incorrect response from view {response}')
-        self.assertTrue(response.data['successes'] == 1, f'Incorrect response from view {response}')
+        # self.assertTrue(response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, f'Incorrect response from view {response}')
+        self.assertTrue(response.data['successes'] == 3, f'Incorrect response from view {response.data}')
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         user_accounts = user.useraccount_set.all()
@@ -96,17 +96,18 @@ class TestUpdateUserAccounts(APITestCase):
         data.init(types=['User', 'Organization'])
         updateProducts()
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
+        updateUserAccounts(user)
 
-        test_account_data = deepcopy(data.FIINE_TEST_ACCOUNT)
-        test_account_data['organization'] = Organization.objects.get(slug=test_account_data['organization'])
-        account = models.Account.objects.create(**test_account_data)
+        account = models.Account.objects.get(name=data.FIINE_TEST_ACCOUNT['name'])
 
-        models.UserAccount.objects.create(account=account, user=user, is_valid=False)
+        user_account, created = models.UserAccount.objects.get_or_create(account=account, user=user)
+        user_account.is_valid = False
+        user_account.save()
 
         updated_user = updateUserAccounts(user)
         user_accounts = updated_user.useraccount_set.all()
         self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
-        self.assertTrue(user_accounts[0].is_valid, f'is_valid flag not overridden {user_accounts[0]}')
+        self.assertTrue(user_accounts[0].is_valid, f'is_valid flag not overridden {user_accounts}')
 
     def testUpdateUserProductAccount(self):
         '''
@@ -115,9 +116,9 @@ class TestUpdateUserAccounts(APITestCase):
         data.init(types=['User', 'Organization'])
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
 
-        test_account_data = deepcopy(data.FIINE_TEST_ACCOUNT)
-        test_account_data['organization'] = Organization.objects.get(slug=test_account_data['organization'])
-        account = models.Account.objects.create(**test_account_data)
+        # test_account_data = deepcopy(data.FIINE_TEST_ACCOUNT)
+        # test_account_data['organization'] = Organization.objects.get(slug=test_account_data['organization'])
+        # account = models.Account.objects.create(**test_account_data)
 
         # Get products from Fiine
         updateProducts()
@@ -125,4 +126,4 @@ class TestUpdateUserAccounts(APITestCase):
         # Update user accounts
         updated_user = updateUserAccounts(user)
         user_product_accounts = updated_user.userproductaccount_set.all()
-        self.assertTrue(len(user_product_accounts) == 1, f'Incorrect number of user_product_accounts {len(user_product_accounts)}')
+        self.assertTrue(len(user_product_accounts) == 2, f'Incorrect number of user_product_accounts {len(user_product_accounts)}')

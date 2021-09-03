@@ -177,6 +177,7 @@ class UserAccount(models.Model):
     '''
     class Meta:
         db_table = 'user_account'
+        unique_together = ('account', 'user')
 
     account = models.ForeignKey(
         Account,

@@ -40,7 +40,7 @@ class TestProduct(APITestCase):
         '''
         data.init()
         product_data = {
-            'product_name': 'Helium Dewar',
+            'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
         }
@@ -70,7 +70,7 @@ class TestProduct(APITestCase):
         '''
         data.init()
         product_data = {
-            'product_name': 'Helium Dewar',
+            'product_name': 'Helium Dewar Test',
             'facility': 'Liquid Nitrogen Service',
         }
         url = reverse('product-list')
@@ -84,7 +84,7 @@ class TestProduct(APITestCase):
         '''
         data.init()
         product_data = {
-            'product_name': 'Helium Dewar',
+            'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
             'rates': [
@@ -116,7 +116,7 @@ class TestProduct(APITestCase):
         '''
         data.init()
         product_data = {
-            'product_name': 'Helium Dewar',
+            'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
             'rates': [
@@ -141,7 +141,7 @@ class TestProduct(APITestCase):
         # Fetch the existing object
         url = reverse('product-detail', kwargs={'pk': response.data['id']})
         response = self.client.get(url, format='json')
-        self.assertTrue(response.data['product_name'] == 'Helium Dewar', f'Incorrect response {response.data}')
+        self.assertTrue(response.data['product_name'] == 'Helium Dewar Test', f'Incorrect response {response.data}')
         product_data = response.data
         for i, rate in enumerate(product_data['rates']):
             if rate['name'] == 'Helium Dewar External Rate':
@@ -165,7 +165,7 @@ class TestProduct(APITestCase):
         '''
         data.init()
         product_data = {
-            'product_name': 'Helium Dewar',
+            'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
             'rates': [

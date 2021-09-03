@@ -161,7 +161,7 @@ class FACILITY():
     '''
     Facility data
     '''
-    NAME = 'Liquid Nitrogen Service'
+    NAME = 'Helium Recovery Service'
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 

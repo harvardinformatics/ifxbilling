@@ -39,15 +39,7 @@ class TestUnauthorized(APITestCase):
         '''
         Ensure that user with a product usage and no authorized accounts is returned.
         '''
-        data.init(['Account', 'UserAccount'])
-        product_data = {
-            'product_number': 'IFXP0000000001',
-            'product_name': 'Helium Dewar',
-            'product_description': 'A dewar of helium',
-            'facility': 'Liquid Nitrogen Service',
-        }
-        url = reverse('product-list')
-        response = self.client.post(url, product_data, format='json')
+        data.init(['Account', 'UserAccount', 'Product'])
 
         ifxid_with_user_account = 'IFXIDX000000001'
         ifxid_without_user_account = 'IFXIDX000000002'
