@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.environ.get('IFXBILLING_DJANGO_KEY','lkoqwimoismoaiwelj23ajsd')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('IFXBILLING_DEBUG', 'FALSE')
+DEBUG = os.environ.get('IFXBILLING_DEBUG', 'FALSE').upper() == 'TRUE'
 
 IFXBILLING_PROCESSOR_MODULE = 'test'
 AUTH_USER_MODEL = 'ifxuser.IfxUser'
@@ -177,3 +177,18 @@ AUTHOR_IGNORE_MODELS = [
     'ifxbilling.BillingRecord',
     'ifxbilling.Transaction',
 ]
+
+DEFAULT_EMAIL_FROM_ADDRESS = 'ifx@fas.harvard.edu'
+
+class EMAILS():
+    '''
+    Email addresses
+    '''
+    DEFAULT_EMAIL_FROM_ADDRESS = DEFAULT_EMAIL_FROM_ADDRESS
+
+class IFXMESSAGES():
+    '''
+    ifxmail message names
+    '''
+    EXPENSE_CODE_REQUEST_MESSAGE_NAME = 'ifxbilling_expense_code_request_message'
+

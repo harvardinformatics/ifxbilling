@@ -15,9 +15,11 @@ All rights reserved.
 '''
 from django.contrib.auth import get_user_model
 from rest_framework.authtoken.models import Token
+from ifxuser.models import Organization
 from ifxbilling.init import main as init_production
 from ifxbilling.init import USER_APP_MODEL
 from ifxbilling.models import Product, Facility
+from ifxuser.models import Organization, Contact, OrganizationContact
 
 
 
@@ -30,6 +32,9 @@ def main():
     modelsForFixture['authtoken.Token'] = initTokens()
     modelsForFixture['ifxbilling.Facility'] = initFacilities()
     modelsForFixture['ifxbilling.Product'] = initProducts()
+    modelsForFixture['ifxuser.Organization'] = initOrganizations()
+    modelsForFixture['ifxuser.Contact'] = initContacts()
+    modelsForFixture['ifxuser.OrganizationContact'] = initOrganizationContacts()
     return modelsForFixture
 
 def initUsers():
@@ -120,4 +125,61 @@ def initProducts():
         product_data['facility'] = Facility.objects.get(name=product_data.pop('facility'))
         (obj, created) = Product.objects.get_or_create(**product_data)
         pks.append(obj.pk)
+    return pks
+
+def initOrganizations():
+    '''
+    This is really just for an expense code request test
+    '''
+    pks = []
+    orgs = [
+        {
+            'name': 'Derpiston Lab',
+            'rank': 'lab',
+            'org_tree': 'Test',
+        },
+    ]
+    for org_data in orgs:
+        (obj, created) = Organization.objects.get_or_create(**org_data)
+        pks.append(obj.pk)
+    return pks
+
+def initContacts():
+    '''
+    Setup veradmin as a contact
+    '''
+    pks = []
+    contacts = [
+        {
+            'name': 'Vera D. Min',
+            'ifxcon': 'IFXC0000000001',
+            'is_valid': True,
+            'type': 'Email',
+            'detail': 'ifx@fas.harvard.edu',
+        },
+    ]
+    for contactdata in contacts:
+        (obj, created) = Contact.objects.get_or_create(**contactdata)
+        pks.append(obj.pk)
+
+    return pks
+
+def initOrganizationContacts():
+    '''
+    Setup veradmin labadmin for Derpiston
+    '''
+    pks = []
+    contact = Contact.objects.get(name='Vera D. Min')
+    org = Organization.objects.get(name='Derpiston Lab')
+    org_contacts = [
+        {
+            'contact': contact,
+            'role': 'Lab Admin',
+            'organization': org
+        },
+    ]
+    for org_contactdata in org_contacts:
+        (obj, created) = OrganizationContact.objects.get_or_create(**org_contactdata)
+        pks.append(obj.pk)
+
     return pks

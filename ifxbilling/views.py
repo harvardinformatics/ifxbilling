@@ -12,8 +12,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
+from ifxmail.client import send, FieldErrorsException
+from ifxurls.urls import getIfxUrl
 from ifxbilling.fiine import updateUserAccounts
-from ifxbilling import models
+from ifxbilling import models, settings
 
 
 logger = logging.getLogger(__name__)
@@ -126,3 +128,56 @@ def unauthorized(request):
             )
 
     return Response(data=results)
+
+@api_view(('POST',))
+def expense_code_request(request):
+    '''
+    email an expense code request
+    '''
+    user = request.user
+    organization_name = request.data.get('organization')
+    facility_name = request.data.get('facility')
+    product_name = request.data.get('product')
+    logger.info(f'Formatting message for {facility_name} {organization_name} request from {user.full_name} for {product_name}.')
+    try:
+        send_to = []
+        org = models.Organization.objects.get(slug=organization_name)
+        for org_contact in org.organizationcontact_set.all():
+            if org_contact.role == 'Lab Admin' and org_contact.contact.type == 'Email':
+                send_to.append(org_contact.contact.detail)
+        facility = models.Facility.objects.get(name=facility_name)
+        url = getIfxUrl(f'{facility.application_username.upper()}_EXPENSE_CODE_REQUEST_UPDATE')
+    except Exception as e:
+        logger.exception(e)
+        return Response(data={'error': 'Error gathering information to create expense code request for {facility_name} {organization_name} by {user.full_name} for {product_name}.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    fromstr = settings.EMAILS.DEFAULT_EMAIL_FROM_ADDRESS
+    tostr = ','.join(send_to)
+    ccstr = user.email
+    ifxmessage = settings.IFXMESSAGES.EXPENSE_CODE_REQUEST_MESSAGE_NAME
+    data = {
+        'user': user.full_name,
+        'facility': facility_name,
+        'product': product_name,
+        'organization': organization_name,
+        'link': url
+    }
+
+    logger.debug(f'Attempting to send message to {tostr} from {fromstr} with {ifxmessage} with {json.dumps(data)}.')
+    try:
+        send(
+            to=tostr,
+            fromaddr=fromstr,
+            ifxmessage=ifxmessage,
+            field_errors=True,
+            cclist=ccstr.split(','),
+            data=data
+        )
+        msg = 'Successfully sent mailing.'
+        msg_status = status.HTTP_200_OK
+        data = {'message': msg}
+    except FieldErrorsException as e:
+        logger.exception(e)
+        data = e.field_errors
+        msg_status = e.status
+    return Response(data=data, status=msg_status)
