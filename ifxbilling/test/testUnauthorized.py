@@ -41,8 +41,8 @@ class TestUnauthorized(APITestCase):
         '''
         data.init(['Account', 'UserAccount', 'Product'])
 
-        ifxid_with_user_account = 'IFXIDX000000001'
-        ifxid_without_user_account = 'IFXIDX000000002'
+        ifxid_with_user_account = 'IFXID000000000D'
+        ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
                 'product': 'Helium Dewar',
@@ -69,8 +69,8 @@ class TestUnauthorized(APITestCase):
         '''
         data.init(['Account', 'Product', 'UserProductAccount'])
 
-        ifxid_with_user_account = 'IFXIDX000000001'
-        ifxid_without_user_account = 'IFXIDX000000002'
+        ifxid_with_user_account = 'IFXID000000000D'
+        ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
                 'product': 'Helium Dewar',
@@ -83,7 +83,7 @@ class TestUnauthorized(APITestCase):
             }
             url = reverse('productusage-list')
             response = self.client.post(url, product_usage_data, format='json')
-            self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.status_code}')
+            self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.data}')
 
         # Double check to make sure user doesn't have a default account
         self.assertFalse(UserAccount.objects.filter(user__ifxid=ifxid_with_user_account).exists(), f'User should not have a UserAccount, just a UserProductAccount')
@@ -100,8 +100,8 @@ class TestUnauthorized(APITestCase):
         '''
         data.init(['Account', 'Product', 'UserProductAccount'])
 
-        ifxid_with_user_account = 'IFXIDX000000001'
-        ifxid_without_user_account = 'IFXIDX000000002'
+        ifxid_with_user_account = 'IFXID000000000D'
+        ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
                 'product': 'Helium Balloon',
@@ -130,8 +130,8 @@ class TestUnauthorized(APITestCase):
         '''
         data.init(['Account', 'Product', 'UserAccount'])
 
-        ifxid_with_user_account = 'IFXIDX000000001'
-        ifxid_without_user_account = 'IFXIDX000000002'
+        ifxid_with_user_account = 'IFXID000000000D'
+        ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
                 'product': 'Helium Dewar',
