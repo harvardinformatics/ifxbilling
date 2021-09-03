@@ -50,6 +50,7 @@ def initUsers():
             'is_active': True,
             'is_superuser': True,
             'is_staff': True,
+            'ifxid': 'IFXID0000000001'
         },
     ]
     for userdata in users:
@@ -137,6 +138,7 @@ def initOrganizations():
             'name': 'Derpiston Lab',
             'rank': 'lab',
             'org_tree': 'Test',
+            'ifxorg': 'IFXORG0000000001'
         },
     ]
     for org_data in orgs:

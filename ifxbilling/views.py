@@ -13,7 +13,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from ifxmail.client import send, FieldErrorsException
-from ifxurls.urls import getIfxUrl
+from ifxurls.urls import FIINE_URL_BASE
 from ifxbilling.fiine import updateUserAccounts
 from ifxbilling import models, settings
 
@@ -146,10 +146,10 @@ def expense_code_request(request):
             if org_contact.role == 'Lab Admin' and org_contact.contact.type == 'Email':
                 send_to.append(org_contact.contact.detail)
         facility = models.Facility.objects.get(name=facility_name)
-        url = f'{getIfxUrl("FIINE_API_BASE")}/user-accounts/review/'
+        url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/'
     except Exception as e:
         logger.exception(e)
-        return Response(data={'error': 'Error gathering information to create expense code request for {facility_name} {organization_name} by {user.full_name} for {product_name}.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(data={'error': f'Error gathering information to create expense code request for {facility_name} {organization_name} by {user.full_name} for {product_name}.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     fromstr = settings.EMAILS.DEFAULT_EMAIL_FROM_ADDRESS
     tostr = ','.join(send_to)
