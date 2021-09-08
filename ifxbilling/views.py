@@ -146,7 +146,8 @@ def expense_code_request(request):
             if org_contact.role == 'Lab Admin' and org_contact.contact.type == 'Email':
                 send_to.append(org_contact.contact.detail)
         facility = models.Facility.objects.get(name=facility_name)
-        url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/'
+        url =
+            f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/?facility={facility_name}&product={product_name}'
     except Exception as e:
         logger.exception(e)
         return Response(data={'error': f'Error gathering information to create expense code request for {facility_name} {organization_name} by {user.full_name} for {product_name}.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
