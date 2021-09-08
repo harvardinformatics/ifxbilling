@@ -408,7 +408,7 @@ class BillingRecord(models.Model):
         default=100,
     )
     description = models.CharField(
-        max_length=255,
+        max_length=500,
         blank=True,
         null=True,
         default='',
@@ -571,7 +571,7 @@ class Transaction(models.Model):
         help_text='Positive or negative charge in pennies'
     )
     description = models.CharField(
-        max_length=200,
+        max_length=500,
         blank=False,
         null=False,
         default=None,
