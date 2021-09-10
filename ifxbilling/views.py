@@ -8,12 +8,16 @@ import logging
 import json
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.http import HttpResponseBadRequest
+from django.core.validators import validate_email, ValidationError
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
+from ifxmail.client import send, FieldErrorsException
+from ifxurls.urls import FIINE_URL_BASE
 from ifxbilling.fiine import updateUserAccounts
-from ifxbilling import models
+from ifxbilling import models, settings
 
 
 logger = logging.getLogger(__name__)
@@ -126,3 +130,94 @@ def unauthorized(request):
             )
 
     return Response(data=results)
+
+@api_view(('POST',))
+def expense_code_request(request):
+    '''
+    email an expense code request
+    '''
+    user = request.user
+    organization_name = request.data.get('organization')
+    facility_name = request.data.get('facility')
+    product_name = request.data.get('product')
+    emails = request.data.get('emails')
+
+    # ensure there is atleast one valid email
+    email_list = [e.strip() for e in emails.split(',')]
+    valid_emails = []
+    for email in email_list:
+        try:
+            validate_email(email)
+            valid_emails.append(email)
+        except ValidationError:
+            pass
+    if not valid_emails:
+        msg = f'None of the emails supplied were valid: {emails}.'
+        logger.error(msg)
+        return Response(data={'emails': msg}, status=status.HTTP_400_BAD_REQUEST)
+
+    # ensure all parameters are passed in
+    param_errors = {}
+    if organization_name is None:
+        msg = f'A required parameter is missing from data: organization_name - {organization_name}.'
+        logger.error(msg)
+        param_errors['organization'] = msg
+    if facility_name is None:
+        msg = f'A required parameter is missing from data: facility_name - {facility_name}'
+        logger.error(msg)
+        param_errors['facility'] = msg
+    if product_name is None:
+        msg = f'A required parameter is missing from data: product_name - {product_name}'
+        logger.error(msg)
+        param_errors['product'] = msg
+    if param_errors:
+        return Response(data=param_errors, status=status.HTTP_400_BAD_REQUEST)
+
+    logger.info(f'Formatting message for {facility_name} {organization_name} request from {user.full_name} for {product_name}.')
+
+    try:
+        org = models.Organization.objects.get(slug=organization_name)
+        facility = models.Facility.objects.get(name=facility_name)
+        url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/?facility={facility_name}&product={product_name}'
+    except models.Organization.DoesNotExist:
+        msg = f'Organization not found: {organization_name}.'
+        logger.error(msg)
+        return Response(data={'organization': f'Error {msg}'}, status=status.HTTP_400_BAD_REQUEST)
+    except models.Facility.DoesNotExist:
+        msg = f'Facility not found: {facility_name}.'
+        logger.error(msg)
+        return Response(data={'facility': f'Error {msg}'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.exception(e)
+        return Response(data={'error': f'Error gathering information to create expense code request for {facility_name} {organization_name} by {user.full_name} for {product_name}.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    fromstr = settings.EMAILS.DEFAULT_EMAIL_FROM_ADDRESS
+    tostr = ','.join(valid_emails)
+    ccstr = user.email
+    ifxmessage = settings.IFXMESSAGES.EXPENSE_CODE_REQUEST_MESSAGE_NAME
+    data = {
+        'user': user.full_name,
+        'facility': facility_name,
+        'product': product_name,
+        'organization': organization_name,
+        'link': url
+    }
+
+    logger.debug(f'Attempting to send message to {tostr} from {fromstr} with {ifxmessage} with {json.dumps(data)}.')
+    try:
+        send(
+            to=tostr,
+            fromaddr=fromstr,
+            ifxmessage=ifxmessage,
+            field_errors=True,
+            cclist=ccstr.split(','),
+            data=data
+        )
+        msg = 'Successfully sent mailing.'
+        msg_status = status.HTTP_200_OK
+        data = {'message': msg}
+    except FieldErrorsException as e:
+        logger.exception(e)
+        data = e.field_errors
+        msg_status = e.status
+    return Response(data=data, status=msg_status)
