@@ -8,6 +8,7 @@ import logging
 import json
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.utils.http import urlencode
 from django.http import HttpResponseBadRequest
 from django.core.validators import validate_email, ValidationError
 from rest_framework.response import Response
@@ -178,7 +179,8 @@ def expense_code_request(request):
     try:
         org = models.Organization.objects.get(slug=organization_name)
         facility = models.Facility.objects.get(name=facility_name)
-        url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/?facility={facility_name}&product={product_name}'
+        qparams = {'facility': facility_name, 'product':product_name}
+        url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/' + '?' + urlencode(qparams)
     except models.Organization.DoesNotExist:
         msg = f'Organization not found: {organization_name}.'
         logger.error(msg)
