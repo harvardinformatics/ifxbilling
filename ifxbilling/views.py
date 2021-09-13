@@ -180,7 +180,7 @@ def expense_code_request(request):
         org = models.Organization.objects.get(slug=organization_name)
         facility = models.Facility.objects.get(name=facility_name)
         qparams = {'facility': facility_name, 'product':product_name}
-        url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/' + '?' + urlencode(qparams)
+        url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/?{urlencode(qparams)}'
     except models.Organization.DoesNotExist:
         msg = f'Organization not found: {organization_name}.'
         logger.error(msg)
