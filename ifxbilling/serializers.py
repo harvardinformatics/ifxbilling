@@ -204,6 +204,7 @@ class ProductSerializer(serializers.ModelSerializer):
         for attr in ['product_name', 'product_description', 'billing_calculator']:
             setattr(instance, attr, validated_data[attr])
 
+        instance.save()
         instance.rate_set.all().delete()
 
         if 'rates' in self.initial_data and self.initial_data['rates']:
