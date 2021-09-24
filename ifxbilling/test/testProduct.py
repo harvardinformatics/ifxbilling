@@ -50,6 +50,32 @@ class TestProduct(APITestCase):
         self.assertTrue(response.data['billing_calculator'] == 'ifxbilling.calculator.BasicBillingCalculator', f'Incorrect response data {response.data}')
         self.assertTrue(response.data['product_number'], f'Product number not set {response.data}')
 
+    def testProductUpdate(self):
+        '''
+        Ensure that you can update a Product
+        '''
+        data.init()
+        product_data = {
+            'product_name': 'Helium Dewar Test',
+            'product_description': 'A dewar of helium',
+            'facility': 'Liquid Nitrogen Service',
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        product_id = response.data['id']
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
+
+        new_description = 'new description'
+        product_data = {
+            'product_name': 'Helium Dewar Test',
+            'product_description': new_description,
+            'facility': 'Liquid Nitrogen Service',
+        }
+        url = reverse('product-detail', kwargs={ 'pk': product_id })
+        response = self.client.put(url, product_data, format='json')
+
+        self.assertTrue(response.data['product_description'] == new_description, f'Incorrect response data {response.data}')
+
     def testMissingProductName(self):
         '''
         Ensure insertion fails without product name
