@@ -201,9 +201,12 @@ class ProductSerializer(serializers.ModelSerializer):
         product.description = validated_data['product_description']
         FiineAPI.updateProduct(**product.to_dict())
 
-        for attr in ['product_name', 'product_description', 'billing_calculator']:
+        for attr in ['product_name', 'product_description']:
             setattr(instance, attr, validated_data[attr])
+        if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
+            instance.billing_calculator = validated_data['billing_calculator']
 
+        instance.save()
         instance.rate_set.all().delete()
 
         if 'rates' in self.initial_data and self.initial_data['rates']:
