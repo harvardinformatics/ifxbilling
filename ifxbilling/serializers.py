@@ -246,11 +246,13 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     product_user = UserSerializer(many=False, read_only=True)
     start_date = serializers.DateTimeField(required=False)
     description = serializers.CharField(max_length=2000, required=False)
+    created = serializers.DateTimeField(read_only=True)
+    updated = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = models.ProductUsage
-        fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created', 'start_date', 'description')
-        read_only_fields = ('id', 'created')
+        fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created', 'start_date', 'description', 'updated')
+        read_only_fields = ('id', 'created', 'updated')
 
     @transaction.atomic
     def create(self, validated_data):
