@@ -361,6 +361,7 @@ class AbstractProductUsage(models.Model):
         help_text='Description of usage'
     )
     created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True)
 

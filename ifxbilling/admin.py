@@ -248,6 +248,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'quantity',
         'units',
         'created',
+        'updated',
         'start_date',
     )
     list_display = (
@@ -267,7 +268,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'product_user__full_name',
      )
     list_filter = ('year', 'month', 'product', 'product_user')
-    readonly_fields = ('created',)
+    readonly_fields = ('created', 'updated')
     autocomplete_fields = ('product_user', )
 
 
