@@ -131,6 +131,8 @@ class BasicBillingCalculator():
 
         # Get the organization associated with the ProductUsage to use for Account selection
         organization = self.getOrganizationForProductUsage(product_usage)
+        if not organization:
+            raise Exception(f'Unable to get an organization for {product_usage}')
 
         user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
             product=product_usage.product,
