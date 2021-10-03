@@ -111,6 +111,13 @@ class BasicBillingCalculator():
         )
         return transactions_data
 
+    def getOrganizationForProductUsage(self, product_usage):
+        '''
+        Return the Organization associated with a ProductUsage.  This is needed to ensure that the correct Account is used for billing.
+        As a default, the user primary_affiliation is returned, but this should probably evolve to a field on ProductUsage
+        '''
+        return product_usage.product_user.primary_affiliation
+
     def getAccountPercentagesForProductUsage(self, product_usage):
         '''
         For a given ProductUsage, return an array of account (Account object) and percent that should be used.  This is only called
@@ -121,7 +128,15 @@ class BasicBillingCalculator():
         account_percentages = []
         if not product_usage.product_user:
             raise Exception(f'No product user for {product_usage}')
-        user_product_accounts = product_usage.product_user.userproductaccount_set.filter(product=product_usage.product, is_valid=True)
+
+        # Get the organization associated with the ProductUsage to use for Account selection
+        organization = self.getOrganizationForProductUsage(product_usage)
+
+        user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
+            product=product_usage.product,
+            account__organization=organization,
+            is_valid=True
+        )
         if len(user_product_accounts) > 0:
             for user_product_account in user_product_accounts:
                 account_percentages.append(
@@ -131,7 +146,7 @@ class BasicBillingCalculator():
                     }
                 )
         else:
-            user_account = product_usage.product_user.useraccount_set.filter(is_valid=True).first()
+            user_account = product_usage.product_user.useraccount_set.filter(account__organization=organization, is_valid=True).first()
             if user_account:
                 account_percentages.append(
                     {
