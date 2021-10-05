@@ -364,7 +364,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     '''
     product_usage = ProductUsageSerializer(read_only=True)
     charge = serializers.IntegerField(read_only=True)
-    description = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    description = serializers.CharField(max_length=1000, required=False, allow_blank=True)
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
     account = AccountSerializer(many=False, read_only=True)
