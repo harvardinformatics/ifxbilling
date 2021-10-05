@@ -409,7 +409,7 @@ class BillingRecord(models.Model):
         default=100,
     )
     description = models.CharField(
-        max_length=500,
+        max_length=1000,
         blank=True,
         null=True,
         default='',
