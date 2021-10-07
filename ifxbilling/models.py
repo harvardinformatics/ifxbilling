@@ -333,13 +333,11 @@ class AbstractProductUsage(models.Model):
         null=False,
         blank=False,
         help_text='Calendar year in which the usage occurs',
-        default=thisYear
     )
     month = models.IntegerField(
         null=False,
         blank=False,
         help_text='Month in which the usage occurs',
-        default=thisMonth
     )
     quantity = models.BigIntegerField(
         null=False,
@@ -376,6 +374,10 @@ class ProductUsage(AbstractProductUsage):
     def save(self, *args, **kwargs):
         if not self.description:
             self.description = f'{self.quantity} {self.units} of {self.product} for {self.product_user} on {self.start_date}'
+        if not self.month:
+            self.month = self.start_date.month
+        if not self.year:
+            self.year = self.start_date.year
         super().save(*args, **kwargs)
 
     def __str__(self):
