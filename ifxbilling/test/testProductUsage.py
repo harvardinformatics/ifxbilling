@@ -40,14 +40,15 @@ class TestProductUsage(APITestCase):
         Insert a minimal ProductUsage.  Ensure that month and year get set.
         '''
         data.init('Product')
-
+        year = 2021
+        month = 2
         product_usage_data = {
             'product': 'Helium Dewar',
             'product_user': {
                 'ifxid': data.USERS[0]['ifxid']
             },
             'quantity': 1,
-            'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+            'start_date': timezone.make_aware(datetime(year, month, 1)),
             'description': 'Howdy',
         }
         url = reverse('productusage-list')
@@ -55,8 +56,8 @@ class TestProductUsage(APITestCase):
         self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.data}')
 
         product_usage = ProductUsage.objects.get(id=response.data['id'])
-        self.assertTrue(product_usage.year == timezone.now().year, f'Year not properly set {product_usage.year}')
-        self.assertTrue(product_usage.month == timezone.now().month, f'Month not properly set {product_usage.year}')
+        self.assertTrue(product_usage.year == year, f'Year not properly set {product_usage.year}')
+        self.assertTrue(product_usage.month == month, f'Month not properly set {product_usage.year}')
         self.assertTrue(product_usage.description == 'Howdy', f'Incorrect product usage description {product_usage.description}')
 
     def testMissingProduct(self):

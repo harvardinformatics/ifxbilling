@@ -28,3 +28,8 @@ Submodules
    ifxbilling.migrations.0014_product_facility
    ifxbilling.migrations.0015_rate_max_qty
    ifxbilling.migrations.0016_auto_20210824_2106
+   ifxbilling.migrations.0017_auto_20210903_1953
+   ifxbilling.migrations.0018_auto_20210924_1830
+   ifxbilling.migrations.0019_productusage_updated
+   ifxbilling.migrations.0020_auto_20210928_1907
+   ifxbilling.migrations.0021_auto_20211008_1610
