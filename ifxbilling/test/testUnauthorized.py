@@ -40,7 +40,8 @@ class TestUnauthorized(APITestCase):
         Ensure that user with a product usage and no authorized accounts is returned.
         '''
         data.init(['Account', 'UserAccount', 'Product'])
-
+        year = 2021
+        month = 2
         ifxid_with_user_account = 'IFXID000000000D'
         ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
@@ -50,7 +51,7 @@ class TestUnauthorized(APITestCase):
                     'ifxid': ifxid
                 },
                 'quantity': 1,
-                'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+                'start_date': timezone.make_aware(datetime(year, month, 1)),
                 'description': 'Howdy',
             }
             url = reverse('productusage-list')
@@ -58,7 +59,7 @@ class TestUnauthorized(APITestCase):
             self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.status_code}')
 
         url = reverse('unauthorized')
-        response = self.client.get(url)
+        response = self.client.get(url, {'year': year, 'month': month})
         unauthorized = response.data
         self.assertTrue(len(unauthorized) == 1, f'Incorrect number of unauthorized users {unauthorized}')
         self.assertTrue(unauthorized[0]['user']['ifxid'] == ifxid_without_user_account, f'Incorrect user returned {unauthorized}')
@@ -68,6 +69,8 @@ class TestUnauthorized(APITestCase):
         Ensure that user with a user product account is considered authorized.
         '''
         data.init(['Account', 'Product', 'UserProductAccount'])
+        year = 2021
+        month = 2
 
         ifxid_with_user_account = 'IFXID000000000D'
         ifxid_without_user_account = 'IFXID000000000E'
@@ -78,7 +81,7 @@ class TestUnauthorized(APITestCase):
                     'ifxid': ifxid
                 },
                 'quantity': 1,
-                'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+                'start_date': timezone.make_aware(datetime(year, month, 1)),
                 'description': 'Howdy',
             }
             url = reverse('productusage-list')
@@ -89,7 +92,7 @@ class TestUnauthorized(APITestCase):
         self.assertFalse(UserAccount.objects.filter(user__ifxid=ifxid_with_user_account).exists(), f'User should not have a UserAccount, just a UserProductAccount')
 
         url = reverse('unauthorized')
-        response = self.client.get(url)
+        response = self.client.get(url, {'year': year, 'month': month})
         unauthorized = response.data
         self.assertTrue(len(unauthorized) == 1, f'Incorrect number of unauthorized users {unauthorized}')
         self.assertTrue(unauthorized[0]['user']['ifxid'] == ifxid_without_user_account, f'Incorrect user returned {unauthorized}')
@@ -99,6 +102,8 @@ class TestUnauthorized(APITestCase):
         Ensure that user with a user product account for a different product is not considered authorized
         '''
         data.init(['Account', 'Product', 'UserProductAccount'])
+        year = 2021
+        month = 2
 
         ifxid_with_user_account = 'IFXID000000000D'
         ifxid_without_user_account = 'IFXID000000000E'
@@ -109,7 +114,7 @@ class TestUnauthorized(APITestCase):
                     'ifxid': ifxid
                 },
                 'quantity': 1,
-                'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+                'start_date': timezone.make_aware(datetime(year, month, 1)),
                 'description': 'Howdy',
             }
             url = reverse('productusage-list')
@@ -120,7 +125,7 @@ class TestUnauthorized(APITestCase):
         self.assertFalse(UserAccount.objects.filter(user__ifxid=ifxid_with_user_account).exists(), f'User should not have a UserAccount, just a UserProductAccount')
 
         url = reverse('unauthorized')
-        response = self.client.get(url)
+        response = self.client.get(url, {'year': year, 'month': month})
         unauthorized = response.data
         self.assertTrue(len(unauthorized) == 2, f'Incorrect number of unauthorized users {unauthorized}')
 
@@ -129,6 +134,8 @@ class TestUnauthorized(APITestCase):
         Ensure that user with a valid user account, but inactive expense code is returned
         '''
         data.init(['Account', 'Product', 'UserAccount'])
+        year = 2021
+        month = 2
 
         ifxid_with_user_account = 'IFXID000000000D'
         ifxid_without_user_account = 'IFXID000000000E'
@@ -139,7 +146,7 @@ class TestUnauthorized(APITestCase):
                     'ifxid': ifxid
                 },
                 'quantity': 1,
-                'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+                'start_date': timezone.make_aware(datetime(year, month, 1)),
                 'description': 'Howdy',
             }
             url = reverse('productusage-list')
@@ -150,6 +157,6 @@ class TestUnauthorized(APITestCase):
         Account.objects.all().update(active=False)
 
         url = reverse('unauthorized')
-        response = self.client.get(url)
+        response = self.client.get(url, {'year': year, 'month': month})
         unauthorized = response.data
         self.assertTrue(len(unauthorized) == 2, f'Incorrect number of unauthorized users {unauthorized}')
