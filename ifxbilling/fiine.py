@@ -63,7 +63,14 @@ def updateUserAccounts(user):
             fiine_accounts.append(facility_account_data)
     logger.debug('fiine_person has %d accounts', len(fiine_accounts))
 
-    product_accounts = [acct.to_dict() for acct in map(replaceObjectCodeInFiineAccount, fiine_person.product_accounts)]
+    product_accounts = []
+    for acct in map(replaceObjectCodeInFiineAccount, fiine_person.product_accounts):
+        # Don't include authorizations from non-local products
+        try:
+            models.Product.objects.get(product_number=acct.product.product_number)
+            product_accounts.append(acct.to_dict())
+        except models.Product.DoesNotExist:
+            pass
 
     # Go through fiine_accounts and product accounts. Create any missing Account objects or update with Fiine information
     for person_account_data in fiine_accounts + product_accounts:
