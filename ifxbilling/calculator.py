@@ -11,9 +11,11 @@ All rights reserved.
 @license: GPL v2.0
 '''
 import logging
+import traceback
+import json
 from importlib import import_module
 from django.db import transaction
-from ifxbilling.models import BillingRecord, Transaction, BillingRecordState
+from ifxbilling.models import BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing
 
 
 logger = logging.getLogger('ifxbilling')
@@ -176,20 +178,34 @@ class BasicBillingCalculator():
         List of new BillingRecords is returned.
         '''
         brs = []
-        with transaction.atomic():
-            if BillingRecord.objects.filter(product_usage=product_usage).exists():
-                if recalculate:
-                    BillingRecord.objects.filter(product_usage=product_usage).delete()
-                else:
-                    raise Exception(f'Billing record already exists for usage {product_usage}')
-
-            if not account_percentages:
-                account_percentages = self.getAccountPercentagesForProductUsage(product_usage)
-            logger.debug('Creating %d billing records for product_usage %s', len(account_percentages), str(product_usage))
-            for account_percentage in account_percentages:
-                account = account_percentage['account']
-                percent = account_percentage['percent']
-                brs.append(self.createBillingRecordForUsage(product_usage, account, percent, year, month, description, usage_data))
+        if BillingRecord.objects.filter(product_usage=product_usage).exists():
+            if recalculate:
+                BillingRecord.objects.filter(product_usage=product_usage).delete()
+            else:
+                raise Exception(f'Billing record already exists for usage {product_usage}')
+        try: # errors are captured in the product_usage_processing table
+            with transaction.atomic():
+                if not account_percentages:
+                    account_percentages = self.getAccountPercentagesForProductUsage(product_usage)
+                logger.debug('Creating %d billing records for product_usage %s', len(account_percentages), str(product_usage))
+                for account_percentage in account_percentages:
+                    account = account_percentage['account']
+                    percent = account_percentage['percent']
+                    brs.append(self.createBillingRecordForUsage(product_usage, account, percent, year, month, description, usage_data))
+        except Exception as e:
+            message = traceback.format_exc()[-20000:] # limit to db column max_length
+            # check for previous processing errors, only keep the latest
+            if not self.update_product_usage_processing(product_usage, {'error_message': message, 'resolved': False}):
+                # nothing to update, create new
+                product_usage_processing = ProductUsageProcessing(
+                    product_usage=product_usage,
+                    error_message=message
+                )
+                product_usage_processing.save()
+            raise e
+        else:
+            # processing complete update any product_usage_processing as resolved
+            self.update_product_usage_processing(product_usage, {'resolved': True}, update_only_unresolved = True)
         return brs
 
     def createBillingRecordForUsage(self, product_usage, account, percent, year=None, month=None, description=None, usage_data=None):
@@ -207,10 +223,25 @@ class BasicBillingCalculator():
             year = product_usage.year
         if not month:
             month = product_usage.month
-
         transactions_data = self.calculateCharges(product_usage, percent, usage_data)
         rate = self.getRateDescriptionFromTransactions(transactions_data)
-        return self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, rate, description)
+        self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, rate, description)
+
+    def update_product_usage_processing(self, product_usage, attrs, update_only_unresolved = False):
+        try:
+            # if exists then update
+            crit = {'product_usage': product_usage}
+            if update_only_unresolved: # only return unresolved
+                crit['resolved'] = False
+            processing = ProductUsageProcessing.objects.get(**crit)
+            logger.info(f'Found previous ProductUsageProcessing {processing.id} will update it with {json.dumps(attrs)}.')
+            for k, v in attrs.items():
+                setattr(processing, k, v)
+            processing.save()
+            return True
+        except ProductUsageProcessing.DoesNotExist:
+            # nothing to update
+            return False
 
     def createBillingRecord(self, product_usage, account, year, month, transactions_data, percent, rate, description=None):
         '''

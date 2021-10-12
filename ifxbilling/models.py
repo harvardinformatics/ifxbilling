@@ -384,6 +384,8 @@ class ProductUsage(AbstractProductUsage):
         return self.description
 
 
+
+
 @with_author
 class BillingRecord(models.Model):
     '''
@@ -614,3 +616,20 @@ class AccountUser(get_user_model()):
         It's a proxy
         '''
         proxy = True
+
+class ProductUsageProcessing(models.Model):
+    '''
+    Store error messages from product usage processing into billing records
+    '''
+    class Meta:
+        db_table = 'product_usage_processing'
+    product_usage = models.ForeignKey(ProductUsage, on_delete=models.CASCADE)
+    error_message = models.CharField(
+        max_length=20000,
+        null=True,
+        blank=True,
+        help_text='Error message from processing into billing record.'
+    )
+    resolved = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
