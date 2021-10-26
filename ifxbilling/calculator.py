@@ -192,8 +192,10 @@ class BasicBillingCalculator():
                     account = account_percentage['account']
                     percent = account_percentage['percent']
                     brs.append(self.createBillingRecordForUsage(product_usage, account, percent, year, month, description, usage_data))
+                # processing complete update any product_usage_processing as resolved
+                self.update_product_usage_processing(product_usage, {'resolved': True}, update_only_unresolved=True)
         except Exception as e:
-            message = traceback.format_exc()[-20000:] # limit to db column max_length
+            message = traceback.format_exc()[-2000:] # limit to db column max_length
             # check for previous processing errors, only keep the latest
             if not self.update_product_usage_processing(product_usage, {'error_message': message, 'resolved': False}):
                 # nothing to update, create new
@@ -203,9 +205,6 @@ class BasicBillingCalculator():
                 )
                 product_usage_processing.save()
             raise e
-        else:
-            # processing complete update any product_usage_processing as resolved
-            self.update_product_usage_processing(product_usage, {'resolved': True}, update_only_unresolved = True)
         return brs
 
     def createBillingRecordForUsage(self, product_usage, account, percent, year=None, month=None, description=None, usage_data=None):
@@ -225,9 +224,9 @@ class BasicBillingCalculator():
             month = product_usage.month
         transactions_data = self.calculateCharges(product_usage, percent, usage_data)
         rate = self.getRateDescriptionFromTransactions(transactions_data)
-        self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, rate, description)
+        return self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, rate, description)
 
-    def update_product_usage_processing(self, product_usage, attrs, update_only_unresolved = False):
+    def update_product_usage_processing(self, product_usage, attrs, update_only_unresolved=False):
         try:
             # if exists then update
             crit = {'product_usage': product_usage}

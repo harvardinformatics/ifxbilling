@@ -625,7 +625,7 @@ class ProductUsageProcessing(models.Model):
         db_table = 'product_usage_processing'
     product_usage = models.ForeignKey(ProductUsage, on_delete=models.CASCADE)
     error_message = models.CharField(
-        max_length=20000,
+        max_length=2000,
         null=True,
         blank=True,
         help_text='Error message from processing into billing record.'

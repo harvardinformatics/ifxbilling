@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name='ProductUsageProcessing',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('error_message', models.CharField(blank=True, help_text='Error message from processing into billing record.', max_length=20000, null=True)),
+                ('error_message', models.CharField(blank=True, help_text='Error message from processing into billing record.', max_length=2000, null=True)),
                 ('resolved', models.BooleanField(default=False)),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('updated', models.DateTimeField(auto_now=True)),
