@@ -250,13 +250,13 @@ def clearTestData():
     except Exception:
         pass
 
+
+def clearFiineProducts():
     # Clear stuff from fiine
     products = FiineAPI.listProducts()
     for product in products:
         if product.product_name == 'Helium Dewar Test':
             FiineAPI.deleteProduct(product_number=product.product_number)
-
-
 
 
 def init(types=None):
@@ -295,10 +295,7 @@ def init(types=None):
                 data_copy['product_user'] = get_user_model().objects.get(full_name=product_usage_data['product_user'])
                 models.ProductUsage.objects.create(**data_copy)
         if 'UserAccount' in types:
-            for user_account_data in USER_ACCOUNTS:
-                account = models.Account.objects.get(name=user_account_data['account'])
-                user = get_user_model().objects.get(full_name=user_account_data['user'])
-                models.UserAccount.objects.create(account=account, user=user, is_valid=user_account_data['is_valid'])
+            init_user_accounts()
         if 'UserProductAccount' in types:
             for user_product_account_data in USER_PRODUCT_ACCOUNTS:
                 account = models.Account.objects.get(name=user_product_account_data['account'])
@@ -311,3 +308,9 @@ def init(types=None):
                     is_valid=user_product_account_data['is_valid'],
                     percent=user_product_account_data['percent']
                 )
+
+def init_user_accounts():
+    for user_account_data in USER_ACCOUNTS:
+        account = models.Account.objects.get(name=user_account_data['account'])
+        user = get_user_model().objects.get(full_name=user_account_data['user'])
+        models.UserAccount.objects.create(account=account, user=user, is_valid=user_account_data['is_valid'])

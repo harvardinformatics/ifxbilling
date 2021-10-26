@@ -61,7 +61,7 @@ services:
     ports:
       - 8091:80
     environment:
-      - IFXBILLING_USERNAME=ifxbilling
+      - IFXBILLING_USERNAME=root
       - IFXBILLING_PASSWORD=ifxbilling
       - IFXBILLING_DATABASE=ifxbilling
       - IFXBILLING_HOSTNAME=db
