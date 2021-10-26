@@ -32,6 +32,7 @@ class TestUpdateUserAccounts(APITestCase):
         setup
         '''
         data.clearTestData()
+        data.clearFiineProducts()
         self.superuser = get_user_model().objects.create_superuser('john', 'john@snow.com', 'johnpassword')
         self.token = Token(user=self.superuser)
         self.token.save()

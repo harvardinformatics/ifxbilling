@@ -323,3 +323,29 @@ class AccountUserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(models.AccountUser, AccountUserAdmin)
+
+class ProductUsageProcessingAdmin(admin.ModelAdmin):
+    '''
+    ProductUsageProcessing
+    '''
+    fields = (
+        'product_usage',
+        'error_message',
+        'resolved',
+    )
+    list_display = (
+        'id',
+        'product_usage',
+        'error_message',
+        'resolved',
+        'created',
+        'updated',
+    )
+    search_fields = (
+        'product_usage',
+        'error_message',
+    )
+    list_filter = ('resolved', )
+
+
+admin.site.register(models.ProductUsageProcessing, ProductUsageProcessingAdmin)

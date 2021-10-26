@@ -12,7 +12,6 @@ All rights reserved.
 '''
 
 import logging
-import pytz
 from copy import deepcopy
 from django.db import IntegrityError
 from django.contrib.auth import get_user_model
@@ -201,4 +200,3 @@ def createNewProduct(product_name, product_description, facility, billing_calcul
             )
         if e.status == status.HTTP_401_UNAUTHORIZED:
             raise NotAuthenticated(detail=str(e))
-

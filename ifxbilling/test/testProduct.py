@@ -34,6 +34,9 @@ class TestProduct(APITestCase):
         self.client.login(username='john', password='johnpassword')
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
+    def tearDown(self):
+        data.clearFiineProducts()
+
     def testProductInsert(self):
         '''
         Insert a minimal Product

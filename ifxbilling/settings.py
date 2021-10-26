@@ -24,6 +24,7 @@ SECRET_KEY = os.environ.get('IFXBILLING_DJANGO_KEY','lkoqwimoismoaiwelj23ajsd')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('IFXBILLING_DEBUG', 'FALSE').upper() == 'TRUE'
+LOGLEVEL = os.environ.get('IFXBILLING_LOGLEVEL', 'INFO')
 
 IFXBILLING_PROCESSOR_MODULE = 'test'
 AUTH_USER_MODEL = 'ifxuser.IfxUser'
@@ -154,6 +155,57 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+}
+
+## Logging setup
+# Logging setup.  Meant to log everything to stderrr
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue'
+        },
+    },
+    'formatters': {
+        'console': {
+            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'console',
+            'level': LOGLEVEL,
+            'filters': ['require_debug_false'],
+        },
+        'console_debug': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'console',
+            'level': LOGLEVEL,
+            'filters': ['require_debug_true'],
+        },
+        'mail_admins_debug': {
+            'class': 'django.utils.log.AdminEmailHandler',
+            'level': 'ERROR',
+            'filters': ['require_debug_true'],
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+        },
+    },
+    'loggers': {
+        'ifxbilling': {
+            'handlers': ['console', 'console_debug', 'mail_admins'],
+            'level': LOGLEVEL,
+            'propagate': False,
+        }
+    },
 }
 
 
