@@ -91,6 +91,59 @@ class TestBillingRecord(APITestCase):
         self.assertTrue(response.data['year'] == timezone.now().year, f'Incorrect year setting {response.data}')
         self.assertTrue(response.data['month'] == timezone.now().month, f'Incorrect month setting {response.data}')
 
+    def testBillingRecordUpdate(self):
+        '''
+        Ensure that account can be changed on a billing record, even if the id is mismatched (support the update-from-fiine case).
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage'])
+
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        account = models.Account.objects.get(code='370-11111-8100-000775-600200-0000-44075')
+        new_account = models.Account.objects.get(code='370-31230-8100-000775-600200-0000-44075')
+
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'current_state': 'INIT',
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                },
+                {
+                    'charge': -10,
+                    'description': '10%% off coupon',
+                }
+            ]
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+        self.assertTrue(response.data['account']['code'] == account.code, f'Incorrect account set {response.data}')
+
+        # Update only code and organization; id should not matter
+        saved_billing_record_data = response.data
+        saved_billing_record_data['account']['code'] = new_account.code
+        # Ensure that we can update by account name (from fiine)
+        saved_billing_record_data['account']['organization'] = new_account.organization.name
+
+        url += 'bulk_update/'
+        response = self.client.post(url, [saved_billing_record_data], format='json')
+        self.assertTrue(response.status_code == status.HTTP_200_OK, f'Failed to post {response.data}')
+
+        # An array should be returned
+        updated_billing_record_data = response.data[0]
+        self.assertTrue(updated_billing_record_data['account']['code'] == new_account.code, f'Incorrect account code returned {updated_billing_record_data}')
+        self.assertTrue(updated_billing_record_data['account']['id'] == new_account.id, f'Incorrect account id set {updated_billing_record_data}')
+
+
     def testDifferentAuthor(self):
         '''
         Ensure that when real_user_ifxid is set, it will be the author of the BillingRecord

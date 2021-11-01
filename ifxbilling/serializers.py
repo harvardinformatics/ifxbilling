@@ -13,6 +13,7 @@ appropriate permissions.
 import re
 import logging
 from django.db import transaction
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers, viewsets
@@ -513,12 +514,13 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             logger.exception(e)
             raise serializers.ValidationError(
                 detail={
-                    'product_usage': 'Cannot find the specifiec product usage record.'
+                    'product_usage': 'Cannot find the specific product usage record.'
                 }
             )
 
         account_data = self.initial_data['account']
         try:
+            # This can be an id since, if billing records are ever created, it should be in the facility application
             account_id = account_data['id']
             account = models.Account.objects.get(id=account_id)
             validated_data['account'] = account
@@ -593,11 +595,22 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 }
             )
 
-        for attr in ['account', 'description']:
-            if attr in validated_data:
-                setattr(instance, attr, validated_data[attr])
+        # Find account for updating based on code and organization because the id may be from fiine
+        account_data = initial_data['account']
+        try:
+            # Organization may be name if coming from fiine or slug if coming from facility application
+            account = models.Account.objects.get(Q(organization__name=account_data['organization']) | Q(organization__slug=account_data['organization']), code=account_data['code'])
+            instance.account = account
+        except models.Account.DoesNotExist:
+            logger.error('Could not find account with code %s and organization %s when updating billing record %d', account_data['code'], account_data['organization'], instance.id)
+            raise serializers.ValidationError(
+                detail={
+                    'account': f'Cannot find code {account_data["code"]} to update billing record {instance}'
+                }
+            )
 
-        validated_data['updated_by'] = self.get_billing_record_author(initial_data)
+        instance.description = validated_data['description']
+        instance.updated_by = self.get_billing_record_author(initial_data)
 
         instance.save()
 
