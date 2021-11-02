@@ -329,6 +329,12 @@ class AbstractProductUsage(models.Model):
         abstract = True
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     product_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    logged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        help_text='User that logged the usage (may be different than user)',
+        on_delete=models.PROTECT,
+        related_name='product_usage_logger'
+    )
     year = models.IntegerField(
         null=False,
         blank=False,
@@ -357,6 +363,11 @@ class AbstractProductUsage(models.Model):
         null=True,
         blank=True,
         help_text='Description of usage'
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        help_text='Organization responsible for the account.'
     )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

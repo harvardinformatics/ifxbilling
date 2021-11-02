@@ -242,6 +242,8 @@ class ProductUsageAdmin(admin.ModelAdmin):
     fields = (
         'product',
         'product_user',
+        'organization',
+        'logged_by',
         'description',
         'year',
         'month',
@@ -254,6 +256,8 @@ class ProductUsageAdmin(admin.ModelAdmin):
     list_display = (
         'product',
         'product_user',
+        'organization',
+        'logged_by',
         'quantity',
         'units',
         'month',
@@ -290,6 +294,7 @@ class ProductUsageInlineAdmin(admin.TabularInline):
     Inline for ProductUsage
     '''
     model = models.ProductUsage
+    fk_name = 'product_user'
     autocomplete_fields = ('product',)
     extra = 0
 
