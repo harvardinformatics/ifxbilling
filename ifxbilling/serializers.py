@@ -558,6 +558,13 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         Only the account and description may be modified.  Transactions and billing record states may be added.
         Added billing record states will be used to call setState
         '''
+        if instance.current_state == 'FINAL':
+            raise serializers.ValidationError(
+                detail={
+                    'current_state': 'Cannot update billing records that are in the FINAL state'
+                }
+            )
+
         initial_data = self.initial_data
         if bulk_id is not None:
             initial_data = self.initial_data[bulk_id]

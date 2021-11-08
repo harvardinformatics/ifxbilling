@@ -437,3 +437,49 @@ class TestBillingRecord(APITestCase):
         self.assertTrue(response.data['current_state'] == 'FINAL', f'Incorrect billing record state {response.data["current_state"]}')
         br = models.BillingRecord.objects.get(id=int(response.data['id']))
         self.assertRaises(ProtectedError, br.delete)
+
+    def testUpdateFaile(self):
+        '''
+        Ensure that billing records cannot be updated if state is FINAL
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        account = models.Account.objects.first()
+
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                },
+                {
+                    'charge': -10,
+                    'description': '10%% off coupon',
+                }
+            ],
+            'billing_record_states': [
+                {
+                    'name': 'FINAL'
+                }
+            ]
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+
+        saved_billing_record = response.data
+
+        url = reverse('billing-record-detail', kwargs={ 'pk': saved_billing_record['id'] })
+        response = self.client.put(url, saved_billing_record, format='json')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response code {response.status_code}')
+        self.assertTrue(response.data['current_state'] == 'Cannot update billing records that are in the FINAL state', f'Incorrect response data {response.data}')
