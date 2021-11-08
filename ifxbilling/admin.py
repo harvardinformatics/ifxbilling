@@ -119,6 +119,7 @@ class AccountAdmin(admin.ModelAdmin):
     list_filter = ('account_type', 'active', 'organization__name')
     readonly_fields = ('created', 'updated')
     inlines = (UserAccountInlineAdmin,)
+    autocomplete_fields = ('organization',)
     formfield_overrides = {
         CharField: {'widget': TextInput(attrs={'size':'60'})},
     }
@@ -231,6 +232,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
     list_filter = ('year', 'month', 'account__root', 'product_usage__product__product_name', 'account__name')
     readonly_fields = ('created', 'updated',)
     inlines = (TransactionInlineAdmin, BillingRecordStateInlineAdmin)
+    autocomplete_fields = ('account', 'product_usage')
 
 admin.site.register(models.BillingRecord, BillingRecordAdmin)
 
