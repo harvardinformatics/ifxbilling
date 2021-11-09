@@ -501,7 +501,7 @@ class BillingRecord(models.Model):
 
     def __str__(self):
         dollar_charge = Decimal(self.charge / 100).quantize(Decimal('1.00'))
-        return f'Charge of {dollar_charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
+        return f'Charge of ${dollar_charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
 
 
 @receiver(post_save, sender=BillingRecord)
