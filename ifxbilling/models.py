@@ -12,6 +12,7 @@ All rights reserved.
 '''
 import re
 import logging
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import models
@@ -499,7 +500,8 @@ class BillingRecord(models.Model):
             raise ProtectedError('Billing Records can not be deleted.', self)
 
     def __str__(self):
-        return f'Charge of {self.charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
+        dollar_charge = Decimal(self.charge / 100).quantize(Decimal('1.00'))
+        return f'Charge of ${dollar_charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
 
 
 @receiver(post_save, sender=BillingRecord)
