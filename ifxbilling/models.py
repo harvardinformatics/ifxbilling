@@ -177,7 +177,7 @@ class Account(models.Model):
             self.slug = 'PO %s (%s)' % (self.code, self.organization.name)
         super().save(*args, **kwargs)
 
-    def replace_object_code(self, object_code):
+    def replaceObjectCode(self, object_code):
         '''
         Return a string with the object code replaced
         '''
