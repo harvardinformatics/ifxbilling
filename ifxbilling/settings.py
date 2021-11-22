@@ -209,11 +209,7 @@ LOGGING = {
 }
 
 
-class FACILITY():
-    '''
-    Facility data
-    '''
-    NAME = 'Helium Recovery Service'
+FACILITIES = ['Helium Recovery Service']
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 

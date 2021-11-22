@@ -32,13 +32,15 @@ FACILITIES = [
         'name': 'Helium Recovery Service',
         'application_username': 'hers',
         'credit_code': '370-32556-8254-018485-627247-0000-00000',
-        'invoice_prefix': 'HE'
+        'invoice_prefix': 'HE',
+        'object_code': '6600',
     },
     {
         'name': 'Liquid Nitrogen Service',
         'application_username': 'hers',
         'credit_code': '370-32556-8254-018485-627258-0000-00000',
-        'invoice_prefix': 'LN2'
+        'invoice_prefix': 'LN2',
+        'object_code': '6600',
     },
 ]
 
@@ -196,7 +198,9 @@ PRODUCT_USAGES = [
         'product_user': 'Slurpy Slurpiston',
         'quantity': 1,
         'units': 'ea',
-        'start_date': timezone.make_aware(datetime(2021, 2, 1))
+        'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'logged_by': 'john@snow.com',
     },
     {
         'product': 'Helium Dewar',
@@ -205,7 +209,9 @@ PRODUCT_USAGES = [
         'units': 'ea',
         'year': 1900,
         'month': 1,
-        'start_date': timezone.make_aware(datetime(1900, 1, 1))
+        'start_date': timezone.make_aware(datetime(1900, 1, 1)),
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'logged_by': 'john@snow.com',
     },
     {
         'product': 'Helium Dewar',
@@ -214,7 +220,9 @@ PRODUCT_USAGES = [
         'units': 'ea',
         'year': 2020,
         'month': 2,
-        'start_date': timezone.make_aware(datetime(2020, 2, 1))
+        'start_date': timezone.make_aware(datetime(2020, 2, 1)),
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'logged_by': 'john@snow.com',
     },
     {
         'product': 'Helium Dewar',
@@ -223,7 +231,9 @@ PRODUCT_USAGES = [
         'units': 'ea',
         'year': 2021,
         'month': 3,
-        'start_date': timezone.make_aware(datetime(2020, 3, 1))
+        'start_date': timezone.make_aware(datetime(2020, 3, 1)),
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'logged_by': 'john@snow.com',
     },
 ]
 
@@ -246,7 +256,7 @@ def clearTestData():
     Organization.objects.all().delete()
 
     try:
-        get_user_model().objects.filter(username='john', email='john@snow.com').delete()
+        get_user_model().objects.filter(email='john@snow.com').delete()
     except Exception:
         pass
 
@@ -293,6 +303,8 @@ def init(types=None):
                 data_copy = deepcopy(product_usage_data)
                 data_copy['product'] = models.Product.objects.get(product_name=product_usage_data['product'])
                 data_copy['product_user'] = get_user_model().objects.get(full_name=product_usage_data['product_user'])
+                data_copy['organization'] = Organization.objects.get(slug=data_copy.pop('organization'))
+                data_copy['logged_by'] = get_user_model().objects.get(email=data_copy.pop('logged_by'))
                 models.ProductUsage.objects.create(**data_copy)
         if 'UserAccount' in types:
             init_user_accounts()
