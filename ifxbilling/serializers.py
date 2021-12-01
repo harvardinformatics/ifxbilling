@@ -249,10 +249,26 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     description = serializers.CharField(max_length=2000, required=False)
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)
+    logged_by = UserSerializer(many=False, read_only=True, required=False)
+    organization = serializers.SlugRelatedField(slug_field='slug', queryset=Organization.objects.all())
 
     class Meta:
         model = models.ProductUsage
-        fields = ('id', 'product', 'product_user', 'year', 'month', 'quantity', 'units', 'created', 'start_date', 'description', 'updated')
+        fields = (
+            'id',
+            'product',
+            'product_user',
+            'year',
+            'month',
+            'quantity',
+            'units',
+            'created',
+            'start_date',
+            'description',
+            'updated',
+            'logged_by',
+            'organization',
+        )
         read_only_fields = ('id', 'created', 'updated')
 
     @transaction.atomic
@@ -277,6 +293,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
             )
         if 'start_date' not in validated_data:
             validated_data['start_date'] = timezone.now()
+        validated_data['logged_by'] = self.context['request'].user
         product_usage = models.ProductUsage.objects.create(**validated_data)
         return product_usage
 

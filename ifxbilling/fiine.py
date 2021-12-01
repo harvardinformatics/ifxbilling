@@ -27,18 +27,17 @@ from ifxbilling import models
 
 logger = logging.getLogger(__name__)
 
-def replaceObjectCodeInFiineAccount(acct_data):
+def replaceObjectCodeInFiineAccount(acct_data, object_code):
     '''
-    Replace object code if settings.FACILITY.OBJECT_CODE exists
+    Replace object code and return dictionary version of FiineAPI account
     Expense code should be in acct_data.account.code (it should be an account from FiineAPI)
     '''
-    if hasattr(settings.FACILITY, 'OBJECT_CODE') and settings.FACILITY.OBJECT_CODE:
-        acct_data.account.code = ExpenseCodeFields.replace_field(
-            acct_data.account.code,
-            ExpenseCodeFields.OBJECT_CODE,
-            settings.FACILITY.OBJECT_CODE
-        )
-    return acct_data
+    acct_data.account.code = ExpenseCodeFields.replace_field(
+        acct_data.account.code,
+        ExpenseCodeFields.OBJECT_CODE,
+        object_code
+    )
+    return acct_data.to_dict()
 
 
 def updateUserAccounts(user):
@@ -51,25 +50,32 @@ def updateUserAccounts(user):
     fiine_person = FiineAPI.readPerson(ifxid=ifxid)
     logger.debug('fiine_person retrieved for ifxid %s: %s', ifxid, str(fiine_person))
 
-    # Collect user accounts and facility accounts for this facility
-    # Substitute object code for this facility if it has one
-    fiine_accounts = [acct.to_dict() for acct in map(replaceObjectCodeInFiineAccount, fiine_person.accounts)]
-    for facility_account in fiine_person.facility_accounts:
-        if facility_account.facility == settings.FACILITY.NAME:
-            facility_account = replaceObjectCodeInFiineAccount(facility_account)
-            facility_account_data = facility_account.to_dict()
-            facility_account_data.pop('facility', None)
-            fiine_accounts.append(facility_account_data)
-    logger.debug('fiine_person has %d accounts', len(fiine_accounts))
-
+    # Collect user accounts and facility accounts for each facility
+    # Substitute object code for the facility if it has one
+    fiine_accounts = []
     product_accounts = []
-    for acct in map(replaceObjectCodeInFiineAccount, fiine_person.product_accounts):
-        # Don't include authorizations from non-local products
-        try:
-            models.Product.objects.get(product_number=acct.product.product_number)
-            product_accounts.append(acct.to_dict())
-        except models.Product.DoesNotExist:
-            pass
+    for facility in models.Facility.objects.all():
+        facility_object_code = facility.object_code
+        if not facility_object_code:
+            raise Exception(f'Facility object code not set for {facility}')
+
+        fiine_accounts.extend([replaceObjectCodeInFiineAccount(acct, facility_object_code) for acct in fiine_person.accounts])
+        for facility_account in fiine_person.facility_accounts:
+            if facility_account.facility == facility.name:
+                facility_account = replaceObjectCodeInFiineAccount(facility_account, facility_object_code)
+                facility_account_data = facility_account
+                facility_account_data.pop('facility', None)
+                fiine_accounts.append(facility_account_data)
+        logger.debug('fiine_person has %d accounts', len(fiine_accounts))
+
+        product_accounts = []
+        for acct in [replaceObjectCodeInFiineAccount(pacct, facility_object_code) for pacct in fiine_person.product_accounts]:
+            # Don't include authorizations from non-local products
+            try:
+                models.Product.objects.get(product_number=acct['product']['product_number'])
+                product_accounts.append(acct)
+            except models.Product.DoesNotExist:
+                pass
 
     # Go through fiine_accounts and product accounts. Create any missing Account objects or update with Fiine information
     for person_account_data in fiine_accounts + product_accounts:
@@ -139,24 +145,21 @@ def updateProducts():
     '''
     Get all of the products for this facility and update to apply any changes made in Fiine. Mainly product_name and product_description
     '''
-    fiine_products = FiineAPI.listProducts(facility=settings.FACILITY.NAME)
-    for fiine_product in fiine_products:
-        try:
-            logger.error(f'updating {fiine_product.product_number}')
-            product = models.Product.objects.get(product_number=fiine_product.product_number)
-            for field in ['product_name', 'product_description']:
-                setattr(product, field, getattr(fiine_product, field))
-            product.save()
-        except models.Product.DoesNotExist:
-            fiine_product_data = fiine_product.to_dict()
+    for facility in models.Facility.objects.all():
+        fiine_products = FiineAPI.listProducts(facility=facility.name)
+        for fiine_product in fiine_products:
             try:
-                facility_name = fiine_product_data.pop('facility')
-                fiine_product_data['facility'] = models.Facility.objects.get(name=facility_name)
+                logger.error(f'updating {fiine_product.product_number}')
+                product = models.Product.objects.get(product_number=fiine_product.product_number)
+                for field in ['product_name', 'product_description']:
+                    setattr(product, field, getattr(fiine_product, field))
+                product.save()
+            except models.Product.DoesNotExist:
+                fiine_product_data = fiine_product.to_dict()
+                fiine_product_data['facility'] = facility
                 fiine_product_data.pop('object_code_category')
                 fiine_product_data.pop('reporting_group')
                 models.Product.objects.create(**fiine_product_data)
-            except models.Facility.DoesNotExist as e:
-                raise Exception(f'Cannot find facility {facility_name}')
 
 
 def getExpenseCodeStatus(account):
