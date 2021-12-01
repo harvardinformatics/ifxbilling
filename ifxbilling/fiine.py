@@ -54,19 +54,14 @@ def updateUserAccounts(user):
     # Substitute object code for the facility if it has one
     fiine_accounts = []
     product_accounts = []
-    for facility_name in settings.FACILITIES:
-        try:
-            facility = models.Facility.objects.get(name=facility_name)
-        except models.Facility.DoesNotExist:
-            raise Exception(f'Unable to find Facility named {facility_name}')
-
+    for facility in models.Facility.objects.all():
         facility_object_code = facility.object_code
         if not facility_object_code:
             raise Exception(f'Facility object code not set for {facility}')
 
         fiine_accounts.extend([replaceObjectCodeInFiineAccount(acct, facility_object_code) for acct in fiine_person.accounts])
         for facility_account in fiine_person.facility_accounts:
-            if facility_account.facility == facility_name:
+            if facility_account.facility == facility.name:
                 facility_account = replaceObjectCodeInFiineAccount(facility_account, facility_object_code)
                 facility_account_data = facility_account
                 facility_account_data.pop('facility', None)
@@ -150,8 +145,8 @@ def updateProducts():
     '''
     Get all of the products for this facility and update to apply any changes made in Fiine. Mainly product_name and product_description
     '''
-    for facility_name in settings.FACILITIES:
-        fiine_products = FiineAPI.listProducts(facility=facility_name)
+    for facility in models.Facility.objects.all():
+        fiine_products = FiineAPI.listProducts(facility=facility.name)
         for fiine_product in fiine_products:
             try:
                 logger.error(f'updating {fiine_product.product_number}')
@@ -161,14 +156,10 @@ def updateProducts():
                 product.save()
             except models.Product.DoesNotExist:
                 fiine_product_data = fiine_product.to_dict()
-                try:
-                    facility_name = fiine_product_data.pop('facility')
-                    fiine_product_data['facility'] = models.Facility.objects.get(name=facility_name)
-                    fiine_product_data.pop('object_code_category')
-                    fiine_product_data.pop('reporting_group')
-                    models.Product.objects.create(**fiine_product_data)
-                except models.Facility.DoesNotExist as e:
-                    raise Exception(f'Cannot find facility {facility_name}')
+                fiine_product_data['facility'] = facility
+                fiine_product_data.pop('object_code_category')
+                fiine_product_data.pop('reporting_group')
+                models.Product.objects.create(**fiine_product_data)
 
 
 def getExpenseCodeStatus(account):

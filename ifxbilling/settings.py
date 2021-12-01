@@ -209,8 +209,6 @@ LOGGING = {
 }
 
 
-FACILITIES = ['Helium Recovery Service']
-
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 
