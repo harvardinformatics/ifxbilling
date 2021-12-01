@@ -50,6 +50,7 @@ class TestProductUsage(APITestCase):
             'quantity': 1,
             'start_date': timezone.make_aware(datetime(year, month, 1)),
             'description': 'Howdy',
+            'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         }
         url = reverse('productusage-list')
         response = self.client.post(url, product_usage_data, format='json')
@@ -70,7 +71,8 @@ class TestProductUsage(APITestCase):
                 'ifxid': data.USERS[0]['ifxid'],
             },
             'quantity': 1,
-            'start_date': timezone.make_aware(datetime(2021, 2, 1))
+            'start_date': timezone.make_aware(datetime(2021, 2, 1)),
+            'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         }
         url = reverse('productusage-list')
         response = self.client.post(url, product_usage_data, format='json')

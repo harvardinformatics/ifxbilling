@@ -23,6 +23,7 @@ from django.db.models import ProtectedError
 from django.dispatch import receiver
 from author.decorators import with_author
 from ifxuser.models import Organization
+from ifxvalidcode.ec_functions import ExpenseCodeFields
 
 
 logger = logging.getLogger('__name__')
@@ -88,6 +89,11 @@ class Facility(models.Model):
     invoice_prefix = models.CharField(
         max_length=50,
         help_text='Prefix used in the invoice names for the facility.',
+    )
+    object_code = models.CharField(
+        help_text='Object code for this facility',
+        max_length=4,
+        default='8250'
     )
     def __str__(self):
         return self.name
@@ -170,6 +176,14 @@ class Account(models.Model):
         else:
             self.slug = 'PO %s (%s)' % (self.code, self.organization.name)
         super().save(*args, **kwargs)
+
+    def replaceObjectCode(self, object_code):
+        '''
+        Return a string with the object code replaced
+        '''
+        ECFIELDS = ExpenseCodeFields()
+        return ECFIELDS.replace_field(self.code, ECFIELDS.OBJECT_CODE, object_code)
+
 
 
 class UserAccount(models.Model):
