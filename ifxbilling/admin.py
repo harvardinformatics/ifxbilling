@@ -34,6 +34,7 @@ class FacilityAdmin(admin.ModelAdmin):
         'name',
         'application_username',
         'credit_code',
+        'object_code',
         'invoice_prefix'
     )
     list_display = (
@@ -41,6 +42,7 @@ class FacilityAdmin(admin.ModelAdmin):
         'name',
         'application_username',
         'credit_code',
+        'object_code',
         'invoice_prefix'
     )
     ordering = ('name',)
