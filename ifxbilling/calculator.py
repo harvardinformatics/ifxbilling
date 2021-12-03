@@ -139,9 +139,12 @@ class BasicBillingCalculator():
         user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
             product=product_usage.product,
             account__organization=organization,
+            account__active=True,
             is_valid=True
         )
         if len(user_product_accounts) > 0:
+            # Use them all.  If there is more than one ensure that percents add to 100.
+            pct_total = 0
             for user_product_account in user_product_accounts:
                 account_percentages.append(
                     {
@@ -149,8 +152,16 @@ class BasicBillingCalculator():
                         'percent': user_product_account.percent,
                     }
                 )
+                pct_total += user_product_account.percent
+
+            if pct_total != 100:
+                raise Exception(f'User product account percents do not add up to 100')
         else:
-            user_account = product_usage.product_user.useraccount_set.filter(account__organization=organization, is_valid=True).first()
+            # Only get the first one
+            user_account = product_usage.product_user.useraccount_set.filter(
+                account__organization=organization,
+                account__active=True,
+                is_valid=True).first()
             if user_account:
                 account_percentages.append(
                     {
