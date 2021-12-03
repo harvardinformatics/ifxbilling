@@ -438,7 +438,7 @@ class TestBillingRecord(APITestCase):
         br = models.BillingRecord.objects.get(id=int(response.data['id']))
         self.assertRaises(ProtectedError, br.delete)
 
-    def testUpdateFaile(self):
+    def testUpdateFail(self):
         '''
         Ensure that billing records cannot be updated if state is FINAL
         '''

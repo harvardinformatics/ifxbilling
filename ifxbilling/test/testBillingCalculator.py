@@ -62,6 +62,24 @@ class TestCalculator(APITestCase):
         units = product_usage.product.rate_set.first().units
         self.assertTrue(br.rate == f'{price} {units}', f'Incorrect billing record rate {br.rate}')
 
+    def testInactiveAccount(self):
+        '''
+        Ensure that BillingRecord creation will fail if the Account is inactive.
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserAccount'])
+        # Make "mycode" inactive
+        models.Account.objects.filter(name='mycode').update(active=False)
+
+        product_usage_data = data.PRODUCT_USAGES[0]
+        product_usage = models.ProductUsage.objects.get(
+            product__product_name=product_usage_data['product'],
+            product_user__full_name=product_usage_data['product_user'],
+            quantity=product_usage_data['quantity']
+        )
+
+        bbc = BasicBillingCalculator()
+        self.assertRaisesMessage(Exception, 'Unable to find a user account record for', bbc.createBillingRecordsForUsage, product_usage)
+
     def testUserProductAccountSplit(self):
         '''
         Ensure that a charge against a UserProductAccount with percentages creates split billing records.
@@ -83,3 +101,19 @@ class TestCalculator(APITestCase):
                 models.BillingRecord.objects.get(product_usage=product_usage, charge=charge)
             except models.BillingRecord.DoesNotExist:
                 self.assertTrue(False, f'Unable to find billing record with charge {charge}\n{brs}')
+
+    def testBadUserProductAccountSplit(self):
+        '''
+        Ensure that a split that doesn't add to 100 fails.
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+        product_usage_data = data.PRODUCT_USAGES[1]
+        product_usage = models.ProductUsage.objects.get(
+            product__product_name=product_usage_data['product'],
+            product_user__full_name=product_usage_data['product_user'],
+            quantity=product_usage_data['quantity'],
+            year=product_usage_data['year']
+        )
+
+        bbc = BasicBillingCalculator()
+        self.assertRaisesMessage(Exception, 'User product account percents do not add up to 100', bbc.createBillingRecordsForUsage, product_usage)

@@ -149,14 +149,14 @@ USER_PRODUCT_ACCOUNTS = [
     },
     {
         'user': 'Markos Hankin',
-        'account': 'Nobody lab code',
+        'account': 'Alternate code',
         'product': 'Helium Dewar',
         'percent': 100,
         'is_valid': True,
     },
     {
         'user': 'Markos Hankin',
-        'account': 'Another code',
+        'account': 'mycode',
         'product': 'Helium Dewar',
         'percent': 100,
         'is_valid': True,
