@@ -296,3 +296,9 @@ class BasicBillingCalculator():
             trxn.save()
 
         return billing_record
+
+    def finalize():
+        '''
+        Perform any final cleanup functions
+        '''
+        pass
