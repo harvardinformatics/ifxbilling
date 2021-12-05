@@ -77,6 +77,13 @@ class Command(BaseCommand):
                 if verbose:
                     logger.exception(e)
                 errors.append(f'Unable to create billing record for {product_usage}: {e}')
+        for class_name, calculator in calculators:
+            try:
+                calculator.finalize()
+            except Exception as e:
+                if verbose:
+                    logger.exception(e)
+                errors.append(f'Finalization failed for {class_name}: {e}')
 
         print(f'{successes} product usages successfully processed')
         if errors:
