@@ -25,6 +25,7 @@ from fiine.client import API as FiineAPI
 from ifxbilling import models
 from ifxbilling import fiine
 from ifxbilling.permissions import BillingRecordUpdatePermissions
+from time import sleep
 
 
 logger = logging.getLogger(__name__)
@@ -663,6 +664,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [BillingRecordUpdatePermissions]
 
     def get_queryset(self):
+        sleep(10)
         year = self.request.query_params.get('year')
         month = self.request.query_params.get('month')
         organization = self.request.query_params.get('organization')
