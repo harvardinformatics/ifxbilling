@@ -693,7 +693,6 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         '''
         Call serializer update on an array of billing records
         '''
-        sleep(10)
         ids = [int(r['id']) for r in request.data]
         instances = models.BillingRecord.objects.filter(id__in=ids)
         serializer = self.get_serializer(instances, data=request.data, many=True)
