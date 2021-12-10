@@ -664,7 +664,6 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [BillingRecordUpdatePermissions]
 
     def get_queryset(self):
-        sleep(10)
         year = self.request.query_params.get('year')
         month = self.request.query_params.get('month')
         organization = self.request.query_params.get('organization')
@@ -694,6 +693,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         '''
         Call serializer update on an array of billing records
         '''
+        sleep(10)
         ids = [int(r['id']) for r in request.data]
         instances = models.BillingRecord.objects.filter(id__in=ids)
         serializer = self.get_serializer(instances, data=request.data, many=True)
