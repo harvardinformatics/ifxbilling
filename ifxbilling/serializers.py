@@ -25,7 +25,6 @@ from fiine.client import API as FiineAPI
 from ifxbilling import models
 from ifxbilling import fiine
 from ifxbilling.permissions import BillingRecordUpdatePermissions
-from time import sleep
 
 
 logger = logging.getLogger(__name__)
