@@ -668,6 +668,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         organization = self.request.query_params.get('organization')
         facility = self.request.query_params.get('facility')
         root = self.request.query_params.get('root')
+        invoice_prefix = self.request.query_params.get('invoice_prefix')
 
         queryset = models.BillingRecord.objects.all()
 
@@ -681,6 +682,8 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(product_usage__product__facility__name=facility)
         if root:
             queryset = queryset.filter(account__root=root)
+        if invoice_prefix:
+            queryset = queryset.filter(product_usage__product__facility__invoice_prefix=invoice_prefix)
 
         return queryset.order_by('id')
 
