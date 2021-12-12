@@ -232,7 +232,9 @@ class BasicBillingCalculator():
             if recalculate:
                 BillingRecord.objects.filter(product_usage=product_usage).delete()
             else:
-                raise Exception(f'Billing record already exists for usage {product_usage}')
+                msg = f'Billing record already exists for usage {product_usage}'
+                self.update_product_usage_processing(product_usage, {'resolved': False, 'error_message': msg})
+                raise Exception(msg)
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
                 if not account_percentages:
