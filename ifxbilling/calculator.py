@@ -336,7 +336,7 @@ class BasicBillingCalculator():
 
         return billing_record
 
-    def finalize():
+    def finalize(self):
         '''
         Perform any final cleanup functions
         '''
