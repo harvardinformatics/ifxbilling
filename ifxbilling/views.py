@@ -240,7 +240,7 @@ def calculate_billing_month(request, invoice_prefix, year, month):
         return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        (successes, errors) = calculateBillingMonth(month, year, facility, recalculate)
-        return Response(data={ 'successes': successes, 'errors': errors }, status=status.HTTP_200_OK)
+        result = calculateBillingMonth(month, year, facility, recalculate)
+        return Response(data={ 'successes': result[0], 'errors': result[1] }, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(data={ 'error': f'Billing calculation failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
