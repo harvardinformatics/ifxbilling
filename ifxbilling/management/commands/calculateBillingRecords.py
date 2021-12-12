@@ -4,12 +4,11 @@
 Calculate billing records for the given year and month
 '''
 import logging
-from io import StringIO
+import re
 from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
-from ifxbilling.models import ProductUsage, BillingRecord
-from ifxbilling.calculator import getClassFromName, BasicBillingCalculator
+from ifxbilling.calculator import calculateMonth
 
 
 logger = logging.getLogger('ifxbilling')
@@ -52,38 +51,7 @@ class Command(BaseCommand):
         recalculate = kwargs['recalculate']
         verbose = kwargs['verbose']
 
-        successes = 0
-        errors = []
-        product_usages = ProductUsage.objects.filter(month=month, year=year)
-        calculators = {
-            'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
-        }
-        usage_data = {}
-        for product_usage in product_usages:
-            if BillingRecord.objects.filter(product_usage=product_usage).exists():
-                if recalculate:
-                    BillingRecord.objects.filter(product_usage=product_usage).delete()
-                else:
-                    continue
-            try:
-                billing_calculator_name = product_usage.product.billing_calculator
-                if billing_calculator_name not in calculators:
-                    billing_calculator_class = getClassFromName(billing_calculator_name)
-                    calculators[billing_calculator_name] = billing_calculator_class()
-                billing_calculator = calculators[billing_calculator_name]
-                billing_calculator.createBillingRecordsForUsage(product_usage, usage_data=usage_data)
-                successes += 1
-            except Exception as e:
-                if verbose:
-                    logger.exception(e)
-                errors.append(f'Unable to create billing record for {product_usage}: {e}')
-        for class_name, calculator in calculators:
-            try:
-                calculator.finalize()
-            except Exception as e:
-                if verbose:
-                    logger.exception(e)
-                errors.append(f'Finalization failed for {class_name}: {e}')
+        (successes, errors) = calculateMonth(month, year, recalculate, verbose)
 
         print(f'{successes} product usages successfully processed')
         if errors:
