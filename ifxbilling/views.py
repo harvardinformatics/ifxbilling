@@ -19,6 +19,7 @@ from ifxmail.client import send, FieldErrorsException
 from ifxurls.urls import FIINE_URL_BASE
 from ifxbilling.fiine import updateUserAccounts
 from ifxbilling import models, settings
+from ifxbilling.calculator import calculateBillingMonth
 
 
 logger = logging.getLogger(__name__)
@@ -132,6 +133,7 @@ def unauthorized(request):
 
     return Response(data=results)
 
+
 @api_view(('POST',))
 def expense_code_request(request):
     '''
@@ -223,3 +225,22 @@ def expense_code_request(request):
         data = e.field_errors
         msg_status = e.status
     return Response(data=data, status=msg_status)
+
+
+@api_view(('POST',))
+def calculate_billing_month(request, invoice_prefix, year, month):
+    '''
+    Calculate billing for the given invoice_prefix, year, and month
+    '''
+    recalculate = request.GET.get('recalculate', None) is not None
+
+    try:
+        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+    except models.Facility.DoesNotExist:
+        return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        (successes, errors) = calculateBillingMonth(month, year, facility, recalculate)
+        return Response(data={ 'successes': successes, 'errors': errors }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(data={ 'error': f'Billing calculation failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

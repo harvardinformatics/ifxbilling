@@ -44,13 +44,13 @@ def getClassFromName(dotted_path):
         raise ImportError(msg) from e
 
 
-def calculateMonth(month, year, recalculate=False, verbose=False):
+def calculateBillingMonth(month, year, facility, recalculate=False, verbose=False):
     '''
     Calculate a months worth of billing records and return the number of successes and list of error messages
     '''
     successes = 0
     errors = []
-    product_usages = ProductUsage.objects.filter(month=month, year=year)
+    product_usages = ProductUsage.objects.filter(month=month, year=year, product__facility=facility)
     calculators = {
         'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
     }
