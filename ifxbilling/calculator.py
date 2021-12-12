@@ -73,7 +73,7 @@ def calculateBillingMonth(month, year, facility, recalculate=False, verbose=Fals
             if verbose:
                 logger.exception(e)
             errors.append(f'Unable to create billing record for {product_usage}: {e}')
-    for class_name, calculator in calculators:
+    for class_name, calculator in calculators.items():
         try:
             calculator.finalize()
         except Exception as e:
