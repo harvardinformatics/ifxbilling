@@ -243,4 +243,5 @@ def calculate_billing_month(request, invoice_prefix, year, month):
         result = calculateBillingMonth(month, year, facility, recalculate)
         return Response(data={ 'successes': result[0], 'errors': result[1] }, status=status.HTTP_200_OK)
     except Exception as e:
+        logger.exception(e)
         return Response(data={ 'error': f'Billing calculation failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
