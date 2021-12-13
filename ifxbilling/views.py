@@ -232,7 +232,7 @@ def calculate_billing_month(request, invoice_prefix, year, month):
     '''
     Calculate billing for the given invoice_prefix, year, and month
     '''
-    recalculate = request.GET.get('recalculate', None) is not None
+    recalculate = request.POST.get('recalculate', False)
 
     try:
         facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
