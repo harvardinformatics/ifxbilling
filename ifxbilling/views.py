@@ -233,6 +233,7 @@ def calculate_billing_month(request, invoice_prefix, year, month):
     Calculate billing for the given invoice_prefix, year, and month
     '''
     recalculate = request.POST.get('recalculate', False)
+    logger.debug('Calculating billing records with invoice_prefix %s for month %d of year %d, with recalculate flag %s', invoice_prefix, month, year, str(recalculate))
 
     try:
         facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
