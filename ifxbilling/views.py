@@ -232,7 +232,15 @@ def calculate_billing_month(request, invoice_prefix, year, month):
     '''
     Calculate billing for the given invoice_prefix, year, and month
     '''
-    recalculate = request.POST.get('recalculate', False)
+    recalculate = False
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        if data and 'recalculate' in data:
+            recalculate = data['recalculate']
+    except json.JSONDecodeError as e:
+        logger.exception(e)
+        return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
+
     logger.debug('Calculating billing records with invoice_prefix %s for month %d of year %d, with recalculate flag %s', invoice_prefix, month, year, str(recalculate))
 
     try:
