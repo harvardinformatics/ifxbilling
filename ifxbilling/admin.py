@@ -301,6 +301,9 @@ class ProductUsageInlineAdmin(admin.TabularInline):
     fk_name = 'product_user'
     autocomplete_fields = ('product',)
     extra = 0
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs[:50]
 
 
 class AccountUserAdmin(admin.ModelAdmin):

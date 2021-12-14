@@ -194,7 +194,7 @@ class BasicBillingCalculator():
                 pct_total += user_product_account.percent
 
             if pct_total != 100:
-                raise Exception(f'User product account percents do not add up to 100')
+                raise Exception(f'User product account percents add up to {pct_total} instead of 100')
         else:
             # Only get the first one
             user_account = product_usage.product_user.useraccount_set.filter(
@@ -233,7 +233,7 @@ class BasicBillingCalculator():
                 BillingRecord.objects.filter(product_usage=product_usage).delete()
             else:
                 msg = f'Billing record already exists for usage {product_usage}'
-                self.update_product_usage_processing(product_usage, {'resolved': False, 'error_message': msg})
+                # self.update_product_usage_processing(product_usage, {'resolved': False, 'error_message': msg})
                 raise Exception(msg)
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
