@@ -11,6 +11,8 @@ All rights reserved.
 @license: GPL v2.0
 '''
 import logging
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
 from django.contrib import admin
 from django.contrib.admin.widgets import AutocompleteSelect
 from django.forms import TextInput
@@ -303,7 +305,8 @@ class ProductUsageInlineAdmin(admin.TabularInline):
     extra = 0
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs[:50]
+        two_months_ago = timezone.now() + relativedelta(months=-2)
+        return qs.filter(start_date__gte=two_months_ago)
 
 
 class AccountUserAdmin(admin.ModelAdmin):
