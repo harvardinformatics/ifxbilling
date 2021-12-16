@@ -11,7 +11,6 @@ All rights reserved.
 @license: GPL v2.0
 '''
 import logging
-import traceback
 import json
 from importlib import import_module
 from django.db import transaction
@@ -75,7 +74,8 @@ def calculateBillingMonth(month, year, facility, recalculate=False, verbose=Fals
             errors.append(f'Unable to create billing record for {product_usage}: {e}')
     for class_name, calculator in calculators.items():
         try:
-            calculator.finalize(month, year, facility, recalculate=False, verbose=False)
+            with transaction.atomic():
+                calculator.finalize(month, year, facility, recalculate=False, verbose=False)
         except Exception as e:
             if verbose:
                 logger.exception(e)
