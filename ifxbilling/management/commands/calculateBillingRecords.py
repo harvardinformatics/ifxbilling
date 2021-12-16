@@ -65,7 +65,7 @@ class Command(BaseCommand):
                 raise Exception('If --facility-name is omitted, there must be exactly one Facility record.')
             facility = Facility.objects.first()
 
-        (successes, errors) = calculateBillingMonth(month, year, facility=facility, recalculate=recalculate, verbose=verbose)
+        (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, verbose)
 
         print(f'{successes} product usages successfully processed')
         if errors:

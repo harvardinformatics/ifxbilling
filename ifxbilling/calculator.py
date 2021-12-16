@@ -233,7 +233,6 @@ class BasicBillingCalculator():
                 BillingRecord.objects.filter(product_usage=product_usage).delete()
             else:
                 msg = f'Billing record already exists for usage {product_usage}'
-                # self.update_product_usage_processing(product_usage, {'resolved': False, 'error_message': msg})
                 raise Exception(msg)
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
