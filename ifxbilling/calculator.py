@@ -15,7 +15,7 @@ import traceback
 import json
 from importlib import import_module
 from django.db import transaction
-from ifxbilling.models import BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing
+from ifxbilling.models import BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage
 
 
 logger = logging.getLogger('ifxbilling')
@@ -42,6 +42,45 @@ def getClassFromName(dotted_path):
         msg = 'Module "%s" does not define a "%s" attribute/class' % (
             module_path, class_name)
         raise ImportError(msg) from e
+
+
+def calculateBillingMonth(month, year, facility, recalculate=False, verbose=False):
+    '''
+    Calculate a months worth of billing records and return the number of successes and list of error messages
+    '''
+    successes = 0
+    errors = []
+    product_usages = ProductUsage.objects.filter(month=month, year=year, product__facility=facility)
+    calculators = {
+        'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
+    }
+    usage_data = {}
+    for product_usage in product_usages:
+        if BillingRecord.objects.filter(product_usage=product_usage).exists():
+            if recalculate:
+                BillingRecord.objects.filter(product_usage=product_usage).delete()
+            else:
+                continue
+        try:
+            billing_calculator_name = product_usage.product.billing_calculator
+            if billing_calculator_name not in calculators:
+                billing_calculator_class = getClassFromName(billing_calculator_name)
+                calculators[billing_calculator_name] = billing_calculator_class()
+            billing_calculator = calculators[billing_calculator_name]
+            billing_calculator.createBillingRecordsForUsage(product_usage, usage_data=usage_data)
+            successes += 1
+        except Exception as e:
+            if verbose:
+                logger.exception(e)
+            errors.append(f'Unable to create billing record for {product_usage}: {e}')
+    for class_name, calculator in calculators.items():
+        try:
+            calculator.finalize(month, year, facility, recalculate=False, verbose=False)
+        except Exception as e:
+            if verbose:
+                logger.exception(e)
+            errors.append(f'Finalization failed for {class_name}: {e}')
+    return (successes, errors)
 
 
 class BasicBillingCalculator():
@@ -155,7 +194,7 @@ class BasicBillingCalculator():
                 pct_total += user_product_account.percent
 
             if pct_total != 100:
-                raise Exception(f'User product account percents do not add up to 100')
+                raise Exception(f'User product account percents add up to {pct_total} instead of 100')
         else:
             # Only get the first one
             user_account = product_usage.product_user.useraccount_set.filter(
@@ -170,7 +209,7 @@ class BasicBillingCalculator():
                     }
                 )
             else:
-                raise Exception(f'Unable to find a user account record for {product_usage.product_user}')
+                raise Exception(f'Unable to find an active user account record for {product_usage.product_user} with organization {organization.name}')
         if product_usage and account_percentages:
             logger.debug('Account percentages for %s: %s', str(product_usage), str(account_percentages))
         return account_percentages
@@ -193,7 +232,8 @@ class BasicBillingCalculator():
             if recalculate:
                 BillingRecord.objects.filter(product_usage=product_usage).delete()
             else:
-                raise Exception(f'Billing record already exists for usage {product_usage}')
+                msg = f'Billing record already exists for usage {product_usage}'
+                raise Exception(msg)
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
                 if not account_percentages:
@@ -297,7 +337,7 @@ class BasicBillingCalculator():
 
         return billing_record
 
-    def finalize():
+    def finalize(self, month, year, facility, recalculate=False, verbose=False):
         '''
         Perform any final cleanup functions
         '''

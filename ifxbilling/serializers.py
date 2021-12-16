@@ -234,6 +234,20 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
 
 
+class ProductUsageProcessingSerializer(serializers.ModelSerializer):
+    '''
+    Read only serializer for ProductUsageProcessing
+    '''
+    class Meta:
+        model = models.ProductUsageProcessing
+        fields = (
+            'resolved',
+            'error_message',
+            'created',
+            'updated',
+        )
+
+
 class ProductUsageSerializer(serializers.ModelSerializer):
     '''
     Serializer for product usages
@@ -251,6 +265,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     updated = serializers.DateTimeField(read_only=True)
     logged_by = UserSerializer(many=False, read_only=True, required=False)
     organization = serializers.SlugRelatedField(slug_field='slug', queryset=Organization.objects.all())
+    processing = ProductUsageProcessingSerializer(source='productusageprocessing_set', many=False, read_only=True)
 
     class Meta:
         model = models.ProductUsage
@@ -268,6 +283,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
             'updated',
             'logged_by',
             'organization',
+            'processing',
         )
         read_only_fields = ('id', 'created', 'updated')
 

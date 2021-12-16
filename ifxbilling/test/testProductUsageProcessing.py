@@ -41,8 +41,7 @@ class TestProductUsageProcessing(APITestCase):
 
     def testProductUsageProcessingCreate(self):
         '''
-        Ensure that a ProductUsageProcessing row is entered when there is an
-        error in creating a billing record from a ProductUsage
+        Ensure that a ProductUsageProcessing row is entered when there is an error in creating a billing record from a ProductUsage
         '''
         data.init(types=['Account', 'Product', 'ProductUsage'])
         product_usage_data = data.PRODUCT_USAGES[0]
@@ -52,13 +51,9 @@ class TestProductUsageProcessing(APITestCase):
             quantity=product_usage_data['quantity']
         )
 
+        expected_error = 'Unable to find an active user account record for'
         bbc = BasicBillingCalculator()
-        try:
-            bbc.createBillingRecordsForUsage(product_usage)
-        except Exception as e:
-            expected_error = f'Unable to find a user account record for {product_usage.product_user}'
-            if str(e) != expected_error:
-                raise e
+        self.assertRaisesMessage(Exception, expected_error, bbc.createBillingRecordsForUsage, product_usage)
         processing_rows = ProductUsageProcessing.objects.filter(product_usage=product_usage)
         self.assertTrue(len(processing_rows) == 1, f'Incorrect number of product usage processing rows returned {processing_rows}')
 
