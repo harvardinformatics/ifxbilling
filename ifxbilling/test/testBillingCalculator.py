@@ -78,7 +78,7 @@ class TestCalculator(APITestCase):
         )
 
         bbc = BasicBillingCalculator()
-        self.assertRaisesMessage(Exception, 'Unable to find a user account record for', bbc.createBillingRecordsForUsage, product_usage)
+        self.assertRaisesMessage(Exception, 'Unable to find an active user account record for', bbc.createBillingRecordsForUsage, product_usage)
 
     def testUserProductAccountSplit(self):
         '''
@@ -116,4 +116,4 @@ class TestCalculator(APITestCase):
         )
 
         bbc = BasicBillingCalculator()
-        self.assertRaisesMessage(Exception, 'User product account percents do not add up to 100', bbc.createBillingRecordsForUsage, product_usage)
+        self.assertRaisesMessage(Exception, 'User product account percents add up to', bbc.createBillingRecordsForUsage, product_usage)
