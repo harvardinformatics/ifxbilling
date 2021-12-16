@@ -424,7 +424,7 @@ class BillingRecord(models.Model):
     class Meta:
         db_table = 'billing_record'
 
-    product_usage = models.ForeignKey(ProductUsage, on_delete=models.PROTECT)
+    product_usage = models.ForeignKey(ProductUsage, on_delete=models.PROTECT, null=True)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     charge = models.IntegerField(
         null=False,
