@@ -159,7 +159,14 @@ class TestAccount(APITestCase):
         '''
         Ensure that user accounts and user product accounts are fetched with an account.
         '''
-        data.init('Account', 'UserProductAccount', 'UserAccount')
+        data.init(['Account', 'Product', 'UserProductAccount', 'UserAccount'])
 
-        url = reverse('account-list', kwargs=)
-
+        url = reverse('account-list')
+        response = self.client.get(url, { 'name': 'mycode' }, format='json')
+        account = response.data[0]
+        print(repr(account))
+        self.assertTrue(len(account['user_accounts']) == 1, f'Account has incorrect number of user_accounts {account}')
+        self.assertTrue(len(account['user_product_accounts']) == 1, f'Account has incorrect number of user_product_accounts {account}')
+        upa = account['user_product_accounts'][0]
+        self.assertTrue(upa['percent'] == 100, f'Incorrect user product account percent {account}')
+        self.assertTrue(upa['product'] == 'Helium Dewar', f'Incorrect product on user product account {account}')

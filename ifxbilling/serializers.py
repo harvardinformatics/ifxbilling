@@ -119,7 +119,7 @@ class UserProductAccountSerializer(serializers.ModelSerializer):
     product = serializers.SlugRelatedField(slug_field='product_name', read_only=True)
 
     class Meta:
-        model = models.UserAccount
+        model = models.UserProductAccount
         fields = ('id', 'user', 'product', 'percent', 'is_valid')
         read_only_fields = ('id', 'is_valid')
 
@@ -136,8 +136,8 @@ class AccountSerializer(serializers.ModelSerializer):
     active = serializers.BooleanField(required=False)
     valid_from = serializers.DateField(required=False)
     expiration_date = serializers.DateField(required=False)
-    user_accounts = UserAccountSerializer(many=True, read_only=True)
-    user_product_accounts = UserProductAccountSerializer(many=True, read_only=True)
+    user_accounts = UserAccountSerializer(many=True, read_only=True, source='useraccount_set')
+    user_product_accounts = UserProductAccountSerializer(many=True, read_only=True, source='userproductaccount_set')
 
     class Meta:
         model = models.Account
@@ -191,6 +191,8 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         if name:
             queryset = queryset.filter(name=name)
+
+        return queryset
 
 
 class RateSerializer(serializers.ModelSerializer):
