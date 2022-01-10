@@ -154,3 +154,12 @@ class TestAccount(APITestCase):
         response = self.client.post(url, accounts_data[1], format='json')
         self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response status: {response.data}')
         self.assertTrue('The fields code, organization must make a unique set' in str(response.data['non_field_errors']), f'Incorrect response data {response.data}')
+
+    def testUserProductAccount(self):
+        '''
+        Ensure that user accounts and user product accounts are fetched with an account.
+        '''
+        data.init('Account', 'UserProductAccount', 'UserAccount')
+
+        url = reverse('account-list', kwargs=)
+
