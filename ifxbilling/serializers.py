@@ -68,6 +68,61 @@ class FacilityViewSet(viewsets.ModelViewSet):
 
         return facilities
 
+class BillingRecordAccountSerializer(serializers.ModelSerializer):
+    '''
+    Read-only serializer for billing records
+    '''
+    organization = serializers.SlugRelatedField(slug_field='slug', queryset=Organization.objects.all())
+
+    class Meta:
+        model = models.Account
+        fields = ('id', 'code', 'name', 'organization', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated', 'slug')
+        read_only_fields = ('id', 'code', 'name', 'organization', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated', 'slug')
+
+
+class SkinnyUserSerializer(serializers.ModelSerializer):
+    '''
+    Serializer that just provides user basics for UserAccount and UserProductAccount serializers
+    '''
+    class Meta:
+        model = get_user_model()
+        fields = (
+            'id',
+            'ifxid',
+            'username',
+            'first_name',
+            'last_name',
+            'full_name',
+            'primary_affiliation',
+            'email',
+            'is_active',
+        )
+
+
+class UserAccountSerializer(serializers.ModelSerializer):
+    '''
+    Read only serializer for AccountSerializer
+    '''
+    user = SkinnyUserSerializer(read_only=True)
+
+    class Meta:
+        model = models.UserAccount
+        fields = ('id', 'user', 'is_valid')
+        read_only_fields = ('id', 'is_valid')
+
+
+class UserProductAccountSerializer(serializers.ModelSerializer):
+    '''
+    Read only serializer for AccountSerializer
+    '''
+    user = SkinnyUserSerializer(read_only=True)
+    product = serializers.SlugRelatedField(slug_field='product_name', read_only=True)
+
+    class Meta:
+        model = models.UserProductAccount
+        fields = ('id', 'user', 'product', 'percent', 'is_valid')
+        read_only_fields = ('id', 'is_valid')
+
 
 class AccountSerializer(serializers.ModelSerializer):
     '''
@@ -81,10 +136,12 @@ class AccountSerializer(serializers.ModelSerializer):
     active = serializers.BooleanField(required=False)
     valid_from = serializers.DateField(required=False)
     expiration_date = serializers.DateField(required=False)
+    user_accounts = UserAccountSerializer(many=True, read_only=True, source='useraccount_set')
+    user_product_accounts = UserProductAccountSerializer(many=True, read_only=True, source='userproductaccount_set')
 
     class Meta:
         model = models.Account
-        fields = ('id', 'code', 'name', 'organization', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated', 'slug')
+        fields = ('id', 'code', 'name', 'organization', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated', 'slug', 'user_accounts', 'user_product_accounts')
         read_only_fields = ('created', 'updated', 'id', 'slug')
 
     @transaction.atomic
@@ -126,8 +183,16 @@ class AccountViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for Account models
     '''
-    queryset = models.Account.objects.all()
     serializer_class = AccountSerializer
+
+    def get_queryset(self):
+        name = self.request.query_params.get('name')
+        queryset = models.Account.objects.all()
+
+        if name:
+            queryset = queryset.filter(name=name)
+
+        return queryset
 
 
 class RateSerializer(serializers.ModelSerializer):
@@ -401,7 +466,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     description = serializers.CharField(max_length=1000, required=False, allow_blank=True)
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
-    account = AccountSerializer(many=False, read_only=True)
+    account = BillingRecordAccountSerializer(many=False, read_only=True)
     transactions = TransactionSerializer(many=True, read_only=True, source='transaction_set')
     current_state = serializers.CharField(max_length=200, allow_blank=True, required=False)
     billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
