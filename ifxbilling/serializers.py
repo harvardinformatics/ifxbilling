@@ -353,7 +353,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created', 'updated')
 
     @transaction.atomic
-    def create(self, validated_data):
+    def get_validated_data(self, validated_data):
         # Pop the user
         if 'product_user' not in self.initial_data:
             raise serializers.ValidationError(
@@ -375,6 +375,10 @@ class ProductUsageSerializer(serializers.ModelSerializer):
         if 'start_date' not in validated_data:
             validated_data['start_date'] = timezone.now()
         validated_data['logged_by'] = self.context['request'].user
+        return validated_data
+
+    def create(self, validated_data):
+        validated_data = self.get_validated_data(validated_data)
         product_usage = models.ProductUsage.objects.create(**validated_data)
         return product_usage
 
