@@ -383,14 +383,17 @@ class ProductUsageSerializer(serializers.ModelSerializer):
         return product_usage
 
     @transaction.atomic
-    def update(self, instance, validated_data):
-        if 'product_user' not in self.initial_data:
+    def update(self, instance, validated_data, bulk_id=None):
+        initial_data = self.initial_data
+        if bulk_id is not None:
+            initial_data = self.initial_data[bulk_id]
+        if 'product_user' not in initial_data:
             raise serializers.ValidationError(
                 detail={
                     'product_user': 'product_user must be set'
                 }
             )
-        product_user_data = self.initial_data['product_user']
+        product_user_data = initial_data['product_user']
         try:
             product_user_ifxid = product_user_data['ifxid']
             product_user = get_user_model().objects.get(ifxid=product_user_ifxid)
