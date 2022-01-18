@@ -379,8 +379,9 @@ class ProductUsageSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data = self.get_validated_data(validated_data)
-        product_usage = models.ProductUsage.objects.create(**validated_data)
-        return product_usage
+        # create child object if there is one, this will also create parent
+        obj = self.Meta.model.objects.create(**validated_data)
+        return obj
 
     @transaction.atomic
     def update(self, instance, validated_data, bulk_id=None):
