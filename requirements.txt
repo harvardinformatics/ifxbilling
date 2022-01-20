@@ -11,3 +11,4 @@ sphinx-py3doc-enhanced-theme>=2.4.0
 recommonmark==0.5.0
 django-mysql
 logging_tree
+python-dateutil
