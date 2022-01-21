@@ -150,14 +150,16 @@ class ProductAdmin(admin.ModelAdmin):
         'product_description',
         'facility',
         'billing_calculator',
-        'reporting_group'
+        'reporting_group',
+        'billable'
     )
     list_display = (
         'id',
         'product_number',
         'product_name',
         'product_description',
-        'facility'
+        'facility',
+        'billable'
     )
     ordering = ('product_number',)
     search_fields = (
@@ -168,7 +170,7 @@ class ProductAdmin(admin.ModelAdmin):
         'facility',
         'reporting_group'
      )
-    list_filter = ('billing_calculator', )
+    list_filter = ('billing_calculator', 'billable')
     inlines = (RateInlineAdmin,)
     readonly_fields = ('product_number',)
 
@@ -257,7 +259,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'units',
         'created',
         'updated',
-        'start_date',
+        'start_date'
     )
     list_display = (
         'product',

@@ -259,6 +259,7 @@ class Product(models.Model):
         blank=True,
         null=True
     )
+    billable = models.BooleanField(default=True)
 
     def __str__(self):
         return f'{self.product_name} ({self.product_number})'
