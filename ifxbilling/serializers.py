@@ -224,7 +224,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility')
+        fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility', 'billable')
         read_only_fields = ('id',)
 
     @transaction.atomic
@@ -236,6 +236,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
             'facility': validated_data['facility'],
+            'billable': validated_data['billable'],
         }
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             kwargs['billing_calculator'] = validated_data['billing_calculator']
@@ -265,9 +266,10 @@ class ProductSerializer(serializers.ModelSerializer):
         product = FiineAPI.readProduct(product_number=instance.product_number)
         product.product_name = validated_data['product_name']
         product.description = validated_data['product_description']
+        product.billable = validated_data['billable']
         FiineAPI.updateProduct(**product.to_dict())
 
-        for attr in ['product_name', 'product_description']:
+        for attr in ['product_name', 'product_description', 'billable']:
             setattr(instance, attr, validated_data[attr])
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             instance.billing_calculator = validated_data['billing_calculator']
@@ -348,7 +350,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
             'updated',
             'logged_by',
             'organization',
-            'processing',
+            'processing'
         )
         read_only_fields = ('id', 'created', 'updated')
 
