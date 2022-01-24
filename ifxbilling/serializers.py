@@ -228,7 +228,7 @@ class ProductSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     @transaction.atomic
-    def create(self, validated_data):
+    def get_validated_data(self, validated_data):
         '''
         Create new product in fiine first, then save any rates
         '''
@@ -236,13 +236,15 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
             'facility': validated_data['facility'],
-            'billable': validated_data['billable'],
+            #'billable': validated_data['billable'],  TODO: add back in when client is updated to add billable
         }
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             kwargs['billing_calculator'] = validated_data['billing_calculator']
+        return kwargs
 
-        product = fiine.createNewProduct(**kwargs)
-
+    def create(self, validated_data):
+        validated_data = self.get_validated_data(validated_data)
+        product = fiine.createNewProduct(**validated_data)
         if 'rates' in self.initial_data and self.initial_data['rates']:
             for rate_data in self.initial_data['rates']:
                 try:
