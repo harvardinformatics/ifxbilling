@@ -62,6 +62,7 @@ class TestProduct(APITestCase):
             'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
+            'billable': True,
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
@@ -73,6 +74,7 @@ class TestProduct(APITestCase):
             'product_name': 'Helium Dewar Test',
             'product_description': new_description,
             'facility': 'Liquid Nitrogen Service',
+            'billable': True,
         }
         url = reverse('product-detail', kwargs={ 'pk': product_id })
         response = self.client.put(url, product_data, format='json')
