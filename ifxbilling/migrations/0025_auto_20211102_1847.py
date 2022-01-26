@@ -14,16 +14,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='productusage',
-            name='logged_by',
-            field=models.ForeignKey(default=1, help_text='User that logged the usage (may be different than user)', on_delete=django.db.models.deletion.PROTECT, related_name='product_usage_logger', to=settings.AUTH_USER_MODEL),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='productusage',
-            name='organization',
-            field=models.ForeignKey(default=1, help_text='Organization responsible for the account.', on_delete=django.db.models.deletion.PROTECT, to='ifxuser.Organization'),
-            preserve_default=False,
-        ),
+        # migrations.AddField(
+        #     model_name='productusage',
+        #     name='logged_by',
+        #     field=models.ForeignKey(default=1, help_text='User that logged the usage (may be different than user)', on_delete=django.db.models.deletion.PROTECT, related_name='product_usage_logger', to=settings.AUTH_USER_MODEL),
+        #     preserve_default=False,
+        # ),
+        # migrations.AddField(
+        #     model_name='productusage',
+        #     name='organization',
+        #     field=models.ForeignKey(default=1, help_text='Organization responsible for the account.', on_delete=django.db.models.deletion.PROTECT, to='ifxuser.Organization'),
+        #     preserve_default=False,
+        # ),
     ]
