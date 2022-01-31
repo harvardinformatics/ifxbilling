@@ -14,7 +14,7 @@ router = routers.DefaultRouter()
 router.register(r'accounts', serializers.AccountViewSet, 'account')
 router.register(r'products', serializers.ProductViewSet)
 router.register(r'facilities', serializers.FacilityViewSet, 'facility')
-router.register(r'product-usages', serializers.ProductUsageViewSet)
+router.register(r'product-usages', serializers.ProductUsageViewSet, 'product-usages')
 router.register(r'billing-records', serializers.BillingRecordViewSet, 'billing-record')
 
 urlpatterns = [

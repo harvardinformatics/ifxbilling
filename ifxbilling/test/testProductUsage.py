@@ -18,7 +18,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from ifxbilling.test import data
-from ifxbilling.models import ProductUsage
+from ifxbilling.models import ProductUsage, Product
 
 class TestProductUsage(APITestCase):
     '''
@@ -52,7 +52,7 @@ class TestProductUsage(APITestCase):
             'description': 'Howdy',
             'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         }
-        url = reverse('productusage-list')
+        url = reverse('product-usages-list')
         response = self.client.post(url, product_usage_data, format='json')
         self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.data}')
 
@@ -74,6 +74,19 @@ class TestProductUsage(APITestCase):
             'start_date': timezone.make_aware(datetime(2021, 2, 1)),
             'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         }
-        url = reverse('productusage-list')
+        url = reverse('product-usages-list')
         response = self.client.post(url, product_usage_data, format='json')
         self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response {response.status_code}')
+
+    def testRetrieveByProduct(self):
+        '''
+        Ensure that a ProductUsage can be retrieved by Product id
+        '''
+        data.init(['Product', 'ProductUsage'])
+        product_name = 'Helium Balloon'
+        product_id = Product.objects.get(product_name=product_name).id
+        url = reverse('product-usages-list')
+        response = self.client.get(url, { 'product': product_id}, format='json')
+        pudata = response.data
+        self.assertTrue(len(pudata) == 1, f'Incorrect number of product usages returned: {pudata}')
+        self.assertTrue(pudata[0]['product'] == product_name, f'Incorrect product usage returned {pudata}')
