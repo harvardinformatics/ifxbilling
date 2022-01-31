@@ -10,6 +10,7 @@ Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    ifxbilling.migrations.0001_initial
    ifxbilling.migrations.0002_userproductaccount
@@ -33,3 +34,11 @@ Submodules
    ifxbilling.migrations.0019_productusage_updated
    ifxbilling.migrations.0020_auto_20210928_1907
    ifxbilling.migrations.0021_auto_20211008_1610
+   ifxbilling.migrations.0022_productusageprocessing
+   ifxbilling.migrations.0023_remove_productusageprocessing_billing_record
+   ifxbilling.migrations.0024_auto_20211026_1759
+   ifxbilling.migrations.0025_auto_20211102_1847
+   ifxbilling.migrations.0026_facility_object_code
+   ifxbilling.migrations.0027_auto_20211216_1428
+   ifxbilling.migrations.0028_auto_20220121_1923
+   ifxbilling.migrations.0029_auto_20220121_2019
