@@ -46,8 +46,6 @@ services:
       - MYSQL_DATABASE=ifxbilling
       - MYSQL_USER=ifxbilling
       - MYSQL_PASSWORD=ifxbilling
-    ports:
-      - 3307:3306
     networks:
       main:
   drf:
@@ -56,6 +54,7 @@ services:
       - db
     links:
       - fiine-drf
+      - db
     volumes:
       - .:/app
     ports:
