@@ -33,7 +33,7 @@ RUN --mount=type=ssh pip install --upgrade pip && \
     pip install git+ssh://git@gitlab-int.rc.fas.harvard.edu/informatics/ifxvalidcode.git@${IFXVALIDCODE_COMMIT} && \
     pip install -r requirements.txt
 
-CMD ./wait-for-it.sh -t 60 db:3306 && \
+CMD ./wait-for-it.sh -t 120 db:3306 && \
     ./manage.py makemigrations && \
     ./manage.py migrate && \
     ./manage.py applyDevBillingData && \
