@@ -55,7 +55,7 @@ class TestUnauthorized(APITestCase):
                 'description': 'Howdy',
                 'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
             }
-            url = reverse('productusage-list')
+            url = reverse('product-usages-list')
             response = self.client.post(url, product_usage_data, format='json')
             self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.status_code}')
 
@@ -86,7 +86,7 @@ class TestUnauthorized(APITestCase):
                 'description': 'Howdy',
                 'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
             }
-            url = reverse('productusage-list')
+            url = reverse('product-usages-list')
             response = self.client.post(url, product_usage_data, format='json')
             self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.data}')
 
@@ -120,7 +120,7 @@ class TestUnauthorized(APITestCase):
                 'description': 'Howdy',
                 'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
             }
-            url = reverse('productusage-list')
+            url = reverse('product-usages-list')
             response = self.client.post(url, product_usage_data, format='json')
             self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.status_code}')
 
@@ -153,7 +153,7 @@ class TestUnauthorized(APITestCase):
                 'description': 'Howdy',
                 'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
             }
-            url = reverse('productusage-list')
+            url = reverse('product-usages-list')
             response = self.client.post(url, product_usage_data, format='json')
             self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response {response.status_code}')
 

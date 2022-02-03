@@ -235,6 +235,17 @@ PRODUCT_USAGES = [
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'logged_by': 'john@snow.com',
     },
+    {
+        'product': 'Helium Balloon',
+        'product_user': 'Markos Hankin',
+        'quantity': 1,
+        'units': 'ea',
+        'year': 2022,
+        'month': 1,
+        'start_date': timezone.make_aware(datetime(2020, 3, 1)),
+        'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
+        'logged_by': 'john@snow.com',
+    },
 ]
 
 def clearTestData():

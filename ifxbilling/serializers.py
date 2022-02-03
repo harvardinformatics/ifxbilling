@@ -421,8 +421,26 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for ProductUsages
     '''
-    queryset = models.ProductUsage.objects.all()
     serializer_class = ProductUsageSerializer
+
+    def get_queryset(self):
+        invoice_prefix = self.request.query_params.get('invoice_prefix')
+        product_id = self.request.query_params.get('product')
+        year = self.request.query_params.get('year')
+        month = self.request.query_params.get('month')
+
+        queryset = models.ProductUsage.objects.all()
+
+        if year:
+            queryset = queryset.filter(year=year)
+        if month:
+            queryset = queryset.filter(month=month)
+        if product_id:
+            queryset = queryset.filter(product__id=product_id)
+        if invoice_prefix:
+            queryset = queryset.filter(product__facility__invoice_prefix=invoice_prefix)
+
+        return queryset.order_by('-start_date')
 
 
 class TransactionSerializer(serializers.ModelSerializer):

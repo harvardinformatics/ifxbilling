@@ -4,6 +4,12 @@ div.document {
   margin-left: 5%;
   margin-right: 5%;
 }
+div.sphinxsidebar {
+  width: 260px;
+}
+div.bodywrapper {
+  margin: 0 0 0 260px;
+}
 div.body {
   max-width: 1200px;
 }
@@ -43,4 +49,28 @@ dl.field-list > dd {
 }
 .field-odd {
   background-color: #EFEFEF;
+}
+dl.class {
+  margin-top: 4em !important;
+}
+dl.py {
+  margin-top: 1em;
+}
+dl.py p{
+  font-size: 20px;
+}
+.descname {
+  font-weight: normal;
+}
+dt {
+  font-weight: bold;
+  font-style: italic;
+}
+.fiine {
+    font-weight: 800;
+    color: darkgreen;
+}
+
+code.xref, a code {
+    font-weight: normal;
 }

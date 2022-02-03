@@ -32,6 +32,7 @@ author = 'Aaron Kitzmiller, Andy Bryant, Meghan Correa'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
     'recommonmark',
 ]
 
@@ -57,6 +58,40 @@ html_theme = "alabaster"
 html_static_path = ['_static']
 
 
+# Intersphinx mappings
+intersphinx_mapping = {'ifxbilling': ('https://ifx.rc.fas.harvard.edu/docs/ifx/ifxbilling', None)}
+
+# --- Do not process common Django functions in autodoc ----------------------
+def skip_common_django(app, what, name, obj, skip, options):
+    '''
+    Don't need these
+    '''
+    skips = [
+        'get_next_by_created',
+        'get_next_by_end_date',
+        'get_next_by_start_date',
+        'get_next_by_updated',
+        'get_previous_by_created',
+        'get_previous_by_end_date',
+        'get_previous_by_start_date',
+        'get_previous_by_updated',
+        'DoesNotExist',
+        'MultipleObjectsReturned',
+        '__doc__',
+        '__module__',
+        '_meta',
+        'objects',
+        '__dict__',
+        '__weakref__',
+        '_declared_fields',
+    ]
+    if what == 'class':
+        if name in skips or name[-3:] == '_id' or name[-4:] == '_ptr':
+            return True
+    return False
+
+
 # -- Extension configuration -------------------------------------------------
 def setup(app):
-    app.add_stylesheet('css/ifx.css')
+    app.add_css_file('css/ifx.css')
+    app.connect('autodoc-skip-member', skip_common_django)

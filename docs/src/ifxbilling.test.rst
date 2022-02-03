@@ -10,6 +10,7 @@ Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    ifxbilling.test.data
    ifxbilling.test.testAccount
@@ -18,5 +19,6 @@ Submodules
    ifxbilling.test.testBillingRecordAuthorship
    ifxbilling.test.testProduct
    ifxbilling.test.testProductUsage
+   ifxbilling.test.testProductUsageProcessing
    ifxbilling.test.testUnauthorized
    ifxbilling.test.testUpdateUserAccounts
