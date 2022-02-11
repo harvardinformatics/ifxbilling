@@ -356,41 +356,8 @@ class ProductUsageSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'created', 'updated')
 
-    @transaction.atomic
-    def get_validated_data(self, validated_data):
+    def get_validated_data(self, validated_data, initial_data):
         # Pop the user
-        if 'product_user' not in self.initial_data:
-            raise serializers.ValidationError(
-                detail={
-                    'product_user': 'product_user must be set'
-                }
-            )
-        product_user_data = self.initial_data['product_user']
-        try:
-            product_user_ifxid = product_user_data['ifxid']
-            product_user = get_user_model().objects.get(ifxid=product_user_ifxid)
-            validated_data['product_user'] = product_user
-        except get_user_model().DoesNotExist:
-            raise serializers.ValidationError(
-                detail={
-                    'product_user': f'Cannot find product user with ifxid {product_user_ifxid}'
-                }
-            )
-        if 'start_date' not in validated_data:
-            validated_data['start_date'] = timezone.now()
-        validated_data['logged_by'] = self.context['request'].user
-        return validated_data
-
-    def create(self, validated_data):
-        validated_data = self.get_validated_data(validated_data)
-        product_usage = models.ProductUsage.objects.create(**validated_data)
-        return product_usage
-
-    @transaction.atomic
-    def update(self, instance, validated_data, bulk_id=None):
-        initial_data = self.initial_data
-        if bulk_id is not None:
-            initial_data = self.initial_data[bulk_id]
         if 'product_user' not in initial_data:
             raise serializers.ValidationError(
                 detail={
@@ -408,6 +375,24 @@ class ProductUsageSerializer(serializers.ModelSerializer):
                     'product_user': f'Cannot find product user with ifxid {product_user_ifxid}'
                 }
             )
+        if 'start_date' not in validated_data:
+            validated_data['start_date'] = timezone.now()
+        validated_data['logged_by'] = self.context['request'].user
+        return validated_data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        validated_data = self.get_validated_data(validated_data, self.initial_data)
+        instance = self.Meta.model.objects.create(**validated_data)
+        return instance
+
+    @transaction.atomic
+    def update(self, instance, validated_data, bulk_id=None):
+        initial_data = self.initial_data
+        if bulk_id is not None:
+            initial_data = self.initial_data[bulk_id]
+
+        validated_data = self.get_validated_data(validated_data, initial_data)
 
         for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date', 'description']:
             if attr in validated_data:
