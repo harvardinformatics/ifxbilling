@@ -48,7 +48,6 @@ def updateUserAccounts(user):
     '''
     ifxid = user.ifxid
     fiine_person = FiineAPI.readPerson(ifxid=ifxid)
-    logger.debug('fiine_person retrieved for ifxid %s: %s', ifxid, str(fiine_person))
 
     # Collect user accounts and facility accounts for each facility
     # Substitute object code for the facility if it has one
@@ -149,7 +148,7 @@ def updateProducts():
         fiine_products = FiineAPI.listProducts(facility=facility.name)
         for fiine_product in fiine_products:
             try:
-                logger.error(f'updating {fiine_product.product_number}')
+                logger.info(f'updating {fiine_product.product_number}')
                 product = models.Product.objects.get(product_number=fiine_product.product_number)
                 for field in ['product_name', 'product_description']:
                     setattr(product, field, getattr(fiine_product, field))
