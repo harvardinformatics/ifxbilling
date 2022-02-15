@@ -48,6 +48,11 @@ class Command(BaseCommand):
             dest='facility_name',
             help='Name of the facility to calculate for.  Can be omitted if there is only one Facility record.'
         )
+        parser.add_argument(
+            '--product-names',
+            dest='product_names',
+            help='Comma-separated list of product names.'
+        )
 
     def handle(self, *args, **kwargs):
         month = int(kwargs['month'])
@@ -55,6 +60,11 @@ class Command(BaseCommand):
         recalculate = kwargs['recalculate']
         verbose = kwargs['verbose']
         facility_name = kwargs.get('facility_name')
+        product_name_str = kwargs.get('product_names')
+        product_names = None
+        if product_name_str:
+            product_names = product_name_str.split(',')
+
         if facility_name:
             try:
                 facility = Facility.objects.get(name=facility_name)
@@ -65,7 +75,7 @@ class Command(BaseCommand):
                 raise Exception('If --facility-name is omitted, there must be exactly one Facility record.')
             facility = Facility.objects.first()
 
-        (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, verbose)
+        (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, verbose, product_names=product_names)
 
         print(f'{successes} product usages successfully processed')
         if errors:

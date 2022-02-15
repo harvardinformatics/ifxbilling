@@ -49,13 +49,25 @@ class TestCalculateBillingMonth(APITestCase):
         # Values on Helium Balloon
         year = 2022
         month = 1
-        (successes, errors) = calculateBillingMonth(month, year, facility, product_name='Helium Balloon')
+        (successes, errors) = calculateBillingMonth(month, year, facility, product_names=['Helium Balloon'])
         self.assertTrue(successes == 2, f'Incorrect result {successes} {errors}')
         self.assertTrue(len(errors) == 0, f'Errors returned! {errors}')
 
         year = 2021
         month = 3
-        (successes, errors) = calculateBillingMonth(month, year, facility, product_name='Helium Dewar')
+        (successes, errors) = calculateBillingMonth(month, year, facility, product_names=['Helium Dewar'])
         self.assertTrue(successes == 1, f'Incorrect result {successes} {errors}')
         self.assertTrue(len(errors) == 0, f'Errors returned! {errors}')
 
+    def testBadProduct(self):
+        '''
+        Ensure that calculation of billing records for a bad product will fail
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+
+        facility = models.Facility.objects.get(name='Helium Recovery Service')
+
+        # Values on Helium Balloon
+        year = 2022
+        month = 1
+        self.assertRaisesMessage(Exception, 'Product does not exist', calculateBillingMonth, month, year, facility, product_names=['Not a product'])

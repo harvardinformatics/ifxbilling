@@ -43,7 +43,7 @@ def getClassFromName(dotted_path):
         raise ImportError(msg) from e
 
 
-def calculateBillingMonth(month, year, facility, recalculate=False, verbose=False, product_name=None):
+def calculateBillingMonth(month, year, facility, recalculate=False, verbose=False, product_names=None):
     '''
     Calculate a months worth of billing records and return the number of successes and list of error messages
     '''
@@ -52,13 +52,15 @@ def calculateBillingMonth(month, year, facility, recalculate=False, verbose=Fals
     product_usages = ProductUsage.objects.filter(month=month, year=year, product__facility=facility)
 
     # Filter by product if needed
-    if product_name is not None:
-        try:
-            product = Product.objects.get(product_name=product_name)
-        except Product.DoesNotExist:
-            raise Exception(f'Cannot filter by {product_name}: Product does not exist.')
-
-        product_usages = product_usages.filter(product=product)
+    products = []
+    if product_names is not None:
+        for product_name in product_names:
+            try:
+                products.append(Product.objects.get(product_name=product_name))
+            except Product.DoesNotExist:
+                raise Exception(f'Cannot filter by {product_name}: Product does not exist.')
+        if products:
+            product_usages = product_usages.filter(product__in=products)
 
     calculators = {
         'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
