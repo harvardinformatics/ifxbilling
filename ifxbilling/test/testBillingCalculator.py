@@ -102,18 +102,18 @@ class TestCalculator(APITestCase):
             except models.BillingRecord.DoesNotExist:
                 self.assertTrue(False, f'Unable to find billing record with charge {charge}\n{brs}')
 
-    def testBadUserProductAccountSplit(self):
-        '''
-        Ensure that a split that doesn't add to 100 fails.
-        '''
-        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
-        product_usage_data = data.PRODUCT_USAGES[1]
-        product_usage = models.ProductUsage.objects.get(
-            product__product_name=product_usage_data['product'],
-            product_user__full_name=product_usage_data['product_user'],
-            quantity=product_usage_data['quantity'],
-            year=product_usage_data['year']
-        )
+    # def testBadUserProductAccountSplit(self):
+    #     '''
+    #     Ensure that a split that doesn't add to 100 fails.
+    #     '''
+    #     data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+    #     product_usage_data = data.PRODUCT_USAGES[1]
+    #     product_usage = models.ProductUsage.objects.get(
+    #         product__product_name=product_usage_data['product'],
+    #         product_user__full_name=product_usage_data['product_user'],
+    #         quantity=product_usage_data['quantity'],
+    #         year=product_usage_data['year']
+    #     )
 
-        bbc = BasicBillingCalculator()
-        self.assertRaisesMessage(Exception, 'User product account percents add up to', bbc.createBillingRecordsForUsage, product_usage)
+    #     bbc = BasicBillingCalculator()
+    #     self.assertRaisesMessage(Exception, 'User product account percents add up to', bbc.createBillingRecordsForUsage, product_usage)

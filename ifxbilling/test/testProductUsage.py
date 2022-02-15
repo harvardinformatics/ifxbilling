@@ -118,5 +118,5 @@ class TestProductUsage(APITestCase):
         url = reverse('product-usages-list')
         response = self.client.get(url, { 'product': product_id}, format='json')
         pudata = response.data
-        self.assertTrue(len(pudata) == 1, f'Incorrect number of product usages returned: {pudata}')
+        self.assertTrue(len(pudata) == 2, f'Incorrect number of product usages returned: {pudata}')
         self.assertTrue(pudata[0]['product'] == product_name, f'Incorrect product usage returned {pudata}')
