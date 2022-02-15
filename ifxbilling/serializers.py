@@ -394,7 +394,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
 
         validated_data = self.get_validated_data(validated_data, initial_data)
 
-        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date', 'description']:
+        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date', 'description', 'end_date']:
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 
