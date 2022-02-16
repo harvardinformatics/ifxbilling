@@ -14,7 +14,7 @@ import logging
 import json
 from importlib import import_module
 from django.db import transaction
-from ifxbilling.models import BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage
+from ifxbilling.models import BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product
 
 
 logger = logging.getLogger('ifxbilling')
@@ -43,13 +43,25 @@ def getClassFromName(dotted_path):
         raise ImportError(msg) from e
 
 
-def calculateBillingMonth(month, year, facility, recalculate=False, verbose=False):
+def calculateBillingMonth(month, year, facility, recalculate=False, verbose=False, product_names=None):
     '''
     Calculate a months worth of billing records and return the number of successes and list of error messages
     '''
     successes = 0
     errors = []
     product_usages = ProductUsage.objects.filter(month=month, year=year, product__facility=facility)
+
+    # Filter by product if needed
+    products = []
+    if product_names is not None:
+        for product_name in product_names:
+            try:
+                products.append(Product.objects.get(product_name=product_name))
+            except Product.DoesNotExist:
+                raise Exception(f'Cannot filter by {product_name}: Product does not exist.')
+        if products:
+            product_usages = product_usages.filter(product__in=products)
+
     calculators = {
         'ifxbilling.calculator.BasicBillingCalculator': BasicBillingCalculator()
     }
