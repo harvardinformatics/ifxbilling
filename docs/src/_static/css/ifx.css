@@ -67,10 +67,13 @@ dt {
   font-style: italic;
 }
 .fiine {
-    font-weight: 800;
-    color: darkgreen;
+  font-weight: 800;
+  color: darkgreen;
 }
 
 code.xref, a code {
-    font-weight: normal;
+  font-weight: normal;
+}
+dl.http {
+  margin-top: 2em;
 }

@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'author',
     'djvocab',
     'ifxauth',
+    'drf_yasg',
     'ifxbilling',
 ]
 
@@ -238,3 +239,7 @@ class IFXMESSAGES():
     '''
     EXPENSE_CODE_REQUEST_MESSAGE_NAME = 'ifxbilling_expense_code_request_message'
 
+
+SWAGGER_SETTINGS = {
+   'DEFAULT_INFO': 'ifxbilling.urls.API_INFO',
+}
