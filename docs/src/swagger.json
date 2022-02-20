@@ -1,0 +1,1698 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "IfxBilling API",
+        "description": "Library for billing stuff",
+        "termsOfService": "https://www.google.com/policies/terms/",
+        "contact": {
+            "email": "ifx@fas.harvard.edu"
+        },
+        "license": {
+            "name": "GNU GPL version 2"
+        },
+        "version": "v1"
+    },
+    "basePath": "/ifxbilling/api",
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "securityDefinitions": {
+        "Basic": {
+            "type": "basic"
+        }
+    },
+    "security": [
+        {
+            "Basic": []
+        }
+    ],
+    "paths": {
+        "/accounts/": {
+            "get": {
+                "operationId": "accounts_list",
+                "description": "ViewSet for Account models",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Account"
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "accounts"
+                ]
+            },
+            "post": {
+                "operationId": "accounts_create",
+                "description": "ViewSet for Account models",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Account"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Account"
+                        }
+                    }
+                },
+                "tags": [
+                    "accounts"
+                ]
+            },
+            "parameters": []
+        },
+        "/accounts/{id}/": {
+            "get": {
+                "operationId": "accounts_read",
+                "description": "ViewSet for Account models",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Account"
+                        }
+                    }
+                },
+                "tags": [
+                    "accounts"
+                ]
+            },
+            "put": {
+                "operationId": "accounts_update",
+                "description": "ViewSet for Account models",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Account"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Account"
+                        }
+                    }
+                },
+                "tags": [
+                    "accounts"
+                ]
+            },
+            "patch": {
+                "operationId": "accounts_partial_update",
+                "description": "ViewSet for Account models",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Account"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Account"
+                        }
+                    }
+                },
+                "tags": [
+                    "accounts"
+                ]
+            },
+            "delete": {
+                "operationId": "accounts_delete",
+                "description": "ViewSet for Account models",
+                "parameters": [],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "accounts"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/billing-records/": {
+            "get": {
+                "operationId": "billing-records_list",
+                "description": "ViewSet for BillingRecords",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/BillingRecord"
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "billing-records"
+                ]
+            },
+            "post": {
+                "operationId": "billing-records_create",
+                "description": "ViewSet for BillingRecords",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                },
+                "tags": [
+                    "billing-records"
+                ]
+            },
+            "parameters": []
+        },
+        "/billing-records/bulk_update/": {
+            "post": {
+                "operationId": "billing-records_bulk_update",
+                "description": "Call serializer update on an array of billing records",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                },
+                "tags": [
+                    "billing-records"
+                ]
+            },
+            "parameters": []
+        },
+        "/billing-records/{id}/": {
+            "get": {
+                "operationId": "billing-records_read",
+                "description": "ViewSet for BillingRecords",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                },
+                "tags": [
+                    "billing-records"
+                ]
+            },
+            "put": {
+                "operationId": "billing-records_update",
+                "description": "ViewSet for BillingRecords",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                },
+                "tags": [
+                    "billing-records"
+                ]
+            },
+            "patch": {
+                "operationId": "billing-records_partial_update",
+                "description": "ViewSet for BillingRecords",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/BillingRecord"
+                        }
+                    }
+                },
+                "tags": [
+                    "billing-records"
+                ]
+            },
+            "delete": {
+                "operationId": "billing-records_delete",
+                "description": "ViewSet for BillingRecords",
+                "parameters": [],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "billing-records"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/expense-code-request/": {
+            "post": {
+                "operationId": "expense-code-request_create",
+                "description": "email an expense code request",
+                "parameters": [],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "expense-code-request"
+                ]
+            },
+            "parameters": []
+        },
+        "/facilities/": {
+            "get": {
+                "operationId": "facilities_list",
+                "description": "Viewset for Facility",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Facility"
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "facilities"
+                ]
+            },
+            "post": {
+                "operationId": "facilities_create",
+                "description": "Viewset for Facility",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Facility"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Facility"
+                        }
+                    }
+                },
+                "tags": [
+                    "facilities"
+                ]
+            },
+            "parameters": []
+        },
+        "/facilities/{id}/": {
+            "get": {
+                "operationId": "facilities_read",
+                "description": "Viewset for Facility",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Facility"
+                        }
+                    }
+                },
+                "tags": [
+                    "facilities"
+                ]
+            },
+            "put": {
+                "operationId": "facilities_update",
+                "description": "Viewset for Facility",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Facility"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Facility"
+                        }
+                    }
+                },
+                "tags": [
+                    "facilities"
+                ]
+            },
+            "patch": {
+                "operationId": "facilities_partial_update",
+                "description": "Viewset for Facility",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Facility"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Facility"
+                        }
+                    }
+                },
+                "tags": [
+                    "facilities"
+                ]
+            },
+            "delete": {
+                "operationId": "facilities_delete",
+                "description": "Viewset for Facility",
+                "parameters": [],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "facilities"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/product-usages/": {
+            "get": {
+                "operationId": "product-usages_list",
+                "description": "ViewSet for ProductUsages",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ProductUsage"
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "product-usages"
+                ]
+            },
+            "post": {
+                "operationId": "product-usages_create",
+                "description": "ViewSet for ProductUsages",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ProductUsage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/ProductUsage"
+                        }
+                    }
+                },
+                "tags": [
+                    "product-usages"
+                ]
+            },
+            "parameters": []
+        },
+        "/product-usages/{id}/": {
+            "get": {
+                "operationId": "product-usages_read",
+                "description": "ViewSet for ProductUsages",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/ProductUsage"
+                        }
+                    }
+                },
+                "tags": [
+                    "product-usages"
+                ]
+            },
+            "put": {
+                "operationId": "product-usages_update",
+                "description": "ViewSet for ProductUsages",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ProductUsage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/ProductUsage"
+                        }
+                    }
+                },
+                "tags": [
+                    "product-usages"
+                ]
+            },
+            "patch": {
+                "operationId": "product-usages_partial_update",
+                "description": "ViewSet for ProductUsages",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ProductUsage"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/ProductUsage"
+                        }
+                    }
+                },
+                "tags": [
+                    "product-usages"
+                ]
+            },
+            "delete": {
+                "operationId": "product-usages_delete",
+                "description": "ViewSet for ProductUsages",
+                "parameters": [],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "product-usages"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/products/": {
+            "get": {
+                "operationId": "products_list",
+                "description": "ViewSet for Product models",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Product"
+                            }
+                        }
+                    }
+                },
+                "tags": [
+                    "products"
+                ]
+            },
+            "post": {
+                "operationId": "products_create",
+                "description": "ViewSet for Product models",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Product"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Product"
+                        }
+                    }
+                },
+                "tags": [
+                    "products"
+                ]
+            },
+            "parameters": []
+        },
+        "/products/{id}/": {
+            "get": {
+                "operationId": "products_read",
+                "description": "ViewSet for Product models",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Product"
+                        }
+                    }
+                },
+                "tags": [
+                    "products"
+                ]
+            },
+            "put": {
+                "operationId": "products_update",
+                "description": "ViewSet for Product models",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Product"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Product"
+                        }
+                    }
+                },
+                "tags": [
+                    "products"
+                ]
+            },
+            "patch": {
+                "operationId": "products_partial_update",
+                "description": "ViewSet for Product models",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Product"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/Product"
+                        }
+                    }
+                },
+                "tags": [
+                    "products"
+                ]
+            },
+            "delete": {
+                "operationId": "products_delete",
+                "description": "ViewSet for Product models",
+                "parameters": [],
+                "responses": {
+                    "204": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "products"
+                ]
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "A unique integer value identifying this product.",
+                    "required": true,
+                    "type": "integer"
+                }
+            ]
+        },
+        "/unauthorized/": {
+            "get": {
+                "operationId": "unauthorized_list",
+                "description": "Return a list of product usages for which there is no expense code authorized",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "unauthorized"
+                ]
+            },
+            "parameters": []
+        },
+        "/update-user-accounts/": {
+            "post": {
+                "operationId": "update-user-accounts_create",
+                "description": "Take a list of ifxids and update data from fiine.  Body should be of the form:\n{\n    'ifxids': [\n        'IFXID0001',\n        'IFXID0002',\n    ]\n}\nIf no data is specified, all accounts will be updated",
+                "parameters": [],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "update-user-accounts"
+                ]
+            },
+            "parameters": []
+        }
+    },
+    "definitions": {
+        "SkinnyUser": {
+            "required": [
+                "username",
+                "email"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "ifxid": {
+                    "title": "Ifxid",
+                    "type": "string",
+                    "maxLength": 20,
+                    "x-nullable": true
+                },
+                "username": {
+                    "title": "Username",
+                    "description": "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
+                    "type": "string",
+                    "pattern": "^[\\w.@+-]+$",
+                    "maxLength": 150,
+                    "minLength": 1
+                },
+                "first_name": {
+                    "title": "First name",
+                    "type": "string",
+                    "maxLength": 30
+                },
+                "last_name": {
+                    "title": "Last name",
+                    "type": "string",
+                    "maxLength": 150,
+                    "x-nullable": true
+                },
+                "full_name": {
+                    "title": "Full name",
+                    "type": "string",
+                    "maxLength": 255,
+                    "x-nullable": true
+                },
+                "primary_affiliation": {
+                    "title": "Primary affiliation",
+                    "type": "integer",
+                    "x-nullable": true
+                },
+                "email": {
+                    "title": "Email address",
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254,
+                    "minLength": 1
+                },
+                "is_active": {
+                    "title": "Active",
+                    "description": "Designates whether this user should be treated as active. Unselect this instead of deleting accounts.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "UserAccount": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "user": {
+                    "$ref": "#/definitions/SkinnyUser"
+                },
+                "is_valid": {
+                    "title": "Is valid",
+                    "type": "boolean",
+                    "readOnly": true
+                }
+            }
+        },
+        "UserProductAccount": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "user": {
+                    "$ref": "#/definitions/SkinnyUser"
+                },
+                "product": {
+                    "title": "Product",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "percent": {
+                    "title": "Percent",
+                    "description": "Percent of charge that should be applied to this account for the user product",
+                    "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": -2147483648
+                },
+                "is_valid": {
+                    "title": "Is valid",
+                    "type": "boolean",
+                    "readOnly": true
+                }
+            }
+        },
+        "Account": {
+            "required": [
+                "code",
+                "organization",
+                "root"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "code": {
+                    "title": "Code",
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "organization": {
+                    "title": "Organization",
+                    "type": "string"
+                },
+                "account_type": {
+                    "title": "Account type",
+                    "type": "string",
+                    "enum": [
+                        "Expense Code",
+                        "PO"
+                    ]
+                },
+                "root": {
+                    "title": "Root",
+                    "type": "string",
+                    "maxLength": 5,
+                    "minLength": 1
+                },
+                "expiration_date": {
+                    "title": "Expiration date",
+                    "type": "string",
+                    "format": "date"
+                },
+                "active": {
+                    "title": "Active",
+                    "type": "boolean"
+                },
+                "valid_from": {
+                    "title": "Valid from",
+                    "type": "string",
+                    "format": "date"
+                },
+                "created": {
+                    "title": "Created",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "updated": {
+                    "title": "Updated",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "slug": {
+                    "title": "Slug",
+                    "description": "EC or PO + institution",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                },
+                "user_accounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UserAccount"
+                    },
+                    "readOnly": true
+                },
+                "user_product_accounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UserProductAccount"
+                    },
+                    "readOnly": true
+                }
+            }
+        },
+        "BillingRecordAccount": {
+            "required": [
+                "organization"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "code": {
+                    "title": "Code",
+                    "description": "Account code (e.g. expense code or PO number)",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                },
+                "name": {
+                    "title": "Name",
+                    "description": "Short, human readable name for this code",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                },
+                "organization": {
+                    "title": "Organization",
+                    "type": "string"
+                },
+                "account_type": {
+                    "title": "Account type",
+                    "description": "Expense Code or PO",
+                    "type": "string",
+                    "enum": [
+                        "Expense Code",
+                        "PO"
+                    ],
+                    "readOnly": true
+                },
+                "root": {
+                    "title": "Root",
+                    "description": "If it is an expense code, the last 5 digits",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                },
+                "expiration_date": {
+                    "title": "Expiration date",
+                    "type": "string",
+                    "format": "date",
+                    "readOnly": true
+                },
+                "active": {
+                    "title": "Active",
+                    "type": "boolean",
+                    "readOnly": true
+                },
+                "valid_from": {
+                    "title": "Valid from",
+                    "type": "string",
+                    "format": "date",
+                    "readOnly": true
+                },
+                "created": {
+                    "title": "Created",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "updated": {
+                    "title": "Updated",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "slug": {
+                    "title": "Slug",
+                    "description": "EC or PO + institution",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                }
+            }
+        },
+        "AffiliationUser": {
+            "required": [
+                "organization"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "role": {
+                    "title": "Role",
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
+                "organization": {
+                    "title": "Organization",
+                    "type": "string"
+                },
+                "active": {
+                    "title": "Active",
+                    "type": "boolean"
+                }
+            }
+        },
+        "Contact": {
+            "required": [
+                "type",
+                "detail"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "is_valid": {
+                    "title": "Is valid",
+                    "type": "boolean"
+                },
+                "ifxcon": {
+                    "title": "Ifxcon",
+                    "description": "Contact identifier",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "type": {
+                    "title": "Type",
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 1
+                },
+                "detail": {
+                    "title": "Detail",
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "phone": {
+                    "title": "Phone",
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "address": {
+                    "title": "Address",
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "created": {
+                    "title": "Created",
+                    "description": "Date created",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                }
+            }
+        },
+        "UserContact": {
+            "required": [
+                "user",
+                "role"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "user": {
+                    "title": "User",
+                    "type": "integer"
+                },
+                "contact": {
+                    "$ref": "#/definitions/Contact"
+                },
+                "role": {
+                    "title": "Role",
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 1
+                }
+            }
+        },
+        "User": {
+            "required": [
+                "email",
+                "is_staff",
+                "first_name",
+                "last_name",
+                "full_name",
+                "is_active",
+                "primary_affiliation"
+            ],
+            "type": "object",
+            "properties": {
+                "username": {
+                    "title": "Username",
+                    "description": "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                },
+                "email": {
+                    "title": "Email",
+                    "type": "string",
+                    "maxLength": 254,
+                    "minLength": 1
+                },
+                "is_staff": {
+                    "title": "Is staff",
+                    "type": "boolean"
+                },
+                "first_name": {
+                    "title": "First name",
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 1
+                },
+                "last_name": {
+                    "title": "Last name",
+                    "type": "string",
+                    "maxLength": 150,
+                    "minLength": 1
+                },
+                "full_name": {
+                    "title": "Full name",
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "ifxid": {
+                    "title": "Ifxid",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                },
+                "is_active": {
+                    "title": "Is active",
+                    "type": "boolean"
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "uniqueItems": true
+                },
+                "last_update": {
+                    "title": "Last update",
+                    "description": "Last updated",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "date_joined": {
+                    "title": "Date joined",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "affiliations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AffiliationUser"
+                    },
+                    "readOnly": true
+                },
+                "primary_affiliation": {
+                    "title": "Primary affiliation",
+                    "type": "string"
+                },
+                "contacts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UserContact"
+                    },
+                    "readOnly": true
+                },
+                "change_comment": {
+                    "title": "Change comment",
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 1,
+                    "x-nullable": true
+                }
+            }
+        },
+        "ProductUsageProcessing": {
+            "type": "object",
+            "properties": {
+                "resolved": {
+                    "title": "Resolved",
+                    "type": "boolean"
+                },
+                "error_message": {
+                    "title": "Error message",
+                    "description": "Error message from processing into billing record.",
+                    "type": "string",
+                    "maxLength": 2000,
+                    "x-nullable": true
+                },
+                "created": {
+                    "title": "Created",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "updated": {
+                    "title": "Updated",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                }
+            }
+        },
+        "ProductUsage": {
+            "required": [
+                "product",
+                "organization"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "product": {
+                    "title": "Product",
+                    "type": "string"
+                },
+                "product_user": {
+                    "$ref": "#/definitions/User"
+                },
+                "year": {
+                    "title": "Year",
+                    "type": "integer"
+                },
+                "month": {
+                    "title": "Month",
+                    "type": "integer"
+                },
+                "quantity": {
+                    "title": "Quantity",
+                    "type": "integer"
+                },
+                "units": {
+                    "title": "Units",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "created": {
+                    "title": "Created",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "start_date": {
+                    "title": "Start date",
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 1
+                },
+                "updated": {
+                    "title": "Updated",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "logged_by": {
+                    "$ref": "#/definitions/User"
+                },
+                "organization": {
+                    "title": "Organization",
+                    "type": "string"
+                },
+                "processing": {
+                    "$ref": "#/definitions/ProductUsageProcessing"
+                }
+            }
+        },
+        "Transaction": {
+            "required": [
+                "charge",
+                "description"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "charge": {
+                    "title": "Charge",
+                    "type": "integer"
+                },
+                "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "created": {
+                    "title": "Created",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "author": {
+                    "$ref": "#/definitions/User"
+                },
+                "rate": {
+                    "title": "Rate",
+                    "description": "Text description of the rate used to calculate the charge",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                }
+            }
+        },
+        "BillingRecordState": {
+            "required": [
+                "name",
+                "user",
+                "approvers"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "user": {
+                    "title": "User",
+                    "type": "string"
+                },
+                "approvers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "uniqueItems": true
+                },
+                "comment": {
+                    "title": "Comment",
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
+                },
+                "created": {
+                    "title": "Created",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "updated": {
+                    "title": "Updated",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                }
+            }
+        },
+        "BillingRecord": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "account": {
+                    "$ref": "#/definitions/BillingRecordAccount"
+                },
+                "product_usage": {
+                    "$ref": "#/definitions/ProductUsage"
+                },
+                "charge": {
+                    "title": "Charge",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "description": {
+                    "title": "Description",
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "year": {
+                    "title": "Year",
+                    "type": "integer"
+                },
+                "month": {
+                    "title": "Month",
+                    "type": "integer"
+                },
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Transaction"
+                    },
+                    "readOnly": true
+                },
+                "current_state": {
+                    "title": "Current state",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "billing_record_states": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BillingRecordState"
+                    },
+                    "readOnly": true
+                },
+                "created": {
+                    "title": "Created",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "updated": {
+                    "title": "Updated",
+                    "type": "string",
+                    "format": "date-time",
+                    "readOnly": true
+                },
+                "percent": {
+                    "title": "Percent",
+                    "type": "integer"
+                },
+                "author": {
+                    "$ref": "#/definitions/User"
+                },
+                "rate": {
+                    "title": "Rate",
+                    "description": "Text description of the rate used to calculate the charge",
+                    "type": "string",
+                    "readOnly": true,
+                    "minLength": 1
+                }
+            }
+        },
+        "Facility": {
+            "required": [
+                "name",
+                "application_username",
+                "invoice_prefix"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "name": {
+                    "title": "Name",
+                    "description": "Name of the facility (e.g. Helium Recovery Service)",
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "application_username": {
+                    "title": "Application username",
+                    "description": "Username that permits logging in to the facility application (e.g. nice)",
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
+                "invoice_prefix": {
+                    "title": "Invoice prefix",
+                    "description": "Prefix used in the invoice names for the facility.",
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                }
+            }
+        },
+        "Rate": {
+            "required": [
+                "name",
+                "price",
+                "units",
+                "max_qty"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "name": {
+                    "title": "Name",
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
+                "price": {
+                    "title": "Price",
+                    "type": "integer"
+                },
+                "units": {
+                    "title": "Units",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "is_active": {
+                    "title": "Is active",
+                    "type": "boolean"
+                },
+                "max_qty": {
+                    "title": "Max qty",
+                    "type": "integer"
+                }
+            }
+        },
+        "Product": {
+            "required": [
+                "product_name",
+                "product_description",
+                "facility"
+            ],
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "ID",
+                    "type": "integer",
+                    "readOnly": true
+                },
+                "product_number": {
+                    "title": "Product number",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "product_name": {
+                    "title": "Product name",
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
+                "product_description": {
+                    "title": "Product description",
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                },
+                "billing_calculator": {
+                    "title": "Billing calculator",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "rates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Rate"
+                    },
+                    "readOnly": true
+                },
+                "facility": {
+                    "title": "Facility",
+                    "type": "string"
+                },
+                "billable": {
+                    "title": "Billable",
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}

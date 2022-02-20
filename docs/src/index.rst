@@ -13,6 +13,7 @@ Billing core application
     Invoicing <invoicing>
     Products <products>
     Modules <modules>
+    REST API <rest-api>
 
 Indices and tables
 ==================

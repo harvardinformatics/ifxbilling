@@ -5,9 +5,19 @@ This is just for testing purposes
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
+from drf_yasg import openapi
 from ifxbilling import serializers
 from ifxbilling import views
 
+# Setup the Swagger API view
+API_INFO = openapi.Info(
+    title="IfxBilling API",
+    default_version='v1',
+    description="Library for billing stuff",
+    terms_of_service="https://www.google.com/policies/terms/",
+    contact=openapi.Contact(email="ifx@fas.harvard.edu"),
+    license=openapi.License(name="GNU GPL version 2"),
+)
 
 # routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
