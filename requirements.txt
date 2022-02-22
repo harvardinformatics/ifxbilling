@@ -14,3 +14,4 @@ sphinxcontrib-openapi
 django-mysql
 logging_tree
 drf-yasg
+django-model-utils==4.2.0

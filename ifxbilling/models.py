@@ -21,6 +21,7 @@ from django.core.validators import RegexValidator
 from django.db.models.signals import post_save, post_delete
 from django.db.models import ProtectedError
 from django.dispatch import receiver
+from model_utils.managers import InheritanceManager
 from author.decorators import with_author
 from ifxuser.models import Organization
 from ifxvalidcode.ec_functions import ExpenseCodeFields
@@ -219,6 +220,8 @@ class Product(models.Model):
     '''
     class Meta:
         db_table = 'product'
+
+    objects = InheritanceManager() # Ensure that subclasses are retrieved.  Needed for
 
     product_number = models.CharField(
         max_length=14,
