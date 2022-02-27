@@ -334,7 +334,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     updated = serializers.DateTimeField(read_only=True)
     logged_by = UserSerializer(many=False, read_only=True, required=False)
     organization = serializers.SlugRelatedField(slug_field='slug', queryset=Organization.objects.all())
-    processing = ProductUsageProcessingSerializer(source='productusageprocessing_set', many=False, read_only=True)
+    processing = ProductUsageProcessingSerializer(source='productusageprocessing_set', many=True, read_only=True)
 
     class Meta:
         model = models.ProductUsage
