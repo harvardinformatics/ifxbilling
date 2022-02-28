@@ -254,7 +254,9 @@ class BasicBillingCalculator():
                 for account_percentage in account_percentages:
                     account = account_percentage['account']
                     percent = account_percentage['percent']
-                    brs.append(self.createBillingRecordForUsage(product_usage, account, percent, year, month, description, usage_data))
+                    br = self.createBillingRecordForUsage(product_usage, account, percent, year, month, description, usage_data)
+                    if br: # can be none
+                        brs.append(br)
                 # processing complete update any product_usage_processing as resolved
                 self.update_product_usage_processing(product_usage, {'resolved': True}, update_only_unresolved=True)
         except Exception as e:
@@ -286,6 +288,8 @@ class BasicBillingCalculator():
         if not month:
             month = product_usage.month
         transactions_data = self.calculateCharges(product_usage, percent, usage_data)
+        if not transactions_data:
+            return None
         rate = self.getRateDescriptionFromTransactions(transactions_data)
         return self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, rate, description)
 
