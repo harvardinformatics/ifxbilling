@@ -329,6 +329,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
     product_user = UserSerializer(many=False, read_only=True)
     start_date = serializers.DateTimeField(required=False)
+    end_date = serializers.DateTimeField(required=False)
     description = serializers.CharField(max_length=2000, required=False)
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)
@@ -348,6 +349,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
             'units',
             'created',
             'start_date',
+            'end_date',
             'description',
             'updated',
             'logged_by',
@@ -394,7 +396,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
 
         validated_data = self.get_validated_data(validated_data, initial_data)
 
-        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date', 'description', 'end_date']:
+        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date', 'description', 'end_date', 'organization', 'processing']:
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 
