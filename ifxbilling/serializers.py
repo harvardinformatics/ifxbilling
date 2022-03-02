@@ -16,6 +16,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.conf import settings
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -532,6 +533,15 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                             'real_user_ifxid': f'Cannot find user with ifxid {real_user_ifxid}'
                         }
                     )
+                except get_user_model().MultipleObjectsReturned:
+                    try:
+                        author = get_user_model().objects.get(ifxid=real_user_ifxid, groups__name=settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME)
+                    except Exception as e:
+                        raise serializers.ValidationError(
+                            detail={
+                                'real_user_ifxid': f'Attempting to approve billing records with user {real_user_ifxid} that has multiple logins none of which is in the {settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME} auth group.'
+                            }
+                        )
             else:
                 raise serializers.ValidationError(
                     detail={

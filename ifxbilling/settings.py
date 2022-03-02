@@ -218,6 +218,7 @@ class GROUPS():
     Group names
     '''
     ADMIN_GROUP_NAME = 'Admin'
+    PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME = 'Preferred Billing Record Approval Account Group Name'
 
 
 AUTHOR_IGNORE_MODELS = [
