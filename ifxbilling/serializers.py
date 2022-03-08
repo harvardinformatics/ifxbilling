@@ -416,6 +416,7 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
         product_id = self.request.query_params.get('product')
         year = self.request.query_params.get('year')
         month = self.request.query_params.get('month')
+        product_user_username = self.request.query_params.get('product_user')
 
         queryset = models.ProductUsage.objects.all()
 
@@ -427,6 +428,8 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(product__id=product_id)
         if invoice_prefix:
             queryset = queryset.filter(product__facility__invoice_prefix=invoice_prefix)
+        if product_user_username:
+            queryset = queryset.filter(product_user__username=product_user_username)
 
         return queryset.order_by('-start_date')
 
