@@ -183,15 +183,23 @@ class AccountSerializer(serializers.ModelSerializer):
 class AccountViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for Account models
+    Filter by name or active status.
+    If the 'active' query param is present, it must be set to 'true' (or True or TRUE) to get active
+    accounts.  Any other value will get inactive accounts.  If the param is missing both
+    active and inactive accounts will be returned.
     '''
     serializer_class = AccountSerializer
 
     def get_queryset(self):
         name = self.request.query_params.get('name')
+        active = self.request.query_params.get('active', False)
+
         queryset = models.Account.objects.all()
 
         if name:
             queryset = queryset.filter(name=name)
+        if active:
+            queryset = queryset.filter(active=active.upper() == 'TRUE')
 
         return queryset
 

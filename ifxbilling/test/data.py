@@ -122,6 +122,13 @@ ACCOUNTS = [
         'root': '33333',
         'active': True,
     },
+    {
+        'code': '370-11111-8100-000775-600200-0000-99999',
+        'organization': 'Nobody Lab (a Harvard Laboratory)',
+        'name': 'inactive code',
+        'root': '99999',
+        'active': False,
+    },
 ]
 
 USER_ACCOUNTS = [
