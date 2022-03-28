@@ -169,3 +169,14 @@ class TestAccount(APITestCase):
         self.assertTrue(len(account['user_product_accounts']) == 2, f'Account has incorrect number of user_product_accounts {account}')
         upa = account['user_product_accounts'][0]
         self.assertTrue(upa['product'] == 'Helium Dewar', f'Incorrect product on user product account {account}')
+
+    def testFilterActive(self):
+        '''
+        Ensure that only active accounts can be returned when 'active' filter is applied.
+        '''
+        data.init(['Account'])
+
+        url = reverse('account-list')
+        response = self.client.get(url, { 'active': 'true' }, format='json')
+        accounts = response.data
+        self.assertTrue(len(accounts) == len(data.ACCOUNTS) - 1, f'active filter for account list did not work')

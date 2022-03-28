@@ -85,6 +85,7 @@ class TestProductUsage(APITestCase):
 
         new_product_usage_data = response.data
         new_product_usage_data['description'] = updated_description
+        new_product_usage_data.pop('end_date')
         url = reverse('product-usages-detail', kwargs={ 'pk': new_product_usage_data['id'] })
         response = self.client.put(url, new_product_usage_data, format='json')
         self.assertTrue(response.status_code == status.HTTP_200_OK, f'Incorrect response {response.data}')
