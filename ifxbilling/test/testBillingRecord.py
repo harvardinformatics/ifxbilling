@@ -522,5 +522,36 @@ class TestBillingRecord(APITestCase):
         state = br.billingrecordstate_set.first()
         self.assertTrue(state.name == initial_state, f'Incorrect billing record state name {state.name}')
 
+    def testAddTransaction(self):
+        '''
+        Ensure that a transaction can be added to a billing record using the addTransaction method
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage'])
 
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        account = models.Account.objects.first()
+        charge = 999
+        description = 'Dewar charge'
+        rate = '999 per ton'
+        initial_state = 'PENDING_LAB_APPROVAL'
+
+        billing_record_data = {
+            'account': account,
+            'product_usage': product_usage,
+            'charge': charge,
+            'description': description,
+            'year': 2022,
+            'month': 4,
+            'author': self.superuser,
+            'rate': rate,
+        }
+        br = models.BillingRecord.createBillingRecord(**billing_record_data)
+        self.assertTrue(br.charge == charge, f'Incorrect charge set {br.charge}')
+        self.assertTrue(br.transaction_set.count() == 1, 'Incorrect number of transactions set.')
+
+        br.addTransaction(charge * -1, rate, description, self.superuser)
+
+        self.assertTrue(br.transaction_set.count() == 2, 'Transaction not added!')
+        self.assertTrue(br.charge == 0, f'Incorrect adjusted billing record charge {br.charge}')
 
