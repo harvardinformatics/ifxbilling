@@ -585,7 +585,6 @@ class BillingRecord(models.Model):
         Add a transaction to this billing record
         '''
         txn = Transaction.objects.create(billing_record=self, charge=charge, rate=rate, description=description, author=author)
-        self.refresh_from_db()
         return txn
 
     def __str__(self):
