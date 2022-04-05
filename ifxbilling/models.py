@@ -15,7 +15,7 @@ import logging
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db.models.signals import post_save, post_delete
@@ -425,6 +425,61 @@ class BillingRecord(models.Model):
     class Meta:
         db_table = 'billing_record'
 
+    @classmethod
+    def createBillingRecord(
+        cls,
+        account,
+        charge,
+        description,
+        year,
+        month,
+        rate,
+        author,
+        product_usage=None,
+        percent=100,
+        initial_state='PENDING_LAB_APPROVAL',
+        transaction_description=None,
+        transaction_author=None
+    ):
+        '''
+        Create a billing record with a single transaction and initial state
+        If txn_description is not set, description will be used
+        Percent defaults to 100
+        If initial_state is not set, PENDING_LAB_APPROVAL is used
+        If transaction_author is not set, author is used
+        '''
+        with transaction.atomic():
+
+            # Make the billing record
+            br_data = {
+                'account': account,
+                'charge': charge,
+                'description': description,
+                'year': year,
+                'month': month,
+                'rate': rate,
+                'percent': percent,
+                'author': author,
+            }
+            if product_usage:
+                br_data['product_usage'] = product_usage
+            br = cls.objects.create(**br_data)
+
+            # Make the transaction
+            txn_data = {
+                'billing_record': br,
+                'charge': charge,
+                'rate': rate,
+            }
+            txn_data['description'] = transaction_description if transaction_description else description
+            txn_data['author'] = transaction_author if transaction_author else author
+            Transaction.objects.create(**txn_data)
+
+            # Set the state
+            br.setState(initial_state, author.username)
+
+            return br
+
     product_usage = models.ForeignKey(ProductUsage, on_delete=models.PROTECT, null=True)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     charge = models.IntegerField(
@@ -524,6 +579,13 @@ class BillingRecord(models.Model):
         """
         if self.current_state and self.current_state not in ['INIT', 'PENDING_LAB_APPROVAL']:
             raise ProtectedError('Billing Records can not be deleted.', self)
+
+    def addTransaction(self, charge, rate, description, author):
+        '''
+        Add a transaction to this billing record
+        '''
+        txn = Transaction.objects.create(billing_record=self, charge=charge, rate=rate, description=description, author=author)
+        return txn
 
     def __str__(self):
         dollar_charge = Decimal(self.charge / 100).quantize(Decimal('1.00'))
