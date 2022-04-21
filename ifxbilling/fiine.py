@@ -39,13 +39,40 @@ def replaceObjectCodeInFiineAccount(acct_data, object_code):
     )
     return acct_data.to_dict()
 
+def syncFiineAccounts(code=None, name=None):
+    '''
+    Sync accounts from fiine.  If neither code nor name are set, all are sync'd
+    If all accounts are being sync'd, existing accounts are first disabled and then set enabled from fiine data.
+    '''
+    if not code and not name:
+        accounts = FiineAPI.listAccounts()
 
-def updateUserAccounts(user):
+    for account_data in accounts:
+        organization_name = account_data.pop('organization')
+        account_data.pop('id')
+        try:
+            account_data['organization'] = Organization.objects.get(name=organization_name, org_tree='Harvard')
+        except Organization.DoesNotExist:
+            raise Exception(f'While synchronizing accounts from fiine, organization {organization_name} in account {account_data["name"]} was not found.')
+
+        try:
+            models.Account.objects.get(code=account_data['code'], organization=account_data['organization'])
+            models.Account.objects.filter(code=account_data['code'], organization=account_data['organization']).update(**account_data)
+        except models.Account.DoesNotExist:
+            models.Account.objects.create(**account_data)
+        except Exception as e:
+            raise Exception(f'Unable to create account {account_data["name"]}: {e}') from e
+
+
+def updateUserAccounts(user, all_accounts=True):
     '''
     For a single user retrieve account strings from fiine.
     Invalidate any account string that are not represented in fiine.
-    Account records may be created by this function, but Products will not be.
+    By default, all accounts will be pulled from fiine so that facility administrators have access to everything.
     '''
+    if all_accounts:
+        syncFiineAccounts()
+
     ifxid = user.ifxid
     fiine_person = FiineAPI.readPerson(ifxid=ifxid)
 
