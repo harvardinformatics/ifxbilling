@@ -29,14 +29,15 @@ logger = logging.getLogger(__name__)
 
 def replaceObjectCodeInFiineAccount(acct_data, object_code):
     '''
-    Replace object code and return dictionary version of FiineAPI account
+    Replace object code and return dictionary version of FiineAPI account for expense codes.
     Expense code should be in acct_data.account.code (it should be an account from FiineAPI)
     '''
-    acct_data.account.code = ExpenseCodeFields.replace_field(
-        acct_data.account.code,
-        ExpenseCodeFields.OBJECT_CODE,
-        object_code
-    )
+    if acct_data.account.account_type == 'Expense Code':
+        acct_data.account.code = ExpenseCodeFields.replace_field(
+            acct_data.account.code,
+            ExpenseCodeFields.OBJECT_CODE,
+            object_code
+        )
     return acct_data.to_dict()
 
 
