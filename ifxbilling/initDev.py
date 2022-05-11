@@ -140,6 +140,18 @@ def initOrganizations():
             'org_tree': 'Test',
             'ifxorg': 'IFXORG0000000001'
         },
+        {
+            'name': 'Kitzmiller Lab',
+            'rank': 'lab',
+            'org_tree': 'Harvard',
+            'ifxorg': 'IFXORGX000000002'
+        },
+        {
+            'name': 'Nobody Lab',
+            'rank': 'lab',
+            'org_tree': 'Harvard',
+            'ifxorg': 'IFXORGX000000003'
+        },
     ]
     for org_data in orgs:
         (obj, created) = Organization.objects.get_or_create(**org_data)
