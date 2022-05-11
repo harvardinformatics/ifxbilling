@@ -135,8 +135,8 @@ def updateUserAccounts(user):
                 models.Account.objects.create(**acct_copy)
 
         # Invalidate all UserAccounts and UserProductAccounts; sync will re-validate
-        models.UserAccount.objects.all().update(is_valid=False)
-        models.UserProductAccount.objects.all().update(is_valid=False)
+        models.UserAccount.objects.filter(user=user).update(is_valid=False)
+        models.UserProductAccount.objects.filter(user=user).update(is_valid=False)
 
 
         # Update existing UserAccounts (is_valid flag) or create new
