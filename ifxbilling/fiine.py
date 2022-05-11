@@ -13,7 +13,7 @@ All rights reserved.
 
 import logging
 from copy import deepcopy
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from rest_framework import status
@@ -40,13 +40,46 @@ def replaceObjectCodeInFiineAccount(acct_data, object_code):
         )
     return acct_data.to_dict()
 
+def syncFiineAccounts(code=None, name=None):
+    '''
+    Sync accounts from fiine.  If neither code nor name are set, all are sync'd
+    If all accounts are being sync'd, existing accounts are first disabled and then set enabled from fiine data.
+    Returns tuple of integers (accounts_updated, accounts_created, and total_accounts)
+    '''
+    if not code and not name:
+        accounts = FiineAPI.listAccounts()
+    total_accounts = 0
+    accounts_updated = 0
+    accounts_created = 0
+
+    for account_obj in accounts:
+        account_data = account_obj.to_dict()
+        total_accounts += 1
+        organization_name = account_data.pop('organization')
+        account_data.pop('id')
+        try:
+            account_data['organization'] = Organization.objects.get(name=organization_name, org_tree='Harvard')
+        except Organization.DoesNotExist:
+            raise Exception(f'While synchronizing accounts from fiine, organization {organization_name} in account {account_data["name"]} was not found.')
+
+        try:
+            models.Account.objects.get(code=account_data['code'], organization=account_data['organization'])
+            models.Account.objects.filter(code=account_data['code'], organization=account_data['organization']).update(**account_data)
+            accounts_updated += 1
+        except models.Account.DoesNotExist:
+            models.Account.objects.create(**account_data)
+            accounts_created += 1
+        except Exception as e:
+            raise Exception(f'Unable to create account {account_data["name"]}: {e}') from e
+    return (accounts_updated, accounts_created, total_accounts)
+
 
 def updateUserAccounts(user):
     '''
     For a single user retrieve account strings from fiine.
     Invalidate any account string that are not represented in fiine.
-    Account records may be created by this function, but Products will not be.
     '''
+
     ifxid = user.ifxid
     fiine_person = FiineAPI.readPerson(ifxid=ifxid)
 
@@ -78,65 +111,73 @@ def updateUserAccounts(user):
                 pass
 
     # Go through fiine_accounts and product accounts. Create any missing Account objects or update with Fiine information
-    for person_account_data in fiine_accounts + product_accounts:
-        account_data = person_account_data['account']
-        try:
-            account = models.Account.objects.get(code=account_data['code'], organization__name=account_data['organization'])
-
-            # Update some of the account fields if it's available
-            for field in ['name', 'active', 'valid_from', 'expiration_date']:
-                if field in account_data:
-                    setattr(account, field, account_data[field])
-
-        except models.Account.DoesNotExist:
+    with transaction.atomic():
+        for person_account_data in fiine_accounts + product_accounts:
+            account_data = person_account_data['account']
             try:
-                acct_copy = deepcopy(account_data)
-                name = acct_copy.pop('organization')
-                acct_copy['organization'] = Organization.objects.get(name=name, org_tree='Harvard')
-            except Organization.DoesNotExist:
-                raise Exception(f'Unable to find organization {name}')
-            acct_copy.pop('id')
-            models.Account.objects.create(**acct_copy)
+                account = models.Account.objects.get(code=account_data['code'], organization__name=account_data['organization'])
 
-    # Update existing UserAccounts (is_valid flag) or create new
-    for fiine_account_data in fiine_accounts:
-        try:
-            account = models.Account.objects.get(
-                organization__name=fiine_account_data['account']['organization'],
-                code=fiine_account_data['account']['code']
-            )
-            user_account = models.UserAccount.objects.get(user=user, account=account)
-            user_account.is_valid = fiine_account_data['is_valid']
-            user_account.save()
-        except models.Account.DoesNotExist:
-            raise Exception(f"For some reason account cannot be found from org {fiine_account_data['account']} and code {fiine_account_data['account']['code']}")
-        except models.UserAccount.DoesNotExist:
-            models.UserAccount.objects.create(account=account, user=user, is_valid=fiine_account_data['is_valid'])
+                # Update some of the account fields if it's available
+                for field in ['name', 'active', 'valid_from', 'expiration_date']:
+                    if field in account_data:
+                        setattr(account, field, account_data[field])
 
-    # Update UserProductAccounts (is_valid, percent) or create new
-    for product_account_data in product_accounts:
-        try:
-            account = models.Account.objects.get(
-                organization__name=product_account_data['account']['organization'],
-                code=product_account_data['account']['code']
-            )
-            product = models.Product.objects.get(product_number=product_account_data['product']['product_number'])
-            user_product_account = models.UserProductAccount.objects.get(account=account, user=user, product=product)
-            user_product_account.is_valid = product_account_data['is_valid']
-            if 'percent' not in product_account_data:
-                product_account_data['percent'] = 100
-            user_product_account.percent = product_account_data['percent']
-            user_product_account.save()
-        except models.Product.DoesNotExist as e:
-            raise Exception(f"Product with number {product_account_data['product']['product_number']} is missing") from e
-        except models.UserProductAccount.DoesNotExist:
-            models.UserProductAccount.objects.create(
-                user=user,
-                product=product,
-                account=account,
-                is_valid=product_account_data['is_valid'],
-                percent=product_account_data['percent']
-            )
+                account.save()
+
+            except models.Account.DoesNotExist:
+                try:
+                    acct_copy = deepcopy(account_data)
+                    name = acct_copy.pop('organization')
+                    acct_copy['organization'] = Organization.objects.get(name=name, org_tree='Harvard')
+                except Organization.DoesNotExist:
+                    raise Exception(f'Unable to find organization {name}')
+                acct_copy.pop('id')
+                models.Account.objects.create(**acct_copy)
+
+        # Invalidate all UserAccounts and UserProductAccounts; sync will re-validate
+        models.UserAccount.objects.filter(user=user).update(is_valid=False)
+        models.UserProductAccount.objects.filter(user=user).update(is_valid=False)
+
+
+        # Update existing UserAccounts (is_valid flag) or create new
+        for fiine_account_data in fiine_accounts:
+            try:
+                account = models.Account.objects.get(
+                    organization__name=fiine_account_data['account']['organization'],
+                    code=fiine_account_data['account']['code']
+                )
+                user_account = models.UserAccount.objects.get(user=user, account=account)
+                user_account.is_valid = fiine_account_data['is_valid']
+                user_account.save()
+            except models.Account.DoesNotExist:
+                raise Exception(f"For some reason account cannot be found from org {fiine_account_data['account']} and code {fiine_account_data['account']['code']}")
+            except models.UserAccount.DoesNotExist:
+                models.UserAccount.objects.create(account=account, user=user, is_valid=fiine_account_data['is_valid'])
+
+        # Update UserProductAccounts (is_valid, percent) or create new
+        for product_account_data in product_accounts:
+            try:
+                account = models.Account.objects.get(
+                    organization__name=product_account_data['account']['organization'],
+                    code=product_account_data['account']['code']
+                )
+                product = models.Product.objects.get(product_number=product_account_data['product']['product_number'])
+                user_product_account = models.UserProductAccount.objects.get(account=account, user=user, product=product)
+                user_product_account.is_valid = product_account_data['is_valid']
+                if 'percent' not in product_account_data:
+                    product_account_data['percent'] = 100
+                user_product_account.percent = product_account_data['percent']
+                user_product_account.save()
+            except models.Product.DoesNotExist as e:
+                raise Exception(f"Product with number {product_account_data['product']['product_number']} is missing") from e
+            except models.UserProductAccount.DoesNotExist:
+                models.UserProductAccount.objects.create(
+                    user=user,
+                    product=product,
+                    account=account,
+                    is_valid=product_account_data['is_valid'],
+                    percent=product_account_data['percent']
+                )
     user = get_user_model().objects.get(id=user.id)
     return user
 

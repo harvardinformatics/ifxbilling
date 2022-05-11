@@ -12,7 +12,7 @@ All rights reserved.
 '''
 from datetime import datetime
 from copy import deepcopy
-from ifxuser.models import Organization, UserAffiliation
+from ifxuser.models import Organization
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from fiine.client import API as FiineAPI

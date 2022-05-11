@@ -4,12 +4,9 @@
 Update UserAccount, UserProductAccount records from Fiine
 '''
 import sys
-from io import StringIO
-from django.utils import timezone
 from django.core.management.base import BaseCommand
-from django.core.management import call_command
 from django.contrib.auth import get_user_model
-from ifxbilling.fiine import updateUserAccounts
+from ifxbilling.fiine import updateUserAccounts, syncFiineAccounts
 
 
 class Command(BaseCommand):
@@ -25,9 +22,23 @@ class Command(BaseCommand):
             dest='ifxid',
             help='IFXID of a single user',
         )
+        parser.add_argument(
+            '--sync-all',
+            action='store_true',
+            dest='sync_all',
+            help='Synchronize all accounts, not just ones with facility authorizations',
+        )
 
     def handle(self, *args, **kwargs):
         ifxid = kwargs.get('ifxid')
+
+        if kwargs.get('sync_all'):
+            try:
+                accounts_updated, accounts_created, total_accounts = syncFiineAccounts()
+                print(f'{accounts_updated} accounts updated, {accounts_created} accounts created out of {total_accounts} total accounts')
+            except Exception as e:
+                print(f'Unable to synchronize fiine accounts: {e}')
+                exit(1)
 
         successes = 0
         errors = []
