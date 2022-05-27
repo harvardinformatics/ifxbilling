@@ -49,7 +49,8 @@ def calculateBillingMonth(month, year, facility, recalculate=False, verbose=Fals
     '''
     successes = 0
     errors = []
-    product_usages = ProductUsage.objects.filter(month=month, year=year, product__facility=facility)
+    # only billable usages will be billed
+    product_usages = ProductUsage.objects.filter(month=month, year=year, product__facility=facility, product__billable=True)
 
     # Filter by product if needed
     products = []
@@ -257,8 +258,9 @@ class BasicBillingCalculator():
                     br = self.createBillingRecordForUsage(product_usage, account, percent, year, month, description, usage_data)
                     if br: # can be none
                         brs.append(br)
-                # processing complete update any product_usage_processing as resolved
-                self.update_product_usage_processing(product_usage, {'resolved': True}, update_only_unresolved=True)
+                if brs: # if billing records then update product usage processing
+                    # processing complete update any product_usage_processing as resolved
+                    self.update_product_usage_processing(product_usage, {'resolved': True}, update_only_unresolved=True)
         except Exception as e:
             message = str(e)[-2000:] # limit to db column max_length
             # check for previous processing errors, only keep the latest
