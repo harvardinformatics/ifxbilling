@@ -17,6 +17,7 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.conf import settings
+from django.core.exceptions import MultipleObjectsReturned
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -603,6 +604,24 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                             'states': f'Unable to find user with ifxid {state_data["user"]}'
                         }
                     )
+                except MultipleObjectsReturned:
+                    # Try the Preferred Billing Record Approval Account
+                    if hasattr(settings, 'GROUPS') and hasattr(settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME):
+                        preferred_account_group_name = settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME
+                        try:
+                            state_username = get_user_model().objects.get(ifxid=state_data['user'], groups__name=preferred_account_group_name).username
+                        except get_user_model().DoesNotExist:
+                            raise serializers.ValidationError(
+                                detail={
+                                    'states': f'User with ifxid {state_data["user"]} has multiple user records, but none has {preferred_account_group_name} set.'
+                                }
+                            )
+                    else:
+                        raise serializers.ValidationError(
+                            detail={
+                                'states': f'User with ifxid {state_data["user"]} has multiple user records and there is no way to set a preference for billing.'
+                            }
+                        )
             else:
                 raise serializers.ValidationError(
                     detail={
