@@ -606,7 +606,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                     )
                 except MultipleObjectsReturned:
                     # Try the Preferred Billing Record Approval Account
-                    if hasattr(settings, 'GROUPS') and hasattr(settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME):
+                    if hasattr(settings, 'GROUPS') and hasattr(settings.GROUPS, 'PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME'):
                         preferred_account_group_name = settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME
                         try:
                             state_username = get_user_model().objects.get(ifxid=state_data['user'], groups__name=preferred_account_group_name).username
