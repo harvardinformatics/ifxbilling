@@ -303,7 +303,9 @@ class BasicBillingCalculator():
             logger.info(f'Found previous ProductUsageProcessing {processing.id} will update it with {json.dumps(attrs)}.')
             for k, v in attrs.items():
                 setattr(processing, k, v)
+                logger.debug(f'Set attribute {k} to {v}.')
             processing.save()
+            logger.debug(f'Saved {processing.id}.')
             return True
         except ProductUsageProcessing.DoesNotExist:
             # nothing to update
