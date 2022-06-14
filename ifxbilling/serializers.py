@@ -712,7 +712,10 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         Only the account and description may be modified.  Transactions and billing record states may be added.
         Added billing record states will be used to call setState
         '''
+
         initial_data = self.initial_data
+        if bulk_id is not None:
+            initial_data = self.initial_data[bulk_id]
         if 'billing_record_states' not in initial_data:
             raise serializers.ValidationError(
                 detail={
@@ -734,8 +737,6 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 }
             )
 
-        if bulk_id is not None:
-            initial_data = self.initial_data[bulk_id]
         if 'transactions' not in initial_data:
             raise serializers.ValidationError(
                 detail={
