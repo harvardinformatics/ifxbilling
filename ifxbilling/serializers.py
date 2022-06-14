@@ -712,16 +712,31 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         Only the account and description may be modified.  Transactions and billing record states may be added.
         Added billing record states will be used to call setState
         '''
+
+        initial_data = self.initial_data
+        if bulk_id is not None:
+            initial_data = self.initial_data[bulk_id]
+        if 'billing_record_states' not in initial_data:
+            raise serializers.ValidationError(
+                detail={
+                    'billing_record_states': 'Billing record must have at least one billing record state'
+                }
+            )
+        billing_record_states_data = initial_data['billing_record_states']
         if instance.current_state == 'FINAL':
+            # in final only certain state changes can be made
+            for state_data in billing_record_states_data:
+                if 'id' not in state_data and 'name' in state_data and state_data['name'] in ['FAILED_INVOICE_GENERATION']:
+                    state_data['user'] = self.get_state_username(state_data)
+                    logger.info(f'setting state to {state_data["name"]} even though record is FINAL')
+                    instance.setState(**state_data)
+                    return instance
             raise serializers.ValidationError(
                 detail={
                     'current_state': 'Cannot update billing records that are in the FINAL state'
                 }
             )
 
-        initial_data = self.initial_data
-        if bulk_id is not None:
-            initial_data = self.initial_data[bulk_id]
         if 'transactions' not in initial_data:
             raise serializers.ValidationError(
                 detail={
@@ -729,12 +744,6 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 }
             )
 
-        if 'billing_record_states' not in initial_data:
-            raise serializers.ValidationError(
-                detail={
-                    'billing_record_states': 'Billing record must have at least one billing record state'
-                }
-            )
         # Check for product_usage, fetch and add to validated_data
         if 'product_usage' not in initial_data \
             or not initial_data['product_usage'] \
@@ -783,7 +792,6 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 models.Transaction.objects.create(**transaction_data, billing_record=instance)
 
         # Only add new billing record states.  Old ones cannot be removed.
-        billing_record_states_data = initial_data['billing_record_states']
         for state_data in billing_record_states_data:
             if 'id' not in state_data:
                 state_data['user'] = self.get_state_username(state_data)
