@@ -49,7 +49,8 @@ def calculateBillingMonth(month, year, facility, recalculate=False, verbose=Fals
     '''
     successes = 0
     errors = []
-    product_usages = ProductUsage.objects.filter(month=month, year=year, product__facility=facility)
+    # only billable usages will be billed
+    product_usages = ProductUsage.objects.filter(month=month, year=year, product__facility=facility, product__billable=True)
 
     # Filter by product if needed
     products = []
