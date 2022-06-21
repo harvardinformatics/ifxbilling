@@ -259,7 +259,8 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'units',
         'created',
         'updated',
-        'start_date'
+        'start_date',
+        'end_date'
     )
     list_display = (
         'product',
@@ -271,7 +272,8 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'month',
         'year',
         'description',
-        'start_date'
+        'start_date',
+        'end_date'
     )
     ordering = ('year', 'month')
     search_fields = (
