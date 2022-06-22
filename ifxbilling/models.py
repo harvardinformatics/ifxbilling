@@ -30,6 +30,7 @@ logger = logging.getLogger('__name__')
 
 EXPENSE_CODE_RE = re.compile(r'\d{3}-\d{5}-\d{4}-\d{6}-\d{6}-\d{4}-\d{5}')
 EXPENSE_CODE_SANS_OBJECT_RE = re.compile(r'\d{3}-\d{5}-\d{6}-\d{6}-\d{4}-\d{5}')
+HUMAN_TIME_FORMAT = '%m/%d/%Y %H:%M'
 
 def thisDate():
     '''
@@ -589,7 +590,13 @@ class BillingRecord(models.Model):
 
     def __str__(self):
         dollar_charge = Decimal(self.charge / 100).quantize(Decimal('1.00'))
-        return f'Charge of ${dollar_charge} against {self.account} for the use of {self.product_usage} on {self.month}/{self.year}'
+        desc = f'Charge of ${dollar_charge} against {self.account} for the use of {self.product_usage.product} by {self.product_usage.product_user.full_name}'
+        local_start = timezone.localtime(self.product_usage.start_date).strftime(HUMAN_TIME_FORMAT)
+        if self.product_usage.end_date:
+            desc += f' from {local_start} to {timezone.localtime(self.product_usage.end_date).strftime(HUMAN_TIME_FORMAT)}'
+        else: # just start time
+            desc += f' on {local_start}'
+        return desc
 
 
 @receiver(post_save, sender=BillingRecord)
