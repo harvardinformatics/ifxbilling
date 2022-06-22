@@ -21,6 +21,7 @@ from django.core.exceptions import MultipleObjectsReturned
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework import status
 from ifxuser.models import Organization
 from ifxuser.serializers import UserSerializer
 from fiine.client import API as FiineAPI
@@ -275,11 +276,17 @@ class ProductSerializer(serializers.ModelSerializer):
         '''
         Update product and rates.  Ensure updated in Fiine as well.
         '''
-        product = FiineAPI.readProduct(product_number=instance.product_number)
-        product.product_name = validated_data['product_name']
-        product.description = validated_data['product_description']
-        product.billable = validated_data['billable']
-        FiineAPI.updateProduct(**product.to_dict())
+        try:
+            product = FiineAPI.readProduct(product_number=instance.product_number)
+            product.product_name = validated_data['product_name']
+            product.description = validated_data['product_description']
+            product.billable = validated_data['billable']
+            FiineAPI.updateProduct(**product.to_dict())
+        except Exception as e:
+            if 'Not authorized' in str(e):
+                return Response('Cannot access fiine system due to authorization failure.  Check application key.', status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                return Response(f'fiine system access failed: {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         for attr in ['product_name', 'product_description', 'billable']:
             setattr(instance, attr, validated_data[attr])
