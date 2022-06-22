@@ -255,7 +255,19 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data = self.get_validated_data(validated_data)
-        product = fiine.createNewProduct(**validated_data)
+        try:
+            product = fiine.createNewProduct(**validated_data)
+        except Exception as e:
+            logger.exception(e)
+            if 'Not authorized' in str(e):
+                msg = 'Cannot access fiine system due to authorization failure.  Check application key.'
+            else:
+                msg = f'fiine system access failed: {e}'
+            raise serializers.ValidationError(
+                detail={
+                    'product_name': msg
+                }
+            )
         if 'rates' in self.initial_data and self.initial_data['rates']:
             for rate_data in self.initial_data['rates']:
                 try:
@@ -283,10 +295,16 @@ class ProductSerializer(serializers.ModelSerializer):
             product.billable = validated_data['billable']
             FiineAPI.updateProduct(**product.to_dict())
         except Exception as e:
+            logger.exception(e)
             if 'Not authorized' in str(e):
-                return Response('Cannot access fiine system due to authorization failure.  Check application key.', status=status.HTTP_401_UNAUTHORIZED)
+                msg = 'Cannot access fiine system due to authorization failure.  Check application key.'
             else:
-                return Response(f'fiine system access failed: {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                msg = f'fiine system access failed: {e}'
+            raise serializers.ValidationError(
+                detail={
+                    'product_name': msg
+                }
+            )
 
         for attr in ['product_name', 'product_description', 'billable']:
             setattr(instance, attr, validated_data[attr])
