@@ -30,7 +30,7 @@ logger = logging.getLogger('__name__')
 
 EXPENSE_CODE_RE = re.compile(r'\d{3}-\d{5}-\d{4}-\d{6}-\d{6}-\d{4}-\d{5}')
 EXPENSE_CODE_SANS_OBJECT_RE = re.compile(r'\d{3}-\d{5}-\d{6}-\d{6}-\d{4}-\d{5}')
-HUMAN_TIME_FORMAT = '%m/%d/%Y %H:%M'
+HUMAN_TIME_FORMAT = '%-m/%d/%Y %-I:%M %p'
 
 def thisDate():
     '''
