@@ -905,13 +905,3 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
-
-    '''
-    TODO: IF we want to keep fat list then we can use this action for the skinny one
-    @action(detail=False, methods=['get'])
-    def skinny_list(self, request):
-        recs = self.get_queryset()
-        serializer = SkinnyBillingRecordSerializer(recs, many=True)
-        return Response(serializer.data)'''
-
-
