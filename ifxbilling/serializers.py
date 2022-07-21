@@ -824,13 +824,50 @@ class BillingRecordSerializer(serializers.ModelSerializer):
 
         return instance
 
+class SkinnyBillingRecordSerializer(serializers.ModelSerializer):
+    '''
+    Skinny serializer for billing records.  For fetching for list view.
+    '''
+    product = serializers.CharField(read_only=True, source='product_usage.product.product_name')
+    user = serializers.CharField(read_only=True, source='product_usage.product_user.full_name')
+    charge = serializers.IntegerField(read_only=True)
+    description = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+    year = serializers.IntegerField(required=False)
+    month = serializers.IntegerField(required=False)
+    account = serializers.SlugRelatedField(slug_field='code', read_only=True)
+    current_state = serializers.CharField(max_length=200, allow_blank=True, required=False)
+    percent = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = models.BillingRecord
+        fields = (
+            'id',
+            'account',
+            'product_usage',
+            'product',
+            'user',
+            'charge',
+            'description',
+            'year',
+            'month',
+            'current_state',
+            'created',
+            'updated',
+            'percent',
+        )
+        read_only_fields = ('id', 'created', 'updated')
+        list_serializer_class = BillingRecordListSerializer
+
 
 class BillingRecordViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for BillingRecords
     '''
-    serializer_class = BillingRecordSerializer
     permission_classes = [BillingRecordUpdatePermissions]
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return SkinnyBillingRecordSerializer
+        return BillingRecordSerializer
 
     def get_queryset(self):
         year = self.request.query_params.get('year')
@@ -840,7 +877,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         root = self.request.query_params.get('root')
         invoice_prefix = self.request.query_params.get('invoice_prefix')
 
-        queryset = models.BillingRecord.objects.all()
+        queryset = models.BillingRecord.objects.all().select_related('product_usage')
 
         if year:
             queryset = queryset.filter(year=year)
@@ -868,3 +905,13 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+    '''
+    TODO: IF we want to keep fat list then we can use this action for the skinny one
+    @action(detail=False, methods=['get'])
+    def skinny_list(self, request):
+        recs = self.get_queryset()
+        serializer = SkinnyBillingRecordSerializer(recs, many=True)
+        return Response(serializer.data)'''
+
+
