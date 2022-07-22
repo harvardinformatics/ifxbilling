@@ -840,7 +840,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         root = self.request.query_params.get('root')
         invoice_prefix = self.request.query_params.get('invoice_prefix')
 
-        queryset = models.BillingRecord.objects.select_related('product_usage', 'account').all()
+        queryset = models.BillingRecord.objects.select_related('product_usage', 'account').prefetch_related('transaction_set', 'billingrecordstate_set').all()
 
         if year:
             queryset = queryset.filter(year=year)
