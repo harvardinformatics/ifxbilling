@@ -406,5 +406,5 @@ def get_billing_record_list(request):
         return Response(f'Error getting billing records {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(
-        data=results
+        data=list(results.values())
     )
