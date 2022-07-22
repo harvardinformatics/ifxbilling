@@ -302,7 +302,7 @@ def get_billing_record_list(request):
             txn.charge as transaction_charge,
             txn.rate as transaction_rate,
             txn_user.full_name as transaction_user_full_name,
-            txn_user.ifxid as transaction_user_ifxid,
+            txn_user.ifxid as transaction_user_ifxid
         from
             billing_record br
             inner join product_usage pu on pu.id = br.product_usage_id
