@@ -392,8 +392,9 @@ def get_billing_record_list(request):
                             'product_number': row_dict['product_number'],
                         },
                         'product_user': {
-                            'ifxid': row_dict['ifxid'],
-                            'primary_affiliation': row_dict['product_user_primary_affiliation']
+                            'ifxid': row_dict['product_user_ifxid'],
+                            'primary_affiliation': row_dict['product_user_primary_affiliation'],
+                            'full_name': row_dict['product_user_full_name']
                         }
                     },
                     'transactions': [
