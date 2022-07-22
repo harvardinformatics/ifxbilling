@@ -289,6 +289,8 @@ def get_billing_record_list(request):
             br.percent as billing_record_percent,
             br.current_state as billing_record_current_state,
             br.description as billing_record_description,
+            br.year,
+            br.month,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
             acct.id as account_id,
@@ -373,6 +375,8 @@ def get_billing_record_list(request):
                     'description': row_dict['billing_record_description'],
                     'percent': row_dict['billing_record_percent'],
                     'current_state': row_dict['billing_record_current_state'],
+                    'year': row_dict['year'],
+                    'month': row_dict['month'],
                     'account': {
                         'id': row_dict['account_id'],
                         'code': row_dict['account_code'],
