@@ -309,7 +309,7 @@ def get_billing_record_list(request):
             inner join product p on p.id = pu.product_id
             inner join ifxuser product_user on pu.product_user_id = product_user.id
             inner join account acct on acct.id = br.account_id
-            inner join organization o on o.id = acct.organization_id
+            inner join nanites_organization o on o.id = acct.organization_id
             inner join transaction txn on txn.billing_record_id = br.id
             inner join ifxuser txn_user on txn_user.id = txn.author_id
             inner join facility f on f.id = p.facility_id
