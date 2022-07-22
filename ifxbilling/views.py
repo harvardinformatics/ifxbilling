@@ -288,6 +288,7 @@ def get_billing_record_list(request):
             br.charge as billing_record_charge,
             br.percent as billing_record_percent,
             br.current_state as billing_record_current_state,
+            br.description as billing_record_description,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
             acct.id as account_id,
