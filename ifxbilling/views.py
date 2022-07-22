@@ -295,7 +295,7 @@ def get_billing_record_list(request):
             acct.name as account_name,
             acct.slug as account_slug,
             p.product_name,
-            p.ifxp,
+            p.product_number,
             pu.id as product_usage_id,
             txn.id as transaction_id,
             txn.description as transaction_description,
@@ -382,7 +382,7 @@ def get_billing_record_list(request):
                         'id': row_dict['product_usage_id'],
                         'product': {
                             'product_name': row_dict['product_name'],
-                            'ifxp': row_dict['ifxp'],
+                            'product_number': row_dict['product_number'],
                         }
 
                     },
