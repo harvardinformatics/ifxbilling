@@ -298,6 +298,7 @@ def get_billing_record_list(request):
             acct.code as account_code,
             acct.name as account_name,
             acct.slug as account_slug,
+            o.slug as account_organization,
             p.product_name,
             p.product_number,
             pu.id as product_usage_id,
@@ -384,6 +385,7 @@ def get_billing_record_list(request):
                         'code': row_dict['account_code'],
                         'name': row_dict['account_name'],
                         'slug': row_dict['account_slug'],
+                        'organization': row_dict['account_organization'],
                     },
                     'product_usage': {
                         'id': row_dict['product_usage_id'],
