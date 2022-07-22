@@ -293,6 +293,7 @@ def get_billing_record_list(request):
             br.month,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
+            product_user_organization.slug as product_user_primary_affiliation,
             acct.id as account_id,
             acct.code as account_code,
             acct.name as account_name,
@@ -311,6 +312,7 @@ def get_billing_record_list(request):
             inner join product_usage pu on pu.id = br.product_usage_id
             inner join product p on p.id = pu.product_id
             inner join ifxuser product_user on pu.product_user_id = product_user.id
+            inner join nanites_organization product_user_organization on product_user.primary_affiliation_id = product_user_organization.id
             inner join account acct on acct.id = br.account_id
             inner join nanites_organization o on o.id = acct.organization_id
             inner join transaction txn on txn.billing_record_id = br.id
@@ -388,8 +390,11 @@ def get_billing_record_list(request):
                         'product': {
                             'product_name': row_dict['product_name'],
                             'product_number': row_dict['product_number'],
+                        },
+                        'product_user': {
+                            'ifxid': row_dict['ifxid'],
+                            'primary_affiliation': row_dict['product_user_primary_affiliation']
                         }
-
                     },
                     'transactions': [
                         make_transaction_from_query_result(row_dict)
