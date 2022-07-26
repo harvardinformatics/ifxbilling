@@ -8,9 +8,13 @@ import logging
 import json
 from django.db import connection
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django.utils import timezone
 from django.utils.http import urlencode
+from django.template.loader import render_to_string
+from django.http import HttpResponseBadRequest
 from django.core.validators import validate_email, ValidationError
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -18,7 +22,7 @@ from rest_framework.decorators import api_view
 from ifxmail.client import send, FieldErrorsException
 from ifxurls.urls import FIINE_URL_BASE
 from ifxbilling.fiine import updateUserAccounts
-from ifxbilling import models, settings
+from ifxbilling import models, settings, permissions
 from ifxbilling.calculator import calculateBillingMonth
 
 
@@ -227,6 +231,7 @@ def expense_code_request(request):
     return Response(data=data, status=msg_status)
 
 
+@permission_classes((permissions.AdminPermissions, ))
 @api_view(('POST',))
 def calculate_billing_month(request, invoice_prefix, year, month):
     '''
@@ -254,6 +259,37 @@ def calculate_billing_month(request, invoice_prefix, year, month):
     except Exception as e:
         logger.exception(e)
         return Response(data={ 'error': f'Billing calculation failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@permission_classes((permissions.AdminPermissions, ))
+@api_view(('POST',))
+def billing_record_summary(request, invoice_prefix, year, month):
+    '''
+    return a billing record summary from template for the facility
+    '''
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        if data and 'organization' in data:
+            organization = data['organization']
+    except json.JSONDecodeError as e:
+        logger.exception(e)
+        return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
+    logger.debug('Summarizing billing records with invoice_prefix %s for month %d of year %d, with organization %s', invoice_prefix, month, year, organization)
+
+    try:
+        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+    except models.Facility.DoesNotExist:
+        return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        template = facility.billing_record_template or settings.DEFAULT_BILLING_RECORD_TEMPLATE
+        billing_records = models.BillingRecord.objects.filter(year=year, month=month, product_usage__product__facility__id=facility.id, product_usage__organization__name=organization).select_related('product_usage').all()
+        total = billing_records.aggregate(Sum('charge'))['charge__sum']
+        context = {'year': year, 'month': month, 'billing_records': billing_records, 'total': total}
+        summary = render_to_string(template, context)
+        return Response(data={ 'summary': summary }, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.exception(e)
+        return Response(data={ 'error': f'Billing record summary failed {str(e)}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def make_transaction_from_query_result(row_dict):
     '''

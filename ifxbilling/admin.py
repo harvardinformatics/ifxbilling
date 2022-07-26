@@ -37,7 +37,8 @@ class FacilityAdmin(admin.ModelAdmin):
         'application_username',
         'credit_code',
         'object_code',
-        'invoice_prefix'
+        'invoice_prefix',
+        'billing_record_template'
     )
     list_display = (
         'id',
@@ -45,7 +46,8 @@ class FacilityAdmin(admin.ModelAdmin):
         'application_username',
         'credit_code',
         'object_code',
-        'invoice_prefix'
+        'invoice_prefix',
+        'billing_record_template'
     )
     ordering = ('name',)
     search_fields = (

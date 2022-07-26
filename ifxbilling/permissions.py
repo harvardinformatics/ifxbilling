@@ -23,3 +23,14 @@ class BillingRecordUpdatePermissions(permissions.IsAuthenticated):
             return Roles.userIsAdmin(request.user) or request.user.username == 'fiine'
 
         return False
+
+class AdminPermissions(permissions.IsAuthenticated):
+    '''
+    User must be an admin
+    '''
+    def has_permission(self, request, view):
+        result = Roles.has_role(ROLE.ADMIN, request.user)
+        logger.debug('user is admin? %s', str(result))
+        return result
+
+
