@@ -6,6 +6,7 @@ Common views for expense codes
 
 import logging
 import json
+from django.db import connection
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.utils import timezone
@@ -289,3 +290,156 @@ def billing_record_summary(request, invoice_prefix, year, month):
     except Exception as e:
         logger.exception(e)
         return Response(data={ 'error': f'Billing record summary failed {str(e)}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+def make_transaction_from_query_result(row_dict):
+    '''
+    Return a transaction dict from the row
+    '''
+    return {
+        'description': row_dict['transaction_description'],
+        'id': row_dict['transaction_id'],
+        'charge': row_dict['transaction_charge'],
+        'rate': row_dict['transaction_rate'],
+        'author': {
+            'ifxid': row_dict['transaction_user_ifxid'],
+            'full_name': row_dict['transaction_user_full_name']
+        }
+    }
+
+@api_view(('GET', ))
+def get_billing_record_list(request):
+    '''
+    Return trimmed down listing for billing record displays
+    '''
+    year = request.GET.get('year', None)
+    month = request.GET.get('month', None)
+    invoice_prefix = request.GET.get('invoice_prefix', None)
+    facility = request.GET.get('facility', None)
+    organization = request.GET.get('organization', None)
+    root = request.GET.get('root', None)
+    results = {}
+    sql = '''
+        select
+            br.id as billing_record_id,
+            br.charge as billing_record_charge,
+            br.percent as billing_record_percent,
+            br.current_state as billing_record_current_state,
+            br.description as billing_record_description,
+            br.year,
+            br.month,
+            product_user.full_name as product_user_full_name,
+            product_user.ifxid as product_user_ifxid,
+            product_user_organization.slug as product_user_primary_affiliation,
+            acct.id as account_id,
+            acct.code as account_code,
+            acct.name as account_name,
+            acct.slug as account_slug,
+            o.slug as account_organization,
+            p.product_name,
+            p.product_number,
+            pu.id as product_usage_id,
+            txn.id as transaction_id,
+            txn.description as transaction_description,
+            txn.charge as transaction_charge,
+            txn.rate as transaction_rate,
+            txn_user.full_name as transaction_user_full_name,
+            txn_user.ifxid as transaction_user_ifxid
+        from
+            billing_record br
+            inner join product_usage pu on pu.id = br.product_usage_id
+            inner join product p on p.id = pu.product_id
+            inner join ifxuser product_user on pu.product_user_id = product_user.id
+            inner join nanites_organization product_user_organization on product_user.primary_affiliation_id = product_user_organization.id
+            inner join account acct on acct.id = br.account_id
+            inner join nanites_organization o on o.id = acct.organization_id
+            inner join transaction txn on txn.billing_record_id = br.id
+            inner join ifxuser txn_user on txn_user.id = txn.author_id
+            inner join facility f on f.id = p.facility_id
+    '''
+    where_clauses = []
+    query_args = []
+    if year:
+        try:
+            year = int(year)
+        except ValueError:
+            return Response('year must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('br.year = %s')
+        query_args.append(year)
+
+    if month:
+        try:
+            month = int(month)
+        except ValueError:
+            return Response('month must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('br.month = %s')
+        query_args.append(month)
+
+    if invoice_prefix:
+        where_clauses.append('f.invoice_prefix = %s')
+        query_args.append(invoice_prefix)
+    if organization:
+        where_clauses.append('o.slug = %s')
+        query_args.append(organization)
+    if facility:
+        where_clauses.append('f.name = %s')
+        query_args.append(facility)
+    if root:
+        where_clauses.append('acct.root = %s')
+        query_args.append(root)
+
+    if where_clauses:
+        sql += ' where '
+        sql += ' and '.join(where_clauses)
+
+    try:
+
+        cursor = connection.cursor()
+        cursor.execute(sql, query_args)
+
+        desc = cursor.description
+
+        for row in cursor.fetchall():
+            # Make a dictionary labeled by column name
+            row_dict = dict(zip([col[0] for col in desc], row))
+            billing_record_id = row_dict['billing_record_id']
+            if billing_record_id in results:
+                # Additional transaction
+                results[billing_record_id]['transactions'].append(
+                    make_transaction_from_query_result(row_dict)
+                )
+            else:
+                results[billing_record_id] = {
+                    'id': billing_record_id,
+                    'charge': row_dict['billing_record_charge'],
+                    'description': row_dict['billing_record_description'],
+                    'percent': row_dict['billing_record_percent'],
+                    'current_state': row_dict['billing_record_current_state'],
+                    'year': row_dict['year'],
+                    'month': row_dict['month'],
+                    'account': {
+                        'id': row_dict['account_id'],
+                        'code': row_dict['account_code'],
+                        'name': row_dict['account_name'],
+                        'slug': row_dict['account_slug'],
+                        'organization': row_dict['account_organization'],
+                    },
+                    'product_usage': {
+                        'id': row_dict['product_usage_id'],
+                        'product': row_dict['product_name'],
+                        'product_user': {
+                            'ifxid': row_dict['product_user_ifxid'],
+                            'primary_affiliation': row_dict['product_user_primary_affiliation'],
+                            'full_name': row_dict['product_user_full_name']
+                        }
+                    },
+                    'transactions': [
+                        make_transaction_from_query_result(row_dict)
+                    ]
+                }
+    except Exception as e:
+        logger.exception(e)
+        return Response(f'Error getting billing records {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data=list(results.values())
+    )
