@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='facility',
             name='billing_record_template',
-            field=models.CharField(blank=True, default='ifxbilling.templates.billing_record_summary_base.html', help_text='template for billing record summary which gets emailed to lab admins', max_length=100),
+            field=models.CharField(blank=True, default='billing_record_summary_base.html', help_text='template for billing record summary which gets emailed to lab admins', max_length=100),
         ),
     ]
