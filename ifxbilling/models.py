@@ -96,6 +96,13 @@ class Facility(models.Model):
         max_length=4,
         default='8250'
     )
+    billing_record_template = models.CharField(
+        max_length=100,
+        null=False,
+        blank=True,
+        default='billing_record_summary_base.html',
+        help_text='template for billing record summary which gets emailed to lab admins'
+    )
     def __str__(self):
         return self.name
 

@@ -27,6 +27,7 @@ DEBUG = os.environ.get('IFXBILLING_DEBUG', 'FALSE').upper() == 'TRUE'
 LOGLEVEL = os.environ.get('IFXBILLING_LOGLEVEL', 'INFO')
 
 IFXBILLING_PROCESSOR_MODULE = 'test'
+DEFAULT_BILLING_RECORD_TEMPLATE = 'billing_record_summary_base.html'
 AUTH_USER_MODEL = 'ifxuser.IfxUser'
 DB_USERNAME = os.environ.get('IFXBILLING_USERNAME', 'ifxbilling')
 DB_PASSWORD = os.environ.get('IFXBILLING_PASSWORD', 'ifxbilling')
