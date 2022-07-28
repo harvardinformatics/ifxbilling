@@ -24,8 +24,8 @@ logger = logging.getLogger('ifxbilling')
 
 class BillingRecordEmailGenerator():
     '''
-    Looks at ProductUsages for the month, year,
-    facility and prepares and sendsan email for all organizations.
+    Looks at Billing Records for the month, year,
+    facility and optional organization list and prepares and sends an email for all organizations.
 
     '''
     FACILITY_INVOICE_CONTACT_ROLE = 'Facility Invoice'
@@ -64,6 +64,7 @@ class BillingRecordEmailGenerator():
         self.review_link = getIfxUrl(f'{self.facility.application_username.upper()}_BILLING_RECORD_LISTING')
 
     def get_ifxmessage_name(self):
+        # TODO: is this the naming convention? why two invoice prefixes?
         return f'{self.facility.invoice_prefix}_{self.facility.invoice_prefix}_{self.IFXMESSAGE_NAME}'
 
     def send_billing_record_emails(self):
@@ -71,7 +72,6 @@ class BillingRecordEmailGenerator():
         org_data, errors = self.prepare_org_data()
         for org, data in org_data.items():
             if org not in errors: # already errored, skip
-
                 logger.info(f'Sending message for {org} with {org_data}')
                 success, msg = self.send_email(data)
                 if success:
@@ -80,10 +80,8 @@ class BillingRecordEmailGenerator():
                 else:
                     errors[org] = msg
                     logger.warn(msg)
-        success_msg = f'Successfully sent messagse to {len(sent)} labs: {" ,".join(sent)}'
-        logger.info(success_msg)
-        error_msg = f'Billing record email errors: {errors}'
-        logger.warn(error_msg)
+        logger.info(f'Successfully sent messagse to {len(sent)} labs: {" ,".join(sent)}')
+        logger.info(f'Billing record email errors: {errors}')
         return sent, errors
 
     def send_email(self, org_data):
@@ -160,6 +158,13 @@ class BillingRecordEmailGenerator():
         }
         return summary
 
+    def format_html_context(self, data):
+        return {
+                    'year': self.year,
+                    'month': self.month,
+                    'billing_records': data['recs'],
+                    'total': data['total']
+                }
 
     def add_html_to_org_data(self, org_data, errors):
         '''
@@ -167,12 +172,7 @@ class BillingRecordEmailGenerator():
         '''
         for org, data in org_data.items():
             if not 'error' in data:
-                context = {
-                    'year': self.year,
-                    'month': self.month,
-                    'billing_records': org_data[org]['recs'],
-                    'total': org_data[org]['total']
-                }
+                context = self.format_html_context(data)
                 try:
                     summary = render_to_string(self.template, context)
                     org_data[org]['msg_data']['summary'] = summary
