@@ -266,7 +266,7 @@ class BasicBillingCalculator():
             # check for previous processing errors, only keep the latest
             if not self.update_product_usage_processing(product_usage, {'error_message': message, 'resolved': False}):
                 # nothing to update, create new
-                ProductUsageProcessing(product_usage=product_usage, error_message=message)
+                ProductUsageProcessing.objects.create(product_usage=product_usage, error_message=message)
             raise e
         return brs
 
