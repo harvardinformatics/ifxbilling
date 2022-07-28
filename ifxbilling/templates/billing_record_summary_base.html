@@ -22,13 +22,13 @@
     {% for row in billing_records %}
         <tr>
                 <td class="w30 rtdr">{{ forloop.counter }}</td>
-                <td class="w300">{{ row.product_usage.start_date }}</td>
-                <td class="w300">{{ row.product_usage.end_date }}</td>
-                <td class="w300">{{ row.product_usage.product.product_name }}</td>
-                <td class="w300">{{ row.product_usage.product_user.full_name }}</td>
-                <td class="rtdr">{{ row.product_usage.quantity }}</td>
+                <td class="w300">{{ row.start_date }}</td>
+                <td class="w300">{{ row.end_date }}</td>
+                <td class="w300">{{ row.product }}</td>
+                <td class="w300">{{ row.user }}</td>
+                <td class="rtdr">{{ row.quantity }}</td>
                 <td class="w300">{{ row.rate }}</td>
-                <td class="rtdr">{{ row.account.code }}</td>
+                <td class="rtdr">{{ row.account }}</td>
                 <td class="rtdr">{{ row.charge|dollars }} </td>
         </tr>
     {% endfor %}

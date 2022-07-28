@@ -6,6 +6,7 @@ Common views for expense codes
 
 import logging
 import json
+import re
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.utils import timezone
@@ -19,10 +20,12 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from ifxmail.client import send, FieldErrorsException
+from ifxmail.client.views import messages, mailings, readUpdateOrDeleteMessage, readMailing
 from ifxurls.urls import FIINE_URL_BASE
 from ifxbilling.fiine import updateUserAccounts
 from ifxbilling import models, settings, permissions
 from ifxbilling.calculator import calculateBillingMonth
+from ifxbilling.billing_record_email_generator import BillingRecordEmailGenerator
 
 
 logger = logging.getLogger(__name__)
@@ -265,27 +268,45 @@ def billing_record_summary(request, invoice_prefix, year, month):
     '''
     return a billing record summary from template for the facility
     '''
+    ifxorg_ids = []
     try:
         data = json.loads(request.body.decode('utf-8'))
-        if data and 'organization' in data:
-            organization = data['organization']
+        if data and 'ifxorg_ids' in data:
+            # get ifxorg_ids are valid
+            r = re.compile('^IFXORG\d{10}$')
+            ifxorg_ids = [id for id in data['ifxorg_ids'] if r.match(id)]
+            if len(ifxorg_ids) is not len(data['ifxorg_ids']):
+                return Response(data={'error': f'Some of the ifxorg_ids you passed in are invalid. valid ifxorg_ids included: {ifxorg_ids}'}, status=status.HTTP_400_BAD_REQUEST)
+            logger.info(ifxorg_ids)
     except json.JSONDecodeError as e:
         logger.exception(e)
         return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
-    logger.debug('Summarizing billing records with invoice_prefix %s for month %d of year %d, with organization %s', invoice_prefix, month, year, organization)
-
+    logger.info('Summarizing billing records with invoice_prefix %s for month %d of year %d, with ifxorg_ids %s', invoice_prefix, month, year, ifxorg_ids)
     try:
-        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
-    except models.Facility.DoesNotExist:
-        return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        template = facility.billing_record_template or settings.DEFAULT_BILLING_RECORD_TEMPLATE
-        billing_records = models.BillingRecord.objects.filter(year=year, month=month, product_usage__product__facility__id=facility.id, product_usage__organization__name=organization).select_related('product_usage').all()
-        total = billing_records.aggregate(Sum('charge'))['charge__sum']
-        context = {'year': year, 'month': month, 'billing_records': billing_records, 'total': total}
-        summary = render_to_string(template, context)
-        return Response(data={ 'summary': summary }, status=status.HTTP_200_OK)
+        gen = BillingRecordEmailGenerator(invoice_prefix, month, year, ifxorg_ids)
+        successes, errors = gen.send_billing_record_emails()
+        success_msg = error_msg = ''
+        if successes:
+            success_msg = f'Successfully sent messagse to {len(successes)} labs: {" ,".join(successes)}'
+        if errors:
+            error_msg = f'Billing record email errors: {errors}'
+        logger.info('Billing record email success_msg: {success_msg} error msg: {error_msg}')
+        return Response(data={ 'success_msg': success_msg, 'error_msg': error_msg }, status=status.HTTP_200_OK)
     except Exception as e:
-        logger.exception(e)
+        logger.warn('Billing record email error {str(e)}')
         return Response(data={ 'error': f'Billing record summary failed {str(e)}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@permission_classes((permissions.AdminPermissions, ))
+def ifx_messages(request):
+    '''
+    Messages
+    '''
+    return messages(request)
+
+
+@permission_classes((permissions.AdminPermissions, ))
+def ifx_mailings(request):
+    '''
+    Mailings
+    '''
+    return mailings(request)
