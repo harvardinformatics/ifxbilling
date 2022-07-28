@@ -259,17 +259,14 @@ class BasicBillingCalculator():
                     if br: # can be none
                         brs.append(br)
                 # processing complete update any product_usage_processing as resolved
-                self.update_product_usage_processing(product_usage, {'resolved': True}, update_only_unresolved=False)
+                if not self.update_product_usage_processing(product_usage, {'resolved': True}, update_only_unresolved=False):
+                    ProductUsageProcessing.objects.create(product_usage=product_usage, error_message='OK')
         except Exception as e:
             message = str(e)[-2000:] # limit to db column max_length
             # check for previous processing errors, only keep the latest
             if not self.update_product_usage_processing(product_usage, {'error_message': message, 'resolved': False}):
                 # nothing to update, create new
-                product_usage_processing = ProductUsageProcessing(
-                    product_usage=product_usage,
-                    error_message=message
-                )
-                product_usage_processing.save()
+                ProductUsageProcessing(product_usage=product_usage, error_message=message)
             raise e
         return brs
 
