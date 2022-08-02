@@ -71,7 +71,7 @@ class BillingRecordEmailGenerator():
         except OrganizationContact.DoesNotExist as dne:
             raise Exception(f'There is no facility invoice contact record for organization {facility.name}')
 
-    def get_ifxmessage_name(self):
+    def get_ifxmessage_name(self, org=None):
         # TODO: is this the naming convention? why two invoice prefixes?
         return f'{self.facility.application_username}_{self.facility.invoice_prefix}_{self.IFXMESSAGE_NAME}'
 
