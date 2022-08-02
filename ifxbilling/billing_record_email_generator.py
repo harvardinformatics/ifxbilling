@@ -144,7 +144,7 @@ class BillingRecordEmailGenerator():
             account__organization=org
         )
 
-    def get_msg_data(self, org, brs):
+    def get_message_data(self, org, brs):
         '''
         Get the msg_data portion of the email (except for total and summary)
         '''
@@ -157,6 +157,7 @@ class BillingRecordEmailGenerator():
             'link': self.review_link,
         }
         msg_data['summary'] = self.get_billing_record_html_summary()
+        return msg_data
 
     def get_organizations(self):
         '''
