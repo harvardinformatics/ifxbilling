@@ -156,7 +156,7 @@ class BillingRecordEmailGenerator():
             'month': self.month,
             'link': self.review_link,
         }
-        msg_data['summary'] = self.get_billing_record_html_summary()
+        msg_data['summary'] = self.get_billing_record_html_summary(org, brs)
         return msg_data
 
     def get_organizations(self):
