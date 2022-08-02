@@ -264,9 +264,9 @@ def calculate_billing_month(request, invoice_prefix, year, month):
 
 @permission_classes((permissions.AdminPermissions, ))
 @api_view(('POST',))
-def billing_record_summary(request, invoice_prefix, year, month):
+def send_billing_record_review_notification(request, invoice_prefix, year, month):
     '''
-    return a billing record summary from template for the facility
+    Send billing record notification emails to organization contacts
     '''
     ifxorg_ids = []
     try:
@@ -284,16 +284,14 @@ def billing_record_summary(request, invoice_prefix, year, month):
     logger.info('Summarizing billing records with invoice_prefix %s for month %d of year %d, with ifxorg_ids %s', invoice_prefix, month, year, ifxorg_ids)
     try:
         gen = BillingRecordEmailGenerator(invoice_prefix, month, year, ifxorg_ids)
-        successes, errors = gen.send_billing_record_emails()
-        success_msg = error_msg = ''
-        if successes:
-            success_msg = f'Successfully sent messages to {len(successes)} labs: {" ,".join(successes)}'
-        if errors:
-            error_msg = f'Billing record email errors: {errors}'
-        logger.info('Billing record email success_msg: {success_msg} error msg: {error_msg}')
-        return Response(data={ 'success_msg': success_msg, 'error_msg': error_msg }, status=status.HTTP_200_OK)
+        successes, errors, nobrs = gen.send_billing_record_emails()
+        logger.info(f'Billing record email successes: {", ".join(sorted([s.name for s in successes]))}')
+        logger.info(f'Orgs with no billing records for {month}/{year}: {", ".join(sorted([n.name for n in nobrs]))}')
+        for org_name, error_messages in errors.items():
+            logger.error(f'Email errors for {org_name}: {", ".join(error_messages)} ')
+        return Response(data={ 'successes': successes, 'errors': errors, 'nobrs': nobrs }, status=status.HTTP_200_OK)
     except Exception as e:
-        logger.warn('Billing record email error {str(e)}')
+        logger.error('Billing record email error {str(e)}')
         return Response(data={ 'error': f'Billing record summary failed {str(e)}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @permission_classes((permissions.AdminPermissions, ))

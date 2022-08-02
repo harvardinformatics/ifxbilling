@@ -91,12 +91,12 @@ class BillingRecordEmailGenerator():
                     sent.append(org)
                     logger.info('Successfully sent message for {org}')
                 else:
-                    nobrs.append(org.slug)
+                    nobrs.append(org)
             except Exception as e:
                 logger.exception(e)
-                errors[org.slug] = [str(e)]
-        logger.info(f'Successfully sent messages to {len(sent)} labs: {" ,".join(sent)}')
-        logger.info(f'Billing record email errors: {errors}')
+                errors[org.name] = [str(e)]
+        logger.debug(f'Successfully sent messages to {len(sent)} labs: {" ,".join(sent)}')
+        logger.debug(f'Billing record email errors: {errors}')
         return sent, errors, nobrs
 
     def get_fromaddr(self, org=None):
