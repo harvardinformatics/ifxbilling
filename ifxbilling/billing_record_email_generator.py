@@ -28,7 +28,7 @@ class BillingRecordEmailGenerator():
     '''
     FACILITY_INVOICE_CONTACT_ROLE = 'Facility Invoice'
     LAB_MANAGER_CONTACT_ROLE = 'Lab Manager'
-    DEFAULT_BILLING_RECORD_TEMPLATE = 'billing_record_summary_base.html'
+    DEFAULT_BILLING_RECORD_TEMPLATE = 'billing/billing_record_summary.html'
     IFXMESSAGE_NAME = 'lab_manager_billing_record_notification'
     HUMAN_TIME_FORMAT = '%Y-%m-%d %I:%m%p'
 
@@ -135,13 +135,14 @@ class BillingRecordEmailGenerator():
     def get_billing_records_for_org(self, org):
         '''
         Get billing record queryset for an organization based on the account org
+        Ordered by product name, product user name
         '''
         return models.BillingRecord.objects.filter(
             year=self.year,
             month=self.month,
             product_usage__product__facility=self.facility,
             account__organization=org
-        )
+        ).order_by('product_usage__product__product_name', 'product_usage__product_user__full_name')
 
     def get_message_data(self, org, brs):
         '''

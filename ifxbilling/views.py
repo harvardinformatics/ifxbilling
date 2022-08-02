@@ -23,7 +23,7 @@ from ifxurls.urls import FIINE_URL_BASE
 from ifxuser.models import Organization
 from ifxbilling.fiine import updateUserAccounts
 from ifxbilling import models, settings, permissions
-from ifxbilling.calculator import calculateBillingMonth
+from ifxbilling.calculator import calculateBillingMonth, getClassFromName
 from ifxbilling.billing_record_email_generator import BillingRecordEmailGenerator
 
 
@@ -300,7 +300,12 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
                 }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        gen = BillingRecordEmailGenerator(facility, month, year, organizations)
+        breg_class_name = 'ifxbilling.billing_record_email_generator.BillingRecordEmailGenerator'
+        if hasattr(settings, 'BILLING_RECORD_EMAIL_GENERATOR_CLASS') and settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS:
+            app_name = settings.IFX_APP['name']
+            breg_class_name = f'{app_name}.{settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS}'
+        breg_class = getClassFromName(breg_class_name)
+        gen = breg_class(facility, month, year, organizations)
         successes, errors, nobrs = gen.send_billing_record_emails()
         logger.info(f'Billing record email successes: {", ".join(sorted([s.name for s in successes]))}')
         logger.info(f'Orgs with no billing records for {month}/{year}: {", ".join(sorted([n.name for n in nobrs]))}')
