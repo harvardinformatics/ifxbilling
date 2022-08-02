@@ -197,6 +197,6 @@ class BillingRecordEmailGenerator():
             'year': self.year,
             'month': self.month,
             'billing_records': [self.get_billing_record_dict(br) for br in brs],
-            'total': brs.aggregate(Sum('charge')),
+            'total': brs.aggregate(Sum('charge'))['charge__sum'],
         }
         return render_to_string(self.billing_record_template_name, context)
