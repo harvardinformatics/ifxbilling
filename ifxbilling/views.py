@@ -301,7 +301,7 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
                 return Response(data={
                     'error': f'Organization with ifxorg number {ifxorg_id} cannot be found'
                 }, status=status.HTTP_400_BAD_REQUEST)
-
+    logger.debug(f'Processing organizations {organizations}')
     try:
         breg_class_name = 'ifxbilling.billing_record_email_generator.BillingRecordEmailGenerator'
         if hasattr(settings, 'BILLING_RECORD_EMAIL_GENERATOR_CLASS') and settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS:
