@@ -268,15 +268,18 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
     Send billing record notification emails to organization contacts
     '''
     ifxorg_ids = []
+    test = []
     try:
         data = json.loads(request.body.decode('utf-8'))
-        if data and 'ifxorg_ids' in data:
+        if 'ifxorg_ids' in data:
             # get ifxorg_ids are valid
             r = re.compile('^IFXORG\d{10}$')
             ifxorg_ids = [id for id in data['ifxorg_ids'] if r.match(id)]
             if len(ifxorg_ids) is not len(data['ifxorg_ids']):
                 return Response(data={'error': f'Some of the ifxorg_ids you passed in are invalid. valid ifxorg_ids included: {ifxorg_ids}'}, status=status.HTTP_400_BAD_REQUEST)
             logger.info(ifxorg_ids)
+        if 'test' in data:
+            test = data['test']
     except json.JSONDecodeError as e:
         logger.exception(e)
         return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
@@ -305,7 +308,7 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
             app_name = settings.IFX_APP['name']
             breg_class_name = f'{app_name}.{settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS}'
         breg_class = getClassFromName(breg_class_name)
-        gen = breg_class(facility, month, year, organizations)
+        gen = breg_class(facility, month, year, organizations, test)
         successes, errors, nobrs = gen.send_billing_record_emails()
         logger.info(f'Billing record email successes: {", ".join(sorted([s.name for s in successes]))}')
         logger.info(f'Orgs with no billing records for {month}/{year}: {", ".join(sorted([n.name for n in nobrs]))}')

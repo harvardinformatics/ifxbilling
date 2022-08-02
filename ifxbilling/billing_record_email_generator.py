@@ -32,14 +32,16 @@ class BillingRecordEmailGenerator():
     IFXMESSAGE_NAME = 'lab_manager_billing_record_notification'
     HUMAN_TIME_FORMAT = '%Y-%m-%d %I:%m%p'
 
-    def __init__(self, facility, month=None, year=None, organizations=None):
+    def __init__(self, facility, month=None, year=None, organizations=None, test=None):
         '''
         Initialize generator with invoice_prefix.  If month / year are not specified, current month year are used.
+        If test is set to a list of email addresses, they will be used instead of the normal contacts
         '''
         self.facility = facility
         self.organizations = organizations
         self.year = year
         self.month = month
+        self.test = test
 
         self.billing_record_template_name = self.get_billing_record_template_name(facility)
         self.facility_contact = self.get_facility_contact(facility)
@@ -119,10 +121,15 @@ class BillingRecordEmailGenerator():
         '''
         Return the list of to: email addresses for an organization
         '''
-        contacts = self.get_organization_contacts(org)
-        if not contacts:
-            raise Exception(f'Organization {org} has no appropriate contacts')
-        return [c['detail'] for c in contacts]
+        tolist = []
+        if self.test:
+            tolist = self.test
+        else:
+            contacts = self.get_organization_contacts(org)
+            if not contacts:
+                raise Exception(f'Organization {org} has no appropriate contacts')
+            tolist = [c['detail'] for c in contacts]
+        return tolist
 
     def send_email(self, data):
         '''
