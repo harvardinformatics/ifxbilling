@@ -20,6 +20,7 @@ from rest_framework.decorators import api_view
 from ifxmail.client import send, FieldErrorsException
 from ifxmail.client.views import messages, mailings
 from ifxurls.urls import FIINE_URL_BASE
+from ifxuser.models import Organization
 from ifxbilling.fiine import updateUserAccounts
 from ifxbilling import models, settings, permissions
 from ifxbilling.calculator import calculateBillingMonth
@@ -280,8 +281,26 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
         logger.exception(e)
         return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
     logger.info('Summarizing billing records with invoice_prefix %s for month %d of year %d, with ifxorg_ids %s', invoice_prefix, month, year, ifxorg_ids)
+
     try:
-        gen = BillingRecordEmailGenerator(invoice_prefix, month, year, ifxorg_ids)
+        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+    except models.Facility.DoesNotExist:
+        return Response(data={
+            'error': f'Facility with invoice prefix {invoice_prefix} cannot be found'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    organizations = []
+    if ifxorg_ids:
+        for ifxorg_id in ifxorg_ids:
+            try:
+                organizations.append(Organization.objects.get(ifxorg=ifxorg_id))
+            except Organization.DoesNotExist:
+                return Response(data={
+                    'error': f'Organization with ifxorg number {ifxorg_id} cannot be found'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        gen = BillingRecordEmailGenerator(facility, month, year, organizations)
         successes, errors, nobrs = gen.send_billing_record_emails()
         logger.info(f'Billing record email successes: {", ".join(sorted([s.name for s in successes]))}')
         logger.info(f'Orgs with no billing records for {month}/{year}: {", ".join(sorted([n.name for n in nobrs]))}')
@@ -289,7 +308,7 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
             logger.error(f'Email errors for {org_name}: {", ".join(error_messages)} ')
         return Response(data={ 'successes': successes, 'errors': errors, 'nobrs': nobrs }, status=status.HTTP_200_OK)
     except Exception as e:
-        logger.error('Billing record email error {str(e)}')
+        logger.exception(e)
         return Response(data={ 'error': f'Billing record summary failed {str(e)}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @permission_classes((permissions.AdminPermissions, ))
