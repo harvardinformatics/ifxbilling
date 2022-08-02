@@ -55,7 +55,7 @@ class BillingRecordEmailGenerator():
         '''
         Link in email for reviewing charges
         '''
-        return f'https://fiine.rc.fas.harvard.edu/fiine/billing/billing-records-list/?year={self.year}&month={self.month}&facility={facility.name}'
+        return f'https://fiine.rc.fas.harvard.edu/fiine/billing/billing-records/list/?year={self.year}&month={self.month}&facility={facility.name}'
 
     def get_facility_contact(self, facility):
         '''
