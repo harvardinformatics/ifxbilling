@@ -129,6 +129,7 @@ class BillingRecordEmailGenerator():
         Use ifxmail send() to send the email
         '''
         # to, fromaddr, cclist=[], bcclist=[], replyto=None, ifxmessage=None, data=None, timeout=5
+        logger.debug(f'Sending {data}')
         send(**data)
 
     def get_billing_records_for_org(self, org):
