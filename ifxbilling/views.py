@@ -287,7 +287,7 @@ def billing_record_summary(request, invoice_prefix, year, month):
         successes, errors = gen.send_billing_record_emails()
         success_msg = error_msg = ''
         if successes:
-            success_msg = f'Successfully sent messagse to {len(successes)} labs: {" ,".join(successes)}'
+            success_msg = f'Successfully sent messages to {len(successes)} labs: {" ,".join(successes)}'
         if errors:
             error_msg = f'Billing record email errors: {errors}'
         logger.info('Billing record email success_msg: {success_msg} error msg: {error_msg}')
