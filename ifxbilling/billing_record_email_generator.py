@@ -99,7 +99,7 @@ class BillingRecordEmailGenerator():
             except Exception as e:
                 logger.exception(e)
                 errors[org.name] = [str(e)]
-        logger.debug(f'Successfully sent messages to {len(sent)} labs: {" ,".join(sent)}')
+        logger.debug(f'Successfully sent messages to {len(sent)} labs: {" ,".join([s.name for s in sent])}')
         logger.debug(f'Billing record email errors: {errors}')
         return sent, errors, nobrs
 
