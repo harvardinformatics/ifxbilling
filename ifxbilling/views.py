@@ -306,7 +306,14 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
         logger.info(f'Orgs with no billing records for {month}/{year}: {", ".join(sorted([n.name for n in nobrs]))}')
         for org_name, error_messages in errors.items():
             logger.error(f'Email errors for {org_name}: {", ".join(error_messages)} ')
-        return Response(data={ 'successes': successes, 'errors': errors, 'nobrs': nobrs }, status=status.HTTP_200_OK)
+        return Response(
+            data={
+                'successes': [s.name for s in successes],
+                'errors': errors,
+                'nobrs': [n.name for n in nobrs]
+            },
+            status=status.HTTP_200_OK
+        )
     except Exception as e:
         logger.exception(e)
         return Response(data={ 'error': f'Billing record summary failed {str(e)}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

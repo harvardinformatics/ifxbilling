@@ -67,7 +67,7 @@ class BillingRecordEmailGenerator():
                 organization__name=facility.name,
                 organization__org_tree='Harvard'
             )
-            self.facility_contact = oc.contact
+            return oc.contact
         except OrganizationContact.DoesNotExist as dne:
             raise Exception(f'There is no facility invoice contact record for organization {facility.name}')
 
