@@ -124,13 +124,11 @@ class BillingRecordEmailGenerator():
             raise Exception(f'Organization {org} has no appropriate contacts')
         return [c['detail'] for c in contacts]
 
-    def send_email(self, org_data):
+    def send_email(self, data):
         '''
         Use ifxmail send() to send the email
         '''
         # to, fromaddr, cclist=[], bcclist=[], replyto=None, ifxmessage=None, data=None, timeout=5
-        data = {
-        }
         send(**data)
 
     def get_billing_records_for_org(self, org):
