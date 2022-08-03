@@ -74,10 +74,17 @@ class BillingRecordEmailGenerator():
             raise Exception(f'There is no facility invoice contact record for organization {facility.name}')
 
     def get_ifxmessage_name(self, org=None):
-        # TODO: is this the naming convention? why two invoice prefixes?
+        '''
+        Return the name for the ifxmessage.  Combines facility application name, invoice prefix and IFXMESSAGE_NAME
+        '''
         return f'{self.facility.application_username}_{self.facility.invoice_prefix}_{self.IFXMESSAGE_NAME}'
 
     def send_billing_record_emails(self):
+        '''
+        Iterate through organizations and send email via ifxmail if there are billing records.
+        Returns a tuple that includes a list of organizations that were successfully sent emails,
+        a dict of errors keyed by org name, and a list of organizations that had no billing records.
+        '''
         sent = []
         nobrs = []
         errors = {}
