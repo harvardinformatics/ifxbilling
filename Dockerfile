@@ -14,7 +14,7 @@ COPY requirements.txt /app
 ARG DJVOCAB_COMMIT=a0cfeba93ea805d3861e97e9c38fd27447e5b58a
 ARG IFXURLS_COMMIT=30d093a410e405dac650e7904e6e140e87a9e95b
 ARG NANITES_CLIENT_COMMIT=a11ff96ccb2c888d0d07ac97f27de1153463bf59
-ARG IFXUSER_COMMIT=ad9758fcd82627e4fb27b2fd533e9bbeef07681c
+ARG IFXUSER_COMMIT=760d637acbecec9e246c9a717e73d635ec2d7b2e
 ARG IFXAUTH_COMMIT=afcaad2b05f5dd90e86e53b2de864bef04c91898
 ARG IFXMAIL_CLIENT_COMMIT=5fc6d834c76c0f66d823ff0b5d384ab7b30009b0
 ARG FIINE_CLIENT_COMMIT=d0c0658fedde41bd97755bfef47ecd835ac7ef9b
@@ -26,9 +26,9 @@ RUN --mount=type=ssh pip install --upgrade pip && \
     pip install git+ssh://git@github.com/harvardinformatics/djvocab.git@${DJVOCAB_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxurls.git@${IFXURLS_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/nanites.client.git@${NANITES_CLIENT_COMMIT} && \
-    pip install git+ssh://git@github.com/harvardinformatics/ifxuser.git@${IFXUSER_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxauth.git@${IFXAUTH_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxmail.client.git@${IFXMAIL_CLIENT_COMMIT} && \
+    pip install git+ssh://git@github.com/harvardinformatics/ifxuser.git@${IFXUSER_COMMIT} && \
     pip install git+ssh://git@gitlab-int.rc.fas.harvard.edu/informatics/fiine.client.git@${FIINE_CLIENT_COMMIT} && \
     pip install git+ssh://git@gitlab-int.rc.fas.harvard.edu/informatics/ifxvalidcode.git@${IFXVALIDCODE_COMMIT} && \
     pip install -r requirements.txt

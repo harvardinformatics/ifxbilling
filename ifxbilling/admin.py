@@ -217,6 +217,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'created',
         'updated',
         'percent',
+        'rate'
     )
     list_display = (
         'id',
@@ -228,6 +229,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'year',
         'current_state',
         'description',
+        'rate'
     )
     ordering = ('year', 'month', 'product_usage__id')
     search_fields = (
