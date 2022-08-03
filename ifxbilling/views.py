@@ -273,7 +273,7 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
         data = json.loads(request.body.decode('utf-8'))
         if 'ifxorg_ids' in data:
             # get ifxorg_ids are valid
-            r = re.compile('^IFXORG\d{10}$')
+            r = re.compile('^IFXORG[0-9A-Z]{10}')
             ifxorg_ids = [id for id in data['ifxorg_ids'] if r.match(id)]
             if len(ifxorg_ids) is not len(data['ifxorg_ids']):
                 return Response(data={'error': f'Some of the ifxorg_ids you passed in are invalid. valid ifxorg_ids included: {ifxorg_ids}'}, status=status.HTTP_400_BAD_REQUEST)
