@@ -13,3 +13,4 @@ Submodules
    :maxdepth: 4
 
    ifxbilling.migrations.0001_initial
+   ifxbilling.migrations.0002_facility_billing_record_template
