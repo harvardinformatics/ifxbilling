@@ -23,7 +23,8 @@ from ifxurls.urls import FIINE_URL_BASE
 from ifxuser.models import Organization
 from ifxbilling.fiine import updateUserAccounts
 from ifxbilling import models, settings, permissions
-from ifxbilling.calculator import calculateBillingMonth, getClassFromName
+from ifxbilling.util import get_class_from_name
+#from ifxbilling.billing_record_generator import BillingRecordGenerator
 
 
 logger = logging.getLogger(__name__)
@@ -237,7 +238,7 @@ def calculate_billing_month(request, invoice_prefix, year, month):
     '''
     Calculate billing for the given invoice_prefix, year, and month
     '''
-    recalculate = False
+    '''recalculate = False
     try:
         data = json.loads(request.body.decode('utf-8'))
         if data and 'recalculate' in data:
@@ -254,11 +255,14 @@ def calculate_billing_month(request, invoice_prefix, year, month):
         return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        (successes, errors) = calculateBillingMonth(month, year, facility, recalculate)
-        return Response(data={ 'successes': successes, 'errors': errors }, status=status.HTTP_200_OK)
+        start_month = datetime.datetime(year=year, month=month, day=1)
+        billing_record_generator = BillingRecordGenerator(facility.name)
+        org_results = billing_record_generator.generate_billing_records(start_month, None, recalculate)
+        return Response(data=org_results, status=status.HTTP_200_OK)
     except Exception as e:
         logger.exception(e)
-        return Response(data={ 'error': f'Billing calculation failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(data={ 'error': f'Billing calculation failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)'''
+    pass
 
 @permission_classes((permissions.AdminPermissions, ))
 @api_view(('POST',))
