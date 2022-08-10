@@ -14,6 +14,7 @@ Subpackages
 
    ifxbilling.management
    ifxbilling.migrations
+   ifxbilling.templatetags
    ifxbilling.test
 
 Submodules
@@ -23,6 +24,7 @@ Submodules
    :maxdepth: 4
 
    ifxbilling.admin
+   ifxbilling.billing_record_email_generator
    ifxbilling.calculator
    ifxbilling.fiine
    ifxbilling.init
