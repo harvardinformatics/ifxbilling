@@ -534,7 +534,6 @@ class TestBillingRecord(APITestCase):
         charge = 999
         description = 'Dewar charge'
         rate = '999 per ton'
-        initial_state = 'PENDING_LAB_APPROVAL'
 
         billing_record_data = {
             'account': account,

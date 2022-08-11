@@ -58,10 +58,14 @@ def reset_billing_record_charge(billing_record):
     transactions
     '''
     billing_record_charge = 0
+    billing_record_decimal_charge = Decimal('0.0000')
     transactions = billing_record.transaction_set.all()
     for trx in sorted(transactions, key=lambda transaction: transaction.created):
         billing_record_charge += trx.charge
+        if trx.decimal_charge is not None:
+            billing_record_decimal_charge += trx.decimal_charge
     billing_record.charge = billing_record_charge
+    billing_record.decimal_charge = billing_record_decimal_charge
     billing_record.description = str(billing_record)
     billing_record.save()
 
@@ -294,6 +298,13 @@ class Rate(models.Model):
         default=0,
         help_text='Price in pennies'
     )
+    decimal_price = models.DecimalField(
+        null=True,
+        blank=True,
+        max_digits=19,
+        decimal_places=4,
+        help_text='Price in dollars and cents'
+    )
     units = models.CharField(
         max_length=100,
         null=False,
@@ -374,6 +385,13 @@ class AbstractProductUsage(models.Model):
         blank=False,
         default=1,
         help_text='Quantity of product'
+    )
+    decimal_quantity = models.DecimalField(
+        max_digits=19,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text='Decimal quantity of the Product.  Intended to replace the quantity field.'
     )
     units = models.CharField(
         max_length=100,
@@ -496,6 +514,13 @@ class BillingRecord(models.Model):
         default=0,
         help_text='Sum of charge records in pennies'
     )
+    decimal_charge = models.DecimalField(
+        null=True,
+        blank=True,
+        max_digits=19,
+        decimal_places=4,
+        help_text='Decimal version of the charge in dollars and cents.  Intended to replace "charge" field.'
+    )
     percent = models.IntegerField(
         help_text='Percent of total product usage cost that this charge represents, defaults to 100%',
         null=False,
@@ -596,7 +621,10 @@ class BillingRecord(models.Model):
         return txn
 
     def __str__(self):
-        dollar_charge = Decimal(self.charge / 100).quantize(Decimal('1.00'))
+        if self.decimal_charge:
+            dollar_charge = self.decimal_charge.quantize(Decimal('.01'))
+        else:
+            dollar_charge = Decimal(self.charge / 100).quantize(Decimal('1.00'))
         desc = f'Charge of ${dollar_charge} against {self.account} for the use of {self.product_usage.product} by {self.product_usage.product_user.full_name}'
         local_start = timezone.localtime(self.product_usage.start_date).strftime(HUMAN_TIME_FORMAT)
         if self.product_usage.end_date:
@@ -678,6 +706,13 @@ class Transaction(models.Model):
         blank=False,
         default=0,
         help_text='Positive or negative charge in pennies'
+    )
+    decimal_charge = models.DecimalField(
+        null=True,
+        blank=True,
+        max_digits=19,
+        decimal_places=4,
+        help_text='Decimal version of charge.  Intended to replace "charge" field.'
     )
     description = models.CharField(
         max_length=500,

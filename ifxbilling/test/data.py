@@ -186,6 +186,7 @@ PRODUCTS = [
             {
                 'name': 'Harvard Internal',
                 'price': 100,
+                'decimal_price': 100.00,
                 'units': 'ea',
             }
         ],
@@ -198,7 +199,8 @@ PRODUCTS = [
         'rates': [
             {
                 'name': 'Harvard Internal',
-                'price': 1000,
+                'price': 100,
+                'decimal_price': 100.00,
                 'units': 'ea',
             }
         ],
@@ -211,7 +213,10 @@ PRODUCT_USAGES = [
         'product': 'Helium Dewar',
         'product_user': 'Slurpy Slurpiston',
         'quantity': 1,
+        'decimal_quantity': 1.0,
         'units': 'ea',
+        'year': 2021,
+        'month': 2,
         'start_date': timezone.make_aware(datetime(2021, 2, 1)),
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'logged_by': 'john@snow.com',
@@ -220,6 +225,7 @@ PRODUCT_USAGES = [
         'product': 'Helium Dewar',
         'product_user': 'Markos Hankin',
         'quantity': 1,
+        'decimal_quantity': 1.0,
         'units': 'ea',
         'year': 1900,
         'month': 1,
@@ -231,6 +237,7 @@ PRODUCT_USAGES = [
         'product': 'Helium Dewar',
         'product_user': 'Markos Hankin',
         'quantity': 1,
+        'decimal_quantity': 1.0,
         'units': 'ea',
         'year': 2020,
         'month': 2,
@@ -242,6 +249,7 @@ PRODUCT_USAGES = [
         'product': 'Helium Dewar',
         'product_user': 'Markos Hankin',
         'quantity': 1,
+        'decimal_quantity': 1.0,
         'units': 'ea',
         'year': 2021,
         'month': 3,
@@ -253,6 +261,7 @@ PRODUCT_USAGES = [
         'product': 'Helium Balloon',
         'product_user': 'Markos Hankin',
         'quantity': 1,
+        'decimal_quantity': 1.0,
         'units': 'ea',
         'year': 2022,
         'month': 1,
@@ -264,6 +273,7 @@ PRODUCT_USAGES = [
         'product': 'Helium Balloon',
         'product_user': 'Markos Hankin',
         'quantity': 1,
+        'decimal_quantity': 1.0,
         'units': 'ea',
         'year': 2022,
         'month': 1,
