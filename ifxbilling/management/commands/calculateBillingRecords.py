@@ -5,7 +5,6 @@ Calculate billing records for the given year and month
 '''
 import logging
 import datetime
-import pytz
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from django.core.management.base import BaseCommand
@@ -58,8 +57,8 @@ class Command(BaseCommand):
             help='Comma-separated list of product names.'
         )
         parser.add_argument(
-            '--organizations',
-            dest='organizations',
+            '--organization-names',
+            dest='organization_names',
             help='Comma-separated list of organization names.'
         )
 
@@ -70,13 +69,13 @@ class Command(BaseCommand):
         verbose = kwargs['verbose']
         facility_name = kwargs.get('facility_name')
         product_name_str = kwargs.get('product_names')
-        organization_str = kwargs.get('organizations')
-        product_names = None
+        organization_name_str = kwargs.get('organization_names')
+        product_names = []
         if product_name_str:
             product_names = product_name_str.split(',')
-        organizations = None
-        if organization_str:
-            organizations = organization_str.split(',')
+        organization_names = []
+        if organization_name_str:
+            organization_names = organization_name_str.split(',')
         if not facility_name:
             raise Exception('Must supply a facility_name')
         else:
@@ -84,14 +83,14 @@ class Command(BaseCommand):
                 facility = Facility.objects.get(name=facility_name)
             except Facility.DoesNotExist:
                 raise Exception(f'Facility name {facility_name} cannot be found')
-        start_date = timezone.make_aware(datetime.datetime(year=year, month=month, day=1), timezone=pytz.timezone(settings.TIME_ZONE))
-        logger.info(f'Generating billing records for {facility_name} start: {start_date} recalc {recalculate} verbose {verbose} products {product_names} orgs {organizations}')
+        start_date = datetime.datetime(year=year, month=month, day=1)
+        logger.info(f'Generating billing records for {facility_name} start: {start_date} recalc {recalculate} verbose {verbose} products {product_names} orgs {organization_names}')
         try:
             billing_record_generator_class = get_class_from_name(facility.billing_record_generator)
         except Exception as e:
             raise Exception(f'Facility billing record generator class does not exist: {e}')
         billing_record_generator = billing_record_generator_class(facility_name, verbose)
-        gen_results = billing_record_generator.generate_billing_records(start_date, None, recalculate, product_names, organizations)
+        gen_results = billing_record_generator.generate_billing_records(start_date, None, recalculate, product_names, organization_names)
         for org, results in gen_results['org_usage_results'].items():
             print(f'Organization {org} had {results["successes"]} product usages successfully processed')
             if results['errors']:

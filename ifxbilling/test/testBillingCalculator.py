@@ -42,7 +42,7 @@ class TestCalculator(APITestCase):
         '''
         Ensure that a simple ProductUsage can be converted to a BillingRecord specifying only the product_usage.
         '''
-        data.init(types=['Account', 'Product', 'ProductUsage', 'UserAccount'])
+        data.init(types=['Facility', 'Account', 'Product', 'ProductUsage', 'UserAccount'])
         product_usage_data = data.PRODUCT_USAGES[0]
         product_usage = models.ProductUsage.objects.get(
             product__product_name=product_usage_data['product'],
@@ -66,9 +66,9 @@ class TestCalculator(APITestCase):
         '''
         Ensure that BillingRecord creation will fail if the Account is inactive.
         '''
-        data.init(types=['Account', 'Product', 'ProductUsage', 'UserAccount'])
+        data.init(types=['Facility', 'Account', 'Product', 'ProductUsage', 'UserAccount'])
         # Make "mycode" inactive
-        models.Account.objects.filter(name='mycode').update(active=False)
+        account = models.Account.objects.filter(name='mycode').update(expiration_date='1900-01-01')
 
         product_usage_data = data.PRODUCT_USAGES[0]
         product_usage = models.ProductUsage.objects.get(
@@ -78,13 +78,14 @@ class TestCalculator(APITestCase):
         )
 
         bbc = BasicBillingCalculator()
-        self.assertRaisesMessage(Exception, 'Unable to find an active user account record for', bbc.createBillingRecordsForUsage, product_usage)
+        with self.assertRaisesMessage(Exception, 'Unable to find an active user account record for'):
+            bbc.createBillingRecordsForUsage(product_usage)
 
     def testUserProductAccountSplit(self):
         '''
         Ensure that a charge against a UserProductAccount with percentages creates split billing records.
         '''
-        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+        data.init(types=['Facility', 'Account', 'Product', 'ProductUsage', 'UserProductAccount'])
         product_usage_data = data.PRODUCT_USAGES[0]
         product_usage = models.ProductUsage.objects.get(
             product__product_name=product_usage_data['product'],
