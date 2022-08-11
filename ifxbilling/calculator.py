@@ -674,7 +674,7 @@ class NewBillingCalculator():
         return account_percentages
 
 
-    def calculate_charges(self, product_usage, percent):
+    def calculate_charges(self, product_usage, percent=100):
         '''
         Calculates one or more charges that will be used to create transactions
         using a product_usage and an optional usage_data dictionary.
