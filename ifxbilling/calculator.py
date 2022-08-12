@@ -422,7 +422,7 @@ class NewBillingCalculator():
 
         return results
 
-    def generate_billing_records_for_organization(self, year, month, organization, recalculate):
+    def generate_billing_records_for_organization(self, year, month, organization, recalculate, **kwargs):
         '''
         Create and save all of the :class:`~ifxbilling.models.BillingRecord` objects for the month for an organization.
 
@@ -453,7 +453,7 @@ class NewBillingCalculator():
         successes = []
         errors = []
 
-        for product_usage in self.get_product_usages_for_organization(year, month, organization):
+        for product_usage in self.get_product_usages_for_organization(year, month, organization, **kwargs):
             try:
                 if BillingRecord.objects.filter(product_usage=product_usage).exists():
                     if recalculate:
@@ -462,7 +462,7 @@ class NewBillingCalculator():
                         msg = f'Billing record already exists for usage {product_usage}'
                         raise Exception(msg)
                 successes.extend(
-                    self.generate_billing_records_for_usage(year, month, product_usage)
+                    self.generate_billing_records_for_usage(year, month, product_usage, **kwargs)
                 )
             except Exception as e:
                 errors.append(str(e))
@@ -476,7 +476,7 @@ class NewBillingCalculator():
             'errors': errors,
         }
 
-    def get_product_usages_for_organization(self, year, month, organization):
+    def get_product_usages_for_organization(self, year, month, organization, **kwargs):
         '''
         Get a list of :class:`~ifxbilling.models.ProductUsage` object to be converted to :class:`~ifxbilling.models.BillingRecord`
         objects for the given :class:`~ifxuser.models.Organization`.  Base class just gets the
@@ -496,7 +496,7 @@ class NewBillingCalculator():
         '''
         return ProductUsage.objects.filter(organization=organization, year=year, month=month)
 
-    def generate_billing_records_for_usage(self, year, month, product_usage):
+    def generate_billing_records_for_usage(self, year, month, product_usage, **kwargs):
         '''
         Returns one or more billing records for a given ProductUsage.
 
@@ -527,10 +527,10 @@ class NewBillingCalculator():
         brs = []
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
-                account_percentages = self.get_account_percentages_for_product_usage(product_usage)
+                account_percentages = self.get_account_percentages_for_product_usage(product_usage, **kwargs)
                 logger.debug('Creating %d billing records for product_usage %s', len(account_percentages), str(product_usage))
                 for account, percent in account_percentages:
-                    br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent)
+                    br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, **kwargs)
                     if br: # can be none
                         brs.append(br)
 
@@ -579,7 +579,7 @@ class NewBillingCalculator():
                 error_message=message
             )
 
-    def generate_billing_record_for_usage(self, year, month, product_usage, account, percent):
+    def generate_billing_record_for_usage(self, year, month, product_usage, account, percent, **kwargs):
         '''
         Create a single :class:`~ifxbilling.models.BillingRecord` for a :class:`~ifxbilling.models.ProductUsage`
 
@@ -604,13 +604,13 @@ class NewBillingCalculator():
             :class:`~ifxbilling.models.BillingRecord` represents
 
         '''
-        transactions_data = self.calculate_charges(product_usage, percent)
+        transactions_data = self.calculate_charges(product_usage, percent, **kwargs)
         if not transactions_data:
             return None
-        rate = self.get_billing_record_rate_description(transactions_data)
+        rate = self.get_billing_record_rate_description(transactions_data, **kwargs)
         return self.create_billing_record(year, month, product_usage, account, transactions_data, percent, rate)
 
-    def get_account_percentages_for_product_usage(self, product_usage):
+    def get_account_percentages_for_product_usage(self, product_usage, **kwargs):
         '''
         For the given :class:`~ifxbilling.models.ProductUsage` return
         a list of (:class:`~ifxbilling.models.Account`, percent) pairs.
@@ -674,7 +674,7 @@ class NewBillingCalculator():
         return account_percentages
 
 
-    def calculate_charges(self, product_usage, percent=100):
+    def calculate_charges(self, product_usage, percent=100, **kwargs):
         '''
         Calculates one or more charges that will be used to create transactions
         using a product_usage and an optional usage_data dictionary.
@@ -687,7 +687,7 @@ class NewBillingCalculator():
         rate = product.rate_set.get(is_active=True)
         if rate.units != product_usage.units:
             raise Exception(f'Units for product usage do not match the active rate for {product}')
-        rate_desc = self.get_rate_description(rate)
+        rate_desc = self.get_rate_description(rate, **kwargs)
 
         transactions_data = []
 
@@ -710,7 +710,7 @@ class NewBillingCalculator():
         )
         return transactions_data
 
-    def get_rate_description(self, rate):
+    def get_rate_description(self, rate, **kwargs):
         '''
         Text description of rate for use in txn rate and description.
         Empty string is returned if rate.price or rate.units is None.
@@ -737,7 +737,7 @@ class NewBillingCalculator():
                 desc = f'{rate.price} per {rate.units}'
         return desc
 
-    def get_billing_record_rate_description(self, transactions_data):
+    def get_billing_record_rate_description(self, transactions_data, **kwargs):
         '''
         Get the rate description for the BillingRecord from the transactions_data.
         Basically just picking the first one.  If there are no transactions an exception is raised.
