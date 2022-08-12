@@ -270,6 +270,7 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
     test = []
     try:
         data = json.loads(request.body.decode('utf-8'))
+        logger.info(data)
         if 'ifxorg_ids' in data:
             # get ifxorg_ids are valid
             r = re.compile('^IFXORG[0-9A-Z]{10}')
