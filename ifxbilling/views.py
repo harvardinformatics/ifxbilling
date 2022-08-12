@@ -280,6 +280,7 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
             logger.info(ifxorg_ids)
         if 'test' in data:
             test = data['test']
+            logger.info(f'Found test emails {test}')
     except json.JSONDecodeError as e:
         logger.exception(e)
         return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
