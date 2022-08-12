@@ -306,6 +306,7 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
         if hasattr(settings, 'BILLING_RECORD_EMAIL_GENERATOR_CLASS') and settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS:
             app_name = settings.IFX_APP['name']
             breg_class_name = f'{app_name}.{settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS}'
+            logger.info(f'Billing record email subclass {breg_class_name}')
         breg_class = getClassFromName(breg_class_name)
         gen = breg_class(facility, month, year, organizations, test)
         successes, errors, nobrs = gen.send_billing_record_emails()
