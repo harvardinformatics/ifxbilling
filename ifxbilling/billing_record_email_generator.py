@@ -102,7 +102,7 @@ class BillingRecordEmailGenerator():
                     }
                     self.send_email(email_data)
                     sent.append(org)
-                    logger.info('Successfully sent message for {org}')
+                    logger.info(f'Successfully sent message for {org}')
                 else:
                     nobrs.append(org)
             except Exception as e:
