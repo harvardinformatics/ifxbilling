@@ -15,8 +15,9 @@ import json
 from decimal import Decimal
 from importlib import import_module
 from django.db import transaction
+from django.db.models import Q
 from ifxuser.models import Organization
-from ifxbilling.models import BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product
+from ifxbilling.models import BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
 
 logger = logging.getLogger('ifxbilling')
@@ -382,6 +383,30 @@ class NewBillingCalculator():
     CHATTY = 1
     LOUD = 2
 
+    # if subclassing set the facility name constant in your class
+    FACILITY_NAME = None
+
+    def __init__(self):
+        self.set_facility()
+
+    def set_facility(self, facility_name=None):
+        '''
+        return the facility name.  This function is needed if the baseclass is
+        used for billing record calculation.  For subclasses self.FACILITY_NAME
+        should be set as a constant in the class.
+
+        :param facility_name: name of the facility to calculate billing records for, only used if
+        there is no class constant for FACILITY_NAME
+        '''
+        if getattr(self, 'FACILITY_NAME', None) and self.FACILITY_NAME:
+            facility_name = self.FACILITY_NAME
+        if facility_name:
+            try:
+                self.facility = Facility.objects.get(name=facility_name)
+            except Facility.DoesNotExist:
+                raise Exception(f'Facility name {facility_name} cannot be found')
+
+
     def calculate_billing_month(self, year, month, organizations=None, recalculate=False, verbosity=0):
         '''
         Calculate a month of billing for the given year and month
@@ -452,8 +477,8 @@ class NewBillingCalculator():
         '''
         successes = []
         errors = []
-
-        for product_usage in self.get_product_usages_for_organization(year, month, organization):
+        product_usages = self.get_product_usages_for_organization(year, month, organization)
+        for product_usage in product_usages:
             try:
                 if BillingRecord.objects.filter(product_usage=product_usage).exists():
                     if recalculate:
@@ -494,7 +519,10 @@ class NewBillingCalculator():
         :return: QuerySet of :class:`~ifxbilling.models.ProductUsage` objects filtered by the organization, year, and month
         :rtype: :class:`~django.db.models.query.QuerySet`
         '''
-        return ProductUsage.objects.filter(organization=organization, year=year, month=month)
+        product_usages = ProductUsage.objects.filter(organization=organization, year=year, month=month, product__facility=self.facility)
+        if not product_usages:
+            logger.info(f'No product usages for: {organization.name}, {month}, {year}')
+        return product_usages
 
     def generate_billing_records_for_usage(self, year, month, product_usage):
         '''
@@ -640,9 +668,10 @@ class NewBillingCalculator():
             raise Exception(f'Unable to get an organization for {product_usage}')
 
         user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
+            (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
             product=product_usage.product,
             account__organization=organization,
-            account__active=True,
+            account__valid_from__lte=product_usage.start_date,
             is_valid=True
         )
         logger.debug(f'{len(user_product_accounts)} upas found for {product_usage.product}')
@@ -784,7 +813,6 @@ class NewBillingCalculator():
             raise Exception(f'Billing record for product usage {product_usage} and account {account} already exists.')
         except BillingRecord.DoesNotExist:
             pass
-
         for transaction_data in transactions_data:
             if not billing_record:
                 billing_record = BillingRecord(
