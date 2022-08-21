@@ -47,8 +47,9 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             '--verbose',
-            action='store_true',
-            help='Report full exception for errors',
+            dest='verbose',
+            type=int,
+            help='Set verbosity: 0 - quiet, 1 - chatty, 2 - loud',
         )
         parser.add_argument(
             '--organization-names',
@@ -91,7 +92,7 @@ class Command(BaseCommand):
                 print(f'{org} {res}')
         else:
             # use the old function
-            (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, verbose)
+            (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, (verbose > 0))
             print(f'{successes} product usages successfully processed')
             if errors:
                 print('Errors: %s' % '\n'.join(errors))
