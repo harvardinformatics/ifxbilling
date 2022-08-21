@@ -519,7 +519,7 @@ class NewBillingCalculator():
         :return: QuerySet of :class:`~ifxbilling.models.ProductUsage` objects filtered by the organization, year, and month
         :rtype: :class:`~django.db.models.query.QuerySet`
         '''
-        product_usages = ProductUsage.objects.filter(organization=organization, year=year, month=month, product__facility=self.facility)
+        product_usages = ProductUsage.objects.filter(organization=organization, year=year, month=month, product__facility=self.facility, product__billable=True)
         if not product_usages:
             logger.info(f'No product usages for: {organization.name}, {month}, {year}')
         return product_usages
@@ -713,7 +713,7 @@ class NewBillingCalculator():
 
         '''
         product = product_usage.product
-        rate = product.rate_set.get(is_active=True)
+        rate = self.get_rate(product_usage)
         if rate.units != product_usage.units:
             raise Exception(f'Units for product usage do not match the active rate for {product}')
         rate_desc = self.get_rate_description(rate)
@@ -738,6 +738,13 @@ class NewBillingCalculator():
             }
         )
         return transactions_data
+
+    def get_rate(self, product_usage):
+        '''
+        return the rate for calculating the charge for this product_usage
+        '''
+        return product_usage.product.rate_set.get(is_active=True)
+
 
     def get_rate_description(self, rate):
         '''
