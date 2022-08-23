@@ -38,7 +38,8 @@ class FacilityAdmin(admin.ModelAdmin):
         'credit_code',
         'object_code',
         'invoice_prefix',
-        'billing_record_template'
+        'billing_record_template',
+        'billing_record_calculator'
     )
     list_display = (
         'id',
@@ -47,7 +48,8 @@ class FacilityAdmin(admin.ModelAdmin):
         'credit_code',
         'object_code',
         'invoice_prefix',
-        'billing_record_template'
+        'billing_record_template',
+        'billing_record_calculator'
     )
     ordering = ('name',)
     search_fields = (
@@ -260,6 +262,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'year',
         'month',
         'quantity',
+        'decimal_quantity',
         'units',
         'created',
         'updated',
@@ -272,6 +275,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'organization',
         'logged_by',
         'quantity',
+        'decimal_quantity',
         'units',
         'month',
         'year',
