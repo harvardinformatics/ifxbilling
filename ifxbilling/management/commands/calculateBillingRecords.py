@@ -70,7 +70,7 @@ class Command(BaseCommand):
             organization_names = organization_name_str.split(',')
             for organization_name in organization_names:
                 try:
-                    organization_objs.append(Organization.objects.get(name=organization_name.strip()))
+                    organization_objs.append(Organization.objects.get(org_tree='Harvard', name=organization_name.strip()))
                 except Organization.DoesNotExist:
                     raise Exception(f'Organization name {organization_name} cannot be found')
 

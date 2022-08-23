@@ -13,10 +13,7 @@ All rights reserved.
 from decimal import Decimal
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
-from rest_framework.reverse import reverse
-from rest_framework import status
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from ifxbilling.test import data
 from ifxbilling.calculator import NewBillingCalculator
 from ifxbilling import models
@@ -44,6 +41,7 @@ class TestCalculator(APITestCase):
         Ensure that a simple ProductUsage can be converted to a BillingRecord.
         '''
         data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount', 'UserAccount'])
+        models.Facility.objects.filter(name='Liquid Nitrogen Service').delete()
         product_usage_data = data.PRODUCT_USAGES[0]
         product_usage = models.ProductUsage.objects.get(
             product__product_name=product_usage_data['product'],
@@ -57,7 +55,7 @@ class TestCalculator(APITestCase):
         bc = NewBillingCalculator()
         result = bc.calculate_billing_month(year, month, verbosity=NewBillingCalculator.LOUD)
         brs = result['Kitzmiller Lab']['successes']
-        self.assertTrue(len(brs) == 2, f'Incorrect number of billing records returned {brs}')
+        self.assertTrue(len(brs) == 2, f'Incorrect number of billing records returned {result}')
 
         br = brs[0]
         expected_decimal_charge = Decimal('100.00')
@@ -75,6 +73,7 @@ class TestCalculator(APITestCase):
         Ensure that BillingRecord creation will fail if the Account is inactive.
         '''
         data.init(types=['Account', 'Product', 'ProductUsage', 'UserAccount'])
+        models.Facility.objects.filter(name='Liquid Nitrogen Service').delete()
         # Make "mycode" inactive
         models.Account.objects.filter(name='mycode').update(active=False)
 
@@ -101,6 +100,7 @@ class TestCalculator(APITestCase):
         Ensure that a charge against a UserProductAccount with percentages creates split billing records.
         '''
         data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+        models.Facility.objects.filter(name='Liquid Nitrogen Service').delete()
         product_usage_data = data.PRODUCT_USAGES[0]
         product_usage = models.ProductUsage.objects.get(
             product__product_name=product_usage_data['product'],
@@ -113,7 +113,7 @@ class TestCalculator(APITestCase):
         bc = NewBillingCalculator()
         result = bc.calculate_billing_month(year, month, verbosity=NewBillingCalculator.QUIET)
         successes = result['Kitzmiller Lab']['successes']
-        self.assertTrue(len(successes) == 2, f'Incorrect number of successfully processed brs: {successes}')
+        self.assertTrue(len(successes) == 2, f'Incorrect number of successfully processed brs: {result}')
         for charge in [Decimal('25.00'), Decimal('75.00')]:
             try:
                 models.BillingRecord.objects.get(product_usage=product_usage, decimal_charge=charge)

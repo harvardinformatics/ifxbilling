@@ -109,9 +109,8 @@ class Facility(models.Model):
     )
     billing_record_calculator = models.CharField(
         max_length=100,
-        null=False,
+        null=True,
         blank=True,
-        default='ifxbilling.calculator.NewBillingCalculator',
         help_text='The name of the class that selects product usages and creates billing records using the calculator class'
     )
     def __str__(self):

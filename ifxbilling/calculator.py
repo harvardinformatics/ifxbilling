@@ -691,8 +691,9 @@ class NewBillingCalculator():
         else:
             # Only get the first one
             user_account = product_usage.product_user.useraccount_set.filter(
+                (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
                 account__organization=organization,
-                account__active=True,
+                account__valid_from__lte=product_usage.start_date,
                 is_valid=True).first()
             if user_account:
                 account_percentages.append(
