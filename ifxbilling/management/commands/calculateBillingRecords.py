@@ -25,8 +25,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'facility_name',
-            help='Name of the facility to calculate for.'
+            '--facility-name',
+            dest='facility_name',
+            help='Name of the facility to calculate for. Can be omitted if there is only one facility record.'
         )
         parser.add_argument(
             '--year',
@@ -73,26 +74,30 @@ class Command(BaseCommand):
                 except Organization.DoesNotExist:
                     raise Exception(f'Organization name {organization_name} cannot be found')
 
-        if not facility_name:
-            raise Exception('Must supply a facility_name')
-
-        try:
-            facility = Facility.objects.get(name=facility_name)
-        except Facility.DoesNotExist:
-            raise Exception(f'Facility name {facility_name} cannot be found')
-        if facility.billing_record_calculator: # if None then use the old calculator
+        if facility_name:
             try:
-                billing_record_calculator = get_class_from_name(facility.billing_record_calculator)
-            except Exception as e:
-                raise Exception(f'Facility billing record calculator class does not exist: {e}')
-            billing_record_calculator = billing_record_calculator()
-            billing_record_calculator.set_facility(facility_name)
-            results = billing_record_calculator.calculate_billing_month(year, month, organizations=organization_objs, recalculate=recalculate, verbosity=verbose)
-            for org, res in results.items():
-                print(f'{org} {res}')
+                facility = Facility.objects.get(name=facility_name)
+            except Facility.DoesNotExist:
+                raise Exception(f'Facility name {facility_name} cannot be found')
         else:
-            # use the old function
-            (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, (verbose > 0))
-            print(f'{successes} product usages successfully processed')
-            if errors:
-                print('Errors: %s' % '\n'.join(errors))
+            facilities = Facility.objects.all()
+            if len(facilities) == 1:
+                facility = facilities[0]
+            else:
+                raise Exception(f'There are {len(facilities)} Facility records. Must specify facility if there is more than one.')
+
+            if facility.billing_record_calculator: # if None then use the old calculator
+                try:
+                    billing_record_calculator = get_class_from_name(facility.billing_record_calculator)
+                except Exception as e:
+                    raise Exception(f'Facility billing record calculator class does not exist: {e}')
+                billing_record_calculator = billing_record_calculator()
+                results = billing_record_calculator.calculate_billing_month(year, month, organizations=organization_objs, recalculate=recalculate, verbosity=verbose)
+                for org, res in results.items():
+                    print(f'{org} {res}')
+            else:
+                # use the old function
+                (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, (verbose > 0))
+                print(f'{successes} product usages successfully processed')
+                if errors:
+                    print('Errors: %s' % '\n'.join(errors))

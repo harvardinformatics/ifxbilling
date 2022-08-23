@@ -17,7 +17,7 @@ from importlib import import_module
 from django.db import transaction
 from django.db.models import Q
 from ifxuser.models import Organization
-from ifxbilling.models import BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
+from ifxbilling.models import Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
 
 logger = logging.getLogger('ifxbilling')
@@ -389,14 +389,11 @@ class NewBillingCalculator():
     def __init__(self):
         self.set_facility()
 
-    def set_facility(self, facility_name=None):
+    def set_facility(self):
         '''
         return the facility name.  This function is needed if the baseclass is
         used for billing record calculation.  For subclasses self.FACILITY_NAME
         should be set as a constant in the class.
-
-        :param facility_name: name of the facility to calculate billing records for, only used if
-        there is no class constant for FACILITY_NAME
         '''
         if getattr(self, 'FACILITY_NAME', None) and self.FACILITY_NAME:
             facility_name = self.FACILITY_NAME
@@ -405,6 +402,12 @@ class NewBillingCalculator():
                 self.facility = Facility.objects.get(name=facility_name)
             except Facility.DoesNotExist:
                 raise Exception(f'Facility name {facility_name} cannot be found')
+        else:
+            facilities = Facility.objects.all()
+            if len(facilities) == 1:
+                self.facility = facilities[0]
+            else:
+                raise Exception('Default facility can only be set if there is exactly 1 Facility record.')
 
 
     def calculate_billing_month(self, year, month, organizations=None, recalculate=False, verbosity=0):
@@ -743,7 +746,10 @@ class NewBillingCalculator():
         '''
         return the rate for calculating the charge for this product_usage
         '''
-        return product_usage.product.rate_set.get(is_active=True)
+        try:
+            return product_usage.product.rate_set.get(is_active=True)
+        except Rate.DoesNotExist:
+            raise Exception(f'Cannot find an active rate for {product_usage.product.product_name}')
 
 
     def get_rate_description(self, rate):
