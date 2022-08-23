@@ -395,8 +395,7 @@ class NewBillingCalculator():
         used for billing record calculation.  For subclasses self.FACILITY_NAME
         should be set as a constant in the class.
         '''
-        if getattr(self, 'FACILITY_NAME', None) and self.FACILITY_NAME:
-            facility_name = self.FACILITY_NAME
+        facility_name = self.FACILITY_NAME
         if facility_name:
             try:
                 self.facility = Facility.objects.get(name=facility_name)
