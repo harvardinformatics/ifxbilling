@@ -100,6 +100,8 @@ ACCOUNTS = [
         'name': 'Alternate code',
         'root': '44075',
         'active': True,
+        'valid_from': '2000-01-01',
+        'expiration_date': '2100-01-01',
     },
     {
         'code': '370-31230-8100-000775-600200-0000-44075',
@@ -107,6 +109,8 @@ ACCOUNTS = [
         'name': 'mycode',
         'root': '12345',
         'active': True,
+        'valid_from': '2000-01-01',
+        'expiration_date': '2100-01-01',
     },
     {
         'code': '370-99999-8100-000775-600200-0000-44075',
@@ -114,6 +118,8 @@ ACCOUNTS = [
         'name': 'Another code',
         'root': '44075',
         'active': True,
+        'valid_from': '2000-01-01',
+        'expiration_date': '2100-01-01',
     },
     {
         'code': '370-11111-8100-000775-600200-0000-33333',
@@ -121,6 +127,8 @@ ACCOUNTS = [
         'name': 'Nobody lab code',
         'root': '33333',
         'active': True,
+        'valid_from': '2000-01-01',
+        'expiration_date': '2100-01-01',
     },
     {
         'code': '370-11111-8100-000775-600200-0000-99999',
@@ -128,6 +136,8 @@ ACCOUNTS = [
         'name': 'inactive code',
         'root': '99999',
         'active': False,
+        'valid_from': '2000-01-01',
+        'expiration_date': '2100-01-01',
     },
 ]
 

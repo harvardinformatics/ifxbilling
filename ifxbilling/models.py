@@ -107,6 +107,12 @@ class Facility(models.Model):
         default='billing_record_summary_base.html',
         help_text='template for billing record summary which gets emailed to lab admins'
     )
+    billing_record_calculator = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text='The name of the class that selects product usages and creates billing records using the calculator class'
+    )
     def __str__(self):
         return self.name
 

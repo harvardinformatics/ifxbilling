@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.http import urlencode
 from django.core.validators import validate_email, ValidationError
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -22,7 +23,7 @@ from ifxmail.client.views import messages, mailings
 from ifxurls.urls import FIINE_URL_BASE
 from ifxuser.models import Organization
 from ifxbilling.fiine import updateUserAccounts
-from ifxbilling import models, settings, permissions
+from ifxbilling import models, permissions
 from ifxbilling.calculator import calculateBillingMonth, getClassFromName
 
 
