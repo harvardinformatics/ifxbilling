@@ -349,6 +349,7 @@ def make_transaction_from_query_result(row_dict):
         'description': row_dict['transaction_description'],
         'id': row_dict['transaction_id'],
         'charge': row_dict['transaction_charge'],
+        'decimal_charge': row_dict['transaction_decimal_charge'],
         'rate': row_dict['transaction_rate'],
         'author': {
             'ifxid': row_dict['transaction_user_ifxid'],
@@ -372,6 +373,7 @@ def get_billing_record_list(request):
         select
             br.id as billing_record_id,
             br.charge as billing_record_charge,
+            br.decimal_charge as billing_record_decimal_charge,
             br.percent as billing_record_percent,
             br.current_state as billing_record_current_state,
             br.description as billing_record_description,
@@ -393,6 +395,7 @@ def get_billing_record_list(request):
             txn.id as transaction_id,
             txn.description as transaction_description,
             txn.charge as transaction_charge,
+            txn.decimal_charge as transaction_decimal_charge,
             txn.rate as transaction_rate,
             txn_user.full_name as transaction_user_full_name,
             txn_user.ifxid as transaction_user_ifxid
@@ -463,6 +466,7 @@ def get_billing_record_list(request):
                 results[billing_record_id] = {
                     'id': billing_record_id,
                     'charge': row_dict['billing_record_charge'],
+                    'decimal_charge': row_dict['billing_record_decimal_charge'],
                     'description': row_dict['billing_record_description'],
                     'percent': row_dict['billing_record_percent'],
                     'current_state': row_dict['billing_record_current_state'],
