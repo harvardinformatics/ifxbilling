@@ -86,18 +86,18 @@ class Command(BaseCommand):
             else:
                 raise Exception(f'There are {len(facilities)} Facility records. Must specify facility if there is more than one.')
 
-            if facility.billing_record_calculator: # if None then use the old calculator
-                try:
-                    billing_record_calculator = get_class_from_name(facility.billing_record_calculator)
-                except Exception as e:
-                    raise Exception(f'Facility billing record calculator class does not exist: {e}')
-                billing_record_calculator = billing_record_calculator()
-                results = billing_record_calculator.calculate_billing_month(year, month, organizations=organization_objs, recalculate=recalculate, verbosity=verbose)
-                for org, res in results.items():
-                    print(f'{org} {res}')
-            else:
-                # use the old function
-                (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, (verbose > 0))
-                print(f'{successes} product usages successfully processed')
-                if errors:
-                    print('Errors: %s' % '\n'.join(errors))
+        if facility.billing_record_calculator: # if None then use the old calculator
+            try:
+                billing_record_calculator = get_class_from_name(facility.billing_record_calculator)
+            except Exception as e:
+                raise Exception(f'Facility billing record calculator class does not exist: {e}')
+            billing_record_calculator = billing_record_calculator()
+            results = billing_record_calculator.calculate_billing_month(year, month, organizations=organization_objs, recalculate=recalculate, verbosity=verbose)
+            for org, res in results.items():
+                print(f'{org} {res}')
+        else:
+            # use the old function
+            (successes, errors) = calculateBillingMonth(month, year, facility, recalculate, (verbose > 0))
+            print(f'{successes} product usages successfully processed')
+            if errors:
+                print('Errors: %s' % '\n'.join(errors))
