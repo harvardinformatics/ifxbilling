@@ -701,7 +701,7 @@ class NewBillingCalculator():
                     (user_account.account, 100)
                 )
             else:
-                raise Exception(f'Unable to find an active user account record for {product_usage.product_user} with organization {organization.name}')
+                raise Exception(f'Unable to find an active user account record for {product_usage.product_user} with organization {organization.name}, product {product_usage.product} and start_date {product_usage.start_date}')
         if product_usage and account_percentages:
             logger.debug('Account percentages for %s: %s', str(product_usage), str(account_percentages))
         return account_percentages
