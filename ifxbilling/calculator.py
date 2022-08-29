@@ -388,6 +388,8 @@ class NewBillingCalculator():
 
     def __init__(self):
         self.set_facility()
+        # verbosity overriden by parameter in calculate_billing_month
+        self.verbosity = self.QUIET
 
     def set_facility(self):
         '''
