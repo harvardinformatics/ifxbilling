@@ -359,7 +359,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
     quantity = serializers.IntegerField(required=False)
-    decimal_quantity = serializers.DecimalField(required=False, max_digits=19, decimal_places=4)
+    decimal_quantity = serializers.DecimalField(required=False, max_digits=19, decimal_places=4, allow_null=True)
     units = serializers.CharField(max_length=100, required=False)
     # The product should probably be connected by product_number, but, within a given application, names should be unique.
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
@@ -537,6 +537,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             'account',
             'product_usage',
             'charge',
+            'decimal_charge',
             'description',
             'year',
             'month',
