@@ -359,6 +359,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
     quantity = serializers.IntegerField(required=False)
+    decimal_quantity = serializers.DecimalField(required=False, max_digits=19, decimal_places=4)
     units = serializers.CharField(max_length=100, required=False)
     # The product should probably be connected by product_number, but, within a given application, names should be unique.
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
@@ -381,6 +382,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
             'year',
             'month',
             'quantity',
+            'decimal_quantity',
             'units',
             'created',
             'start_date',
@@ -431,7 +433,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
 
         validated_data = self.get_validated_data(validated_data, initial_data)
 
-        for attr in ['year', 'month', 'quantity', 'units', 'product', 'product_user', 'start_date', 'description', 'end_date', 'organization', 'processing']:
+        for attr in ['year', 'month', 'quantity', 'decimal_quantity', 'units', 'product', 'product_user', 'start_date', 'description', 'end_date', 'organization', 'processing']:
             if attr in validated_data:
                 setattr(instance, attr, validated_data[attr])
 
@@ -478,7 +480,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Transaction
-        fields = ('id', 'charge', 'description', 'created', 'author', 'rate')
+        fields = ('id', 'charge', 'decimal_charge', 'description', 'created', 'author', 'rate')
         read_only_fields = ('id', 'created', 'author', 'rate')
 
 class BillingRecordStateSerializer(serializers.ModelSerializer):
@@ -517,6 +519,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     '''
     product_usage = ProductUsageSerializer(read_only=True)
     charge = serializers.IntegerField(read_only=True)
+    decimal_charge = serializers.DecimalField(read_only=True, max_digits=19, decimal_places=4)
     description = serializers.CharField(max_length=1000, required=False, allow_blank=True)
     year = serializers.IntegerField(required=False)
     month = serializers.IntegerField(required=False)
