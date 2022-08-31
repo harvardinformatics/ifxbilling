@@ -391,6 +391,12 @@ class NewBillingCalculator():
         # verbosity overriden by parameter in calculate_billing_month
         self.verbosity = self.QUIET
 
+    def set_verbosity(self, level):
+        if level in [self.QUIET, self.CHATTY, self.LOUD]:
+            self.verbosity = level
+        else:
+            raise Exception(f'Verbosity has no level {level}')
+
     def set_facility(self):
         '''
         return the facility name.  This function is needed if the baseclass is
