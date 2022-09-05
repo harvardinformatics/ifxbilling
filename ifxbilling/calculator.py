@@ -599,7 +599,8 @@ class NewBillingCalculator():
 
         try:
             pup = ProductUsageProcessing.objects.get(product_usage=product_usage)
-            logger.info(f'Found previous ProductUsageProcessing {pup.id} will update it with resolved={resolved} and message {message}.')
+            if self.verbosity > 0:
+                logger.info(f'Found previous ProductUsageProcessing {pup.id} will update it with resolved={resolved} and message {message}.')
 
             pup.resolved = resolved
             pup.message = message
