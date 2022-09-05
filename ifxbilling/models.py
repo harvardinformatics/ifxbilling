@@ -743,9 +743,7 @@ def transaction_post_save(sender, instance, **kwargs):
     """
     Recalculate the BillingRecord charge
     """
-    logger.info('starting transaction post save')
     reset_billing_record_charge(instance.billing_record)
-    logger.info('ending transaction post save')
 
 
 @receiver(post_delete, sender=Transaction)
