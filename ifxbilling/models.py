@@ -67,7 +67,6 @@ def reset_billing_record_charge(billing_record):
     billing_record.charge = billing_record_charge
     billing_record.decimal_charge = billing_record_decimal_charge
     billing_record.description = str(billing_record)
-    logger.info('got billing record updated')
     post_save.disconnect(billing_record_post_save, sender=BillingRecord)
     billing_record.save()
     post_save.connect(billing_record_post_save, sender=BillingRecord)
@@ -649,9 +648,7 @@ def billing_record_post_save(sender, instance, **kwargs):
     Add description to BillingRecord if null, reset charge on billing record
     """
     # post_save.disconnect(billing_record_post_save, sender=BillingRecord)
-    logger.info('br post save start reset')
     reset_billing_record_charge(instance)
-    logger.info('br post save end reset')
     # post_save.connect(billing_record_post_save, sender=BillingRecord)
 
 
