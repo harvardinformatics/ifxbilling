@@ -620,6 +620,7 @@ class BillingRecord(models.Model):
         """
         if self.current_state and self.current_state not in ['INIT', 'PENDING_LAB_APPROVAL']:
             raise ProtectedError('Billing Records can not be deleted.', self)
+        super.delete()
 
     def addTransaction(self, charge, rate, description, author):
         '''

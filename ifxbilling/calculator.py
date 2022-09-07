@@ -795,7 +795,7 @@ class NewBillingCalculator():
             raise Exception('No transactions.  Cannot set a rate on the billing record.')
         return transactions_data[0]['rate']
 
-    def create_billing_record(self, year, month, product_usage, account, transactions_data, percent, rate, description=None, initial_state='INIT'):
+    def create_billing_record(self, year, month, product_usage, account, transactions_data, percent, rate, description=None, initial_state='PENDING_LAB_APPROVAL'):
         '''
         Create (and save) a BillingRecord and related Transactions.
         If an existing BillingRecord has the same product_usage and account an Exception will be thrown.????
