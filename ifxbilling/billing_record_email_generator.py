@@ -201,7 +201,8 @@ class BillingRecordEmailGenerator():
           'quantity': rec.product_usage.quantity,
           'rate': rec.rate,
           'account': rec.account.code,
-          'charge': rec.charge
+          'charge': rec.charge,
+          'transaction_descriptions': [txn.description for txn in rec.transaction_set.all()],
         }
 
     def get_billing_record_html_summary(self, org, brs):
