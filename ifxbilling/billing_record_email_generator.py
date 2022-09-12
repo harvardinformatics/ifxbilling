@@ -194,8 +194,8 @@ class BillingRecordEmailGenerator():
         Compose data dict from billing record
         '''
         return {
-          'start_date': rec.product_usage.start_date.strftime(self.HUMAN_TIME_FORMAT),
-          'end_date': rec.product_usage.end_date.strftime(self.HUMAN_TIME_FORMAT) if rec.product_usage.end_date else '',
+          'start_date': rec.product_usage.start_date,
+          'end_date': rec.product_usage.end_date if rec.product_usage.end_date else None,
           'product': rec.product_usage.product.product_name,
           'user': rec.product_usage.product_user.full_name,
           'quantity': rec.product_usage.quantity,
