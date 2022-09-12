@@ -202,6 +202,7 @@ class BillingRecordEmailGenerator():
           'rate': rec.rate,
           'account': rec.account.code,
           'charge': rec.charge,
+          'decimal_charge': rec.decimal_charge,
           'transaction_descriptions': [txn.description for txn in rec.transaction_set.all()],
         }
 
