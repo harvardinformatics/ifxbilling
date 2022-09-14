@@ -21,7 +21,7 @@ from ifxbilling.models import Rate, BillingRecord, Transaction, BillingRecordSta
 
 
 logger = logging.getLogger('ifxbilling')
-initial_state = 'PENDING LAB APPROVAL'
+initial_state = 'PENDING_LAB_APPROVAL'
 
 def getClassFromName(dotted_path):
     """
@@ -795,7 +795,7 @@ class NewBillingCalculator():
             raise Exception('No transactions.  Cannot set a rate on the billing record.')
         return transactions_data[0]['rate']
 
-    def create_billing_record(self, year, month, product_usage, account, transactions_data, percent, rate, description=None):
+    def create_billing_record(self, year, month, product_usage, account, transactions_data, percent, rate, description=None, initial_state='PENDING_LAB_APPROVAL'):
         '''
         Create (and save) a BillingRecord and related Transactions.
         If an existing BillingRecord has the same product_usage and account an Exception will be thrown.????

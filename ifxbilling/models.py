@@ -67,7 +67,9 @@ def reset_billing_record_charge(billing_record):
     billing_record.charge = billing_record_charge
     billing_record.decimal_charge = billing_record_decimal_charge
     billing_record.description = str(billing_record)
+    post_save.disconnect(billing_record_post_save, sender=BillingRecord)
     billing_record.save()
+    post_save.connect(billing_record_post_save, sender=BillingRecord)
 
 
 class Facility(models.Model):
@@ -618,6 +620,7 @@ class BillingRecord(models.Model):
         """
         if self.current_state and self.current_state not in ['INIT', 'PENDING_LAB_APPROVAL']:
             raise ProtectedError('Billing Records can not be deleted.', self)
+        super().delete()
 
     def addTransaction(self, charge, rate, description, author):
         '''
@@ -645,9 +648,9 @@ def billing_record_post_save(sender, instance, **kwargs):
     """
     Add description to BillingRecord if null, reset charge on billing record
     """
-    post_save.disconnect(billing_record_post_save, sender=BillingRecord)
+    # post_save.disconnect(billing_record_post_save, sender=BillingRecord)
     reset_billing_record_charge(instance)
-    post_save.connect(billing_record_post_save, sender=BillingRecord)
+    # post_save.connect(billing_record_post_save, sender=BillingRecord)
 
 
 

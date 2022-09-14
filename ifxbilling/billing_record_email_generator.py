@@ -194,14 +194,16 @@ class BillingRecordEmailGenerator():
         Compose data dict from billing record
         '''
         return {
-          'start_date': rec.product_usage.start_date.strftime(self.HUMAN_TIME_FORMAT),
-          'end_date': rec.product_usage.end_date.strftime(self.HUMAN_TIME_FORMAT),
+          'start_date': rec.product_usage.start_date,
+          'end_date': rec.product_usage.end_date if rec.product_usage.end_date else None,
           'product': rec.product_usage.product.product_name,
           'user': rec.product_usage.product_user.full_name,
           'quantity': rec.product_usage.quantity,
           'rate': rec.rate,
           'account': rec.account.code,
-          'charge': rec.charge
+          'charge': rec.charge,
+          'decimal_charge': rec.decimal_charge,
+          'transaction_descriptions': [txn.description for txn in rec.transaction_set.all()],
         }
 
     def get_billing_record_html_summary(self, org, brs):
@@ -213,5 +215,6 @@ class BillingRecordEmailGenerator():
             'month': self.month,
             'billing_records': [self.get_billing_record_dict(br) for br in brs],
             'total': brs.aggregate(Sum('charge'))['charge__sum'],
+            'decimal_total': brs.aggregate(Sum('decimal_charge'))['decimal_charge__sum'],
         }
         return render_to_string(self.billing_record_template_name, context)
