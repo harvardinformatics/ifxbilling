@@ -28,9 +28,12 @@ class BillingRecordEmailGenerator():
     '''
     FACILITY_INVOICE_CONTACT_ROLE = 'Facility Invoice'
     LAB_MANAGER_CONTACT_ROLE = 'Lab Manager'
+    BILLING_RECORD_REVIEW_CONTACT_ROLE = 'Billing Record Review'
+    PI_CONTACT_ROLE = 'PI'
     DEFAULT_BILLING_RECORD_TEMPLATE = 'billing/billing_record_summary.html'
     IFXMESSAGE_NAME = 'lab_manager_billing_record_notification'
     HUMAN_TIME_FORMAT = '%Y-%m-%d %I:%m%p'
+    PENDING_LAB_APPROVAL_STATE = 'PENDING_LAB_APPROVAL'
 
     def __init__(self, facility, month=None, year=None, organizations=None, test=None):
         '''
@@ -155,7 +158,8 @@ class BillingRecordEmailGenerator():
             year=self.year,
             month=self.month,
             product_usage__product__facility=self.facility,
-            account__organization=org
+            account__organization=org,
+            current_state=self.PENDING_LAB_APPROVAL_STATE,
         ).order_by('product_usage__product__product_name', 'product_usage__product_user__full_name')
 
     def get_message_data(self, org, brs):
@@ -187,7 +191,16 @@ class BillingRecordEmailGenerator():
         '''
         Return the organization contacts to be emailed
         '''
-        return get_contactables(self.LAB_MANAGER_CONTACT_ROLE, [org])
+        contactables = None
+        for role in [
+            self.BILLING_RECORD_REVIEW_CONTACT_ROLE,
+            self.LAB_MANAGER_CONTACT_ROLE,
+            self.PI_CONTACT_ROLE,
+        ]:
+            contactables = get_contactables(role, [org])
+            if contactables:
+                return contactables
+        return contactables
 
     def get_billing_record_dict(self, rec):
         '''
