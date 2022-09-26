@@ -13,14 +13,14 @@ class Command(BaseCommand):
     '''
     Update UserAccount and UserProductAccounts using Fiine
     '''
-    help = 'Update all UserAccount and UserProductAccounts using Fiine. A single user ifxid may be specified. Usage:\n' + \
-        "./manage.py updateAccounts [--user IFXID0000000001]"
+    help = 'Update all UserAccount and UserProductAccounts using Fiine. One or more comma-separated ifxids may be specified. Usage:\n' + \
+        "./manage.py updateUserAccounts [--ifxids IFXID0000000001]"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--user',
-            dest='ifxid',
-            help='IFXID of a single user',
+            '--ifxids',
+            dest='ifxid_str',
+            help='One or more comma-separated ifxids',
         )
         parser.add_argument(
             '--sync-all',
@@ -30,7 +30,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        ifxid = kwargs.get('ifxid')
+        ifxid_str = kwargs.get('ifxid_str')
 
         if kwargs.get('sync_all'):
             try:
@@ -42,16 +42,19 @@ class Command(BaseCommand):
 
         successes = 0
         errors = []
-        if ifxid:
-            try:
-                user = get_user_model().objects.get(ifxid=ifxid)
-                updateUserAccounts(user)
-                successes = 1
-            except get_user_model().DoesNotExist:
-                sys.stderr.write(f'User with ifxid {ifxid} cannot be found\n')
-                exit(1)
-            except Exception as e:
-                errors.append(f'Unable to update {user}: {e}')
+        if ifxid_str:
+            ifxids = ifxid_str.split(',')
+            for ifxid in ifxids:
+                try:
+                    # May be more than one ifxuser for an ifxid
+                    users = get_user_model().objects.filter(ifxid=ifxid)
+                    if not users:
+                        raise Exception(f'User with ifxid {ifxid} does not exist')
+                    for user in users:
+                        updateUserAccounts(user)
+                    successes += 1
+                except Exception as e:
+                    errors.append(f'Unable to update {ifxid}: {e}')
         else:
             for user in get_user_model().objects.filter(ifxid__isnull=False):
                 try:
