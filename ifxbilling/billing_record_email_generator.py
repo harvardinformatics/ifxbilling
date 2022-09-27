@@ -189,10 +189,12 @@ class BillingRecordEmailGenerator():
 
     def get_organization_contacts(self, org):
         '''
-        Return the organization contacts to be emailed
+        Return the organization contacts to be emailed.
+        First, check for facility-specific billing record review contacts
+        Then, billing record review, then lab manager, then pi
         '''
-        contactables = None
         for role in [
+            f'{self.BILLING_RECORD_REVIEW_CONTACT_ROLE} for {self.facility.name}',
             self.BILLING_RECORD_REVIEW_CONTACT_ROLE,
             self.LAB_MANAGER_CONTACT_ROLE,
             self.PI_CONTACT_ROLE,
