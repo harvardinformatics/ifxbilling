@@ -83,12 +83,13 @@ class BillingRecordEmailGenerator():
         Setup the facility invoice cc contacts
         '''
         contacts = []
-        for oc in OrganizationContact.objects.filter(
-            role=self.FACILITY_INVOICE_CC_CONTACT_ROLE,
-            organization__name=facility.name,
-            organization__org_tree='Harvard'
-        ):
-            contacts.append(oc.contact)
+        if not self.test:
+            for oc in OrganizationContact.objects.filter(
+                role=self.FACILITY_INVOICE_CC_CONTACT_ROLE,
+                organization__name=facility.name,
+                organization__org_tree='Harvard'
+            ):
+                contacts.append(oc.contact)
         return contacts
 
     def get_ifxmessage_name(self, org=None):
