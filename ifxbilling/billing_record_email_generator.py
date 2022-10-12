@@ -27,6 +27,7 @@ class BillingRecordEmailGenerator():
 
     '''
     FACILITY_INVOICE_CONTACT_ROLE = 'Facility Invoice'
+    FACILITY_INVOICE_CC_CONTACT_ROLE = 'Facility Invoice CC'
     LAB_MANAGER_CONTACT_ROLE = 'Lab Manager'
     BILLING_RECORD_REVIEW_CONTACT_ROLE = 'Billing Record Review'
     PI_CONTACT_ROLE = 'PI'
@@ -48,6 +49,7 @@ class BillingRecordEmailGenerator():
 
         self.billing_record_template_name = self.get_billing_record_template_name(facility)
         self.facility_contact = self.get_facility_contact(facility)
+        self.facility_invoice_cc_contacts = self.get_facility_invoice_cc_contacts(facility)
         self.review_link = self.get_review_link(facility)
 
     def get_billing_record_template_name(self, facility):
@@ -64,7 +66,7 @@ class BillingRecordEmailGenerator():
 
     def get_facility_contact(self, facility):
         '''
-        Setup the facility contact
+        Setup the (single) facility contact.  An exception is thrown if one is not found.
         '''
         try:
             oc = OrganizationContact.objects.get(
@@ -75,6 +77,20 @@ class BillingRecordEmailGenerator():
             return oc.contact
         except OrganizationContact.DoesNotExist as dne:
             raise Exception(f'There is no facility invoice contact record for organization {facility.name}')
+
+    def get_facility_invoice_cc_contacts(self, facility):
+        '''
+        Setup the facility invoice cc contacts
+        '''
+        contacts = []
+        if not self.test:
+            for oc in OrganizationContact.objects.filter(
+                role=self.FACILITY_INVOICE_CC_CONTACT_ROLE,
+                organization__name=facility.name,
+                organization__org_tree='Harvard'
+            ):
+                contacts.append(oc.contact)
+        return contacts
 
     def get_ifxmessage_name(self, org=None):
         '''
@@ -103,6 +119,10 @@ class BillingRecordEmailGenerator():
                         'field_errors': True,
                         'data': self.get_message_data(org, brs)
                     }
+                    # Add cc: list if set
+                    if self.facility_invoice_cc_contacts:
+                        email_data['cclist'] = [c.detail for c in self.facility_invoice_cc_contacts]
+
                     self.send_email(email_data)
                     sent.append(org)
                     logger.info(f'Successfully sent message for {org}')
