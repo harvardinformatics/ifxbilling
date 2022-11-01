@@ -13,21 +13,21 @@ All rights reserved.
 
 import logging
 from copy import deepcopy
-from django.db import IntegrityError, transaction
+
 from django.contrib.auth import get_user_model
-from django.conf import settings
-from rest_framework import status
-from rest_framework.exceptions import ValidationError, NotAuthenticated
-from ifxuser.models import Organization
+from django.db import IntegrityError, transaction
 from fiine.client import API as FiineAPI
 from fiine.client import ApiException
+from ifxuser.models import Organization
 from ifxvalidcode.ec_functions import ExpenseCodeFields
-from ifxbilling import models
+from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated, ValidationError
 
+from ifxbilling import models
 
 logger = logging.getLogger(__name__)
 
-def replaceObjectCodeInFiineAccount(acct_data, object_code):
+def replace_object_code_in_fiine_account(acct_data, object_code):
     '''
     Replace object code and return dictionary version of FiineAPI account for expense codes.
     Expense code should be in acct_data.account.code (it should be an account from FiineAPI)
@@ -40,7 +40,7 @@ def replaceObjectCodeInFiineAccount(acct_data, object_code):
         )
     return acct_data.to_dict()
 
-def syncFiineAccounts(code=None, name=None):
+def sync_fiine_accounts(code=None, name=None):
     '''
     Sync accounts from fiine.  If neither code nor name are set, all are sync'd
     If all accounts are being sync'd, existing accounts are first disabled and then set enabled from fiine data.
@@ -60,6 +60,7 @@ def syncFiineAccounts(code=None, name=None):
         try:
             account_data['organization'] = Organization.objects.get(name=organization_name, org_tree='Harvard')
         except Organization.DoesNotExist:
+            # pylint: disable=raise-missing-from
             raise Exception(f'While synchronizing accounts from fiine, organization {organization_name} in account {account_data["name"]} was not found.')
 
         try:
@@ -74,7 +75,7 @@ def syncFiineAccounts(code=None, name=None):
     return (accounts_updated, accounts_created, total_accounts)
 
 
-def updateUserAccounts(user):
+def update_user_accounts(user):
     '''
     For a single user retrieve account strings from fiine.
     Invalidate any account string that are not represented in fiine.
@@ -92,17 +93,17 @@ def updateUserAccounts(user):
         if not facility_object_code:
             raise Exception(f'Facility object code not set for {facility}')
 
-        fiine_accounts.extend([replaceObjectCodeInFiineAccount(acct, facility_object_code) for acct in fiine_person.accounts])
+        fiine_accounts.extend([replace_object_code_in_fiine_account(acct, facility_object_code) for acct in fiine_person.accounts])
         for facility_account in fiine_person.facility_accounts:
             if facility_account.facility == facility.name:
-                facility_account = replaceObjectCodeInFiineAccount(facility_account, facility_object_code)
+                facility_account = replace_object_code_in_fiine_account(facility_account, facility_object_code)
                 facility_account_data = facility_account
                 facility_account_data.pop('facility', None)
                 fiine_accounts.append(facility_account_data)
         logger.debug('fiine_person has %d accounts', len(fiine_accounts))
 
         product_accounts = []
-        for acct in [replaceObjectCodeInFiineAccount(pacct, facility_object_code) for pacct in fiine_person.product_accounts]:
+        for acct in [replace_object_code_in_fiine_account(pacct, facility_object_code) for pacct in fiine_person.product_accounts]:
             # Don't include authorizations from non-local products
             try:
                 models.Product.objects.get(product_number=acct['product']['product_number'])
@@ -130,6 +131,7 @@ def updateUserAccounts(user):
                     name = acct_copy.pop('organization')
                     acct_copy['organization'] = Organization.objects.get(name=name, org_tree='Harvard')
                 except Organization.DoesNotExist:
+                    # pylint: disable=raise-missing-from
                     raise Exception(f'Unable to find organization {name}')
                 acct_copy.pop('id')
                 models.Account.objects.create(**acct_copy)
@@ -150,6 +152,7 @@ def updateUserAccounts(user):
                 user_account.is_valid = fiine_account_data['is_valid']
                 user_account.save()
             except models.Account.DoesNotExist:
+                # pylint: disable=raise-missing-from
                 raise Exception(f"For some reason account cannot be found from org {fiine_account_data['account']} and code {fiine_account_data['account']['code']}")
             except models.UserAccount.DoesNotExist:
                 models.UserAccount.objects.create(account=account, user=user, is_valid=fiine_account_data['is_valid'])
@@ -182,7 +185,7 @@ def updateUserAccounts(user):
     return user
 
 
-def updateProducts():
+def update_products():
     '''
     Get all of the products for this facility and update to apply any changes made in Fiine. Mainly product_name and product_description
     '''
@@ -203,14 +206,7 @@ def updateProducts():
                 models.Product.objects.create(**fiine_product_data)
 
 
-def getExpenseCodeStatus(account):
-    '''
-    Use expense code validator to check an account
-    '''
-    pass
-
-
-def createNewProduct(product_name, product_description, facility, billing_calculator=None):
+def create_new_product(product_name, product_description, facility, object_code_category='Technical Services', billing_calculator=None):
     '''
     Creates product record in fiine, and creates the local record with product number
     '''
@@ -223,6 +219,7 @@ def createNewProduct(product_name, product_description, facility, billing_calcul
             product_name=product_name,
             product_description=product_description,
             facility=facility.name,
+            object_code_category=object_code_category,
         )
         product = models.Product(
             product_number=product_obj.product_number,
@@ -241,6 +238,6 @@ def createNewProduct(product_name, product_description, facility, billing_calcul
                 detail={
                     'product': str(e)
                 }
-            )
+            ) from e
         if e.status == status.HTTP_401_UNAUTHORIZED:
-            raise NotAuthenticated(detail=str(e))
+            raise NotAuthenticated(detail=str(e)) from e

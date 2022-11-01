@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-Test updateUserAccounts
+Test update_user_accounts
 
 Created on  2021-05-06
 
@@ -19,13 +19,13 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from ifxuser.models import Organization
 from ifxbilling.test import data
-from ifxbilling.fiine import updateUserAccounts, updateProducts
+from ifxbilling.fiine import update_user_accounts, update_products
 from ifxbilling import models
 
 
-class TestUpdateUserAccounts(APITestCase):
+class Testupdate_user_accounts(APITestCase):
     '''
-    Test updateUserAccounts
+    Test update_user_accounts
     '''
     def setUp(self):
         '''
@@ -42,15 +42,15 @@ class TestUpdateUserAccounts(APITestCase):
     def tearDown(self):
         data.clearTestData()
 
-    def testUpdateUserAccounts(self):
+    def testupdate_user_accounts(self):
         '''
         Ensure that UserAccounts can be updated from fiine, including creation of new Account
         '''
         data.init(types=['User', 'Account', 'Organization'])
-        updateProducts()
+        update_products()
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
-        updated_user = updateUserAccounts(user)
+        updated_user = update_user_accounts(user)
         user_accounts = updated_user.useraccount_set.all()
         self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
 
@@ -59,7 +59,7 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that UserAccounts can be updated from fiine, including creation of new Account, via view
         '''
         data.init(types=['User', 'Account', 'Organization'])
-        updateProducts()
+        update_products()
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         url = reverse('update-user-accounts')
@@ -76,7 +76,7 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that all UserAccounts can be updated from fiine, including creation of new Account, via view
         '''
         data.init(types=['User', 'Account', 'Organization'])
-        updateProducts()
+        update_products()
 
         url = reverse('update-user-accounts')
         response = self.client.post(url, data={}, format='json')
@@ -95,9 +95,9 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that existing UserAccount can have is_valid flag changed when fiine updates
         '''
         data.init(types=['User', 'Organization'])
-        updateProducts()
+        update_products()
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
-        updateUserAccounts(user)
+        update_user_accounts(user)
 
         account = models.Account.objects.get(name=data.FIINE_TEST_ACCOUNT['name'])
 
@@ -105,7 +105,7 @@ class TestUpdateUserAccounts(APITestCase):
         user_account.is_valid = False
         user_account.save()
 
-        updated_user = updateUserAccounts(user)
+        updated_user = update_user_accounts(user)
         user_accounts = updated_user.useraccount_set.all()
         self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
         self.assertTrue(user_accounts[0].is_valid, f'is_valid flag not overridden {user_accounts}')
@@ -122,9 +122,9 @@ class TestUpdateUserAccounts(APITestCase):
         # account = models.Account.objects.create(**test_account_data)
 
         # Get products from Fiine
-        updateProducts()
+        update_products()
 
         # Update user accounts
-        updated_user = updateUserAccounts(user)
+        updated_user = update_user_accounts(user)
         user_product_accounts = updated_user.userproductaccount_set.all()
         self.assertTrue(len(user_product_accounts) == 2, f'Incorrect number of user_product_accounts {len(user_product_accounts)}')

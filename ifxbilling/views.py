@@ -22,7 +22,7 @@ from ifxmail.client import send, FieldErrorsException
 from ifxmail.client.views import messages, mailings
 from ifxurls.urls import FIINE_URL_BASE
 from ifxuser.models import Organization
-from ifxbilling.fiine import updateUserAccounts
+from ifxbilling.fiine import update_user_accounts
 from ifxbilling import models, permissions
 from ifxbilling.calculator import calculateBillingMonth, getClassFromName
 
@@ -81,7 +81,7 @@ def update_user_accounts(request):
     errors = []
     for user in queryset:
         try:
-            updateUserAccounts(user)
+            update_user_accounts(user)
             successes += 1
         except Exception as e:
             logger.exception(e)

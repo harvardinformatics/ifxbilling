@@ -5,7 +5,7 @@ Update Products from Fiine
 '''
 import sys
 from django.core.management.base import BaseCommand
-from ifxbilling.fiine import updateProducts
+from ifxbilling.fiine import update_products
 
 
 class Command(BaseCommand):
@@ -17,7 +17,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         try:
-            updateProducts()
+            update_products()
         except Exception as e:
             sys.stderr.write(f'Error updating products from fiine {e}\n')
             exit(1)

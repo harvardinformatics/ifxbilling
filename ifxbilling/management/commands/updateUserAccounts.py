@@ -6,7 +6,7 @@ Update UserAccount, UserProductAccount records from Fiine
 import sys
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from ifxbilling.fiine import updateUserAccounts, syncFiineAccounts
+from ifxbilling.fiine import update_user_accounts, sync_fiine_accounts
 
 
 class Command(BaseCommand):
@@ -14,7 +14,7 @@ class Command(BaseCommand):
     Update UserAccount and UserProductAccounts using Fiine
     '''
     help = 'Update all UserAccount and UserProductAccounts using Fiine. One or more comma-separated ifxids may be specified. Usage:\n' + \
-        "./manage.py updateUserAccounts [--ifxids IFXID0000000001]"
+        "./manage.py update_user_accounts [--ifxids IFXID0000000001]"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -34,7 +34,7 @@ class Command(BaseCommand):
 
         if kwargs.get('sync_all'):
             try:
-                accounts_updated, accounts_created, total_accounts = syncFiineAccounts()
+                accounts_updated, accounts_created, total_accounts = sync_fiine_accounts()
                 print(f'{accounts_updated} accounts updated, {accounts_created} accounts created out of {total_accounts} total accounts')
             except Exception as e:
                 print(f'Unable to synchronize fiine accounts: {e}')
@@ -51,14 +51,14 @@ class Command(BaseCommand):
                     if not users:
                         raise Exception(f'User with ifxid {ifxid} does not exist')
                     for user in users:
-                        updateUserAccounts(user)
+                        update_user_accounts(user)
                     successes += 1
                 except Exception as e:
                     errors.append(f'Unable to update {ifxid}: {e}')
         else:
             for user in get_user_model().objects.filter(ifxid__isnull=False):
                 try:
-                    updateUserAccounts(user)
+                    update_user_accounts(user)
                     successes += 1
                 except Exception as e:
                     errors.append(f'Unable to update {user}: {e}')
