@@ -256,7 +256,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data = self.get_validated_data(validated_data)
         try:
-            product = fiine.createNewProduct(**validated_data)
+            product = fiine.create_new_product(**validated_data)
         except Exception as e:
             logger.exception(e)
             if 'Not authorized' in str(e):

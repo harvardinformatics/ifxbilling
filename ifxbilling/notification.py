@@ -36,13 +36,18 @@ class BillingRecordEmailGenerator():
     HUMAN_TIME_FORMAT = '%Y-%m-%d %I:%m%p'
     PENDING_LAB_APPROVAL_STATE = 'PENDING_LAB_APPROVAL'
 
-    def __init__(self, facility, month=None, year=None, organizations=None, test=None):
+    def __init__(self, year, month, facility=None, test=None):
         '''
-        Initialize generator with invoice_prefix.  If month / year are not specified, current month year are used.
+        Initialize generator with invoice_prefix.
         If test is set to a list of email addresses, they will be used instead of the normal contacts
         '''
-        self.facility = facility
-        self.organizations = organizations
+        if not facility:
+            if models.Facility.objects.count() != 1:
+                raise Exception('If there are multiple facilities in the application, you must specify when creating the email generator.')
+            self.facility = models.Facility.objects.first()
+        else:
+            self.facility = facility
+
         self.year = year
         self.month = month
         self.test = test
@@ -75,7 +80,8 @@ class BillingRecordEmailGenerator():
                 organization__org_tree='Harvard'
             )
             return oc.contact
-        except OrganizationContact.DoesNotExist as dne:
+        except OrganizationContact.DoesNotExist:
+            # pylint: disable=raise-missing-from
             raise Exception(f'There is no facility invoice contact record for organization {facility.name}')
 
     def get_facility_invoice_cc_contacts(self, facility):
@@ -98,7 +104,7 @@ class BillingRecordEmailGenerator():
         '''
         return f'{self.facility.application_username}_{self.facility.invoice_prefix}_{self.IFXMESSAGE_NAME}'
 
-    def send_billing_record_emails(self):
+    def send_billing_record_emails(self, organizations=None):
         '''
         Iterate through organizations and send email via ifxmail if there are billing records.
         Returns a tuple that includes a list of organizations that were successfully sent emails,
@@ -107,7 +113,12 @@ class BillingRecordEmailGenerator():
         sent = []
         nobrs = []
         errors = {}
-        for org in self.get_organizations():
+        if organizations:
+            orgs = organizations
+        else:
+            orgs = self.get_organizations()
+
+        for org in orgs:
             try:
                 brs = self.get_billing_records_for_org(org)
                 if brs:
@@ -201,11 +212,7 @@ class BillingRecordEmailGenerator():
         '''
         Return the list (or queryset) of organizations to be processed
         '''
-        if self.organizations:
-            orgs = self.organizations
-        else:
-            orgs = Organization.objects.all()
-        return orgs
+        return Organization.objects.all()
 
     def get_organization_contacts(self, org):
         '''
@@ -236,6 +243,7 @@ class BillingRecordEmailGenerator():
           'quantity': rec.product_usage.quantity,
           'rate': rec.rate,
           'account': rec.account.code,
+          'account_name': rec.account.name,
           'charge': rec.charge,
           'decimal_charge': rec.decimal_charge,
           'transaction_descriptions': [txn.description for txn in rec.transaction_set.all()],
