@@ -30,7 +30,7 @@ router.register(r'billing-records', serializers.BillingRecordViewSet, 'billing-r
 urlpatterns = [
     path(r'ifxbilling/djadmin/', admin.site.urls),
     path(r'ifxbilling/api/obtain-auth-token/', views.get_remote_user_auth_token),
-    path(r'ifxbilling/api/update-user-accounts/', views.update_user_accounts, name='update-user-accounts'),
+    path(r'ifxbilling/api/update-user-accounts/', views.update_user_accounts_view, name='update-user-accounts'),
     path(r'ifxbilling/api/expense-code-request/', views.expense_code_request, name='expense-code-request'),
     path(r'ifxbilling/api/send-billing-record-review-notification/<str:invoice_prefix>/<int:year>/<int:month>/', views.send_billing_record_review_notification, name='send-billing-record-review-notification'),
     path(r'ifxbilling/api/unauthorized/', views.unauthorized, name='unauthorized'),

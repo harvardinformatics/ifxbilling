@@ -17,7 +17,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view
 from ifxmail.client import send, FieldErrorsException
 from ifxmail.client.views import messages, mailings
 from ifxurls.urls import FIINE_URL_BASE
@@ -37,7 +36,7 @@ def get_remote_user_auth_token(request):
     try:
         token = Token.objects.get(user=request.user)
     except Token.DoesNotExist:
-        return Response({'error': 'User record for %s is not complete- missing token.' % str(request.user)}, status=401)
+        return Response({'error': f'User record for {request.user} is not complete- missing token.'}, status=401)
 
     if not request.user.is_active:
         logger.info('User %s is not active', request.user.username)
@@ -54,7 +53,7 @@ def get_remote_user_auth_token(request):
 
 
 @api_view(('POST',))
-def update_user_accounts(request):
+def update_user_accounts_view(request):
     '''
     Take a list of ifxids and update data from fiine.  Body should be of the form:
     {
@@ -185,7 +184,7 @@ def expense_code_request(request):
 
     try:
         org = models.Organization.objects.get(slug=organization_name)
-        facility = models.Facility.objects.get(name=facility_name)
+        models.Facility.objects.get(name=facility_name)
         qparams = {'facility': facility_name, 'product':product_name}
         url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/?{urlencode(qparams)}'
     except models.Organization.DoesNotExist:
@@ -303,7 +302,7 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
                 }, status=status.HTTP_400_BAD_REQUEST)
     logger.debug(f'Processing organizations {organizations}')
     try:
-        breg_class_name = 'ifxbilling.billing_record_email_generator.BillingRecordEmailGenerator'
+        breg_class_name = 'ifxbilling.notification.BillingRecordEmailGenerator'
         if hasattr(settings, 'BILLING_RECORD_EMAIL_GENERATOR_CLASS') and settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS:
             app_name = settings.IFX_APP['name']
             breg_class_name = f'{app_name}.{settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS}'
