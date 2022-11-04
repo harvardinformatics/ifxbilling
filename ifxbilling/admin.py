@@ -329,6 +329,7 @@ class AccountUserAdmin(admin.ModelAdmin):
     '''
     fields = (
         'ifxid',
+        'username',
         'first_name',
         'last_name',
         'full_name',
@@ -337,6 +338,7 @@ class AccountUserAdmin(admin.ModelAdmin):
     )
     list_display = (
         'ifxid',
+        'username',
         'first_name',
         'last_name',
         'full_name',
@@ -345,6 +347,8 @@ class AccountUserAdmin(admin.ModelAdmin):
     )
     search_fields = (
         'full_name',
+        'username',
+        'ifxid',
         'primary_affiliation__name',
     )
     list_filter = ('primary_affiliation', )

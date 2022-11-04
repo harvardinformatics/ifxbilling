@@ -40,14 +40,13 @@ def replace_object_code_in_fiine_account(acct_data, object_code):
         )
     return acct_data.to_dict()
 
-def sync_fiine_accounts(code=None, name=None):
+def sync_fiine_accounts():
     '''
-    Sync accounts from fiine.  If neither code nor name are set, all are sync'd
+    Sync all accounts from fiine.
     If all accounts are being sync'd, existing accounts are first disabled and then set enabled from fiine data.
     Returns tuple of integers (accounts_updated, accounts_created, and total_accounts)
     '''
-    if not code and not name:
-        accounts = FiineAPI.listAccounts()
+    accounts = FiineAPI.listAccounts()
     total_accounts = 0
     accounts_updated = 0
     accounts_created = 0
