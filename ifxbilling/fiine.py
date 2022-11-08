@@ -76,8 +76,20 @@ def sync_fiine_accounts():
 
 def update_user_accounts(user):
     '''
-    For a single user retrieve account strings from fiine.
-    Invalidate any account string that are not represented in fiine.
+    For a single user, update UserAccounts from fiine PersonAccounts and PersonFacilityAccounts and UserProductAccounts from fiine PersonProductAccounts
+
+    fiine data is collected first.  Existing UserAccounts and UserProductAccounts are all invalidated.  Then the fiine data is
+    iterated to either re-validate or create new records.
+
+    Only one valid record for PersonAccount or PersonFacilityAccount is added to UserAccount for a given organization
+    with PersonFacilityAccount having priority.  You could end up with more than one from the same organzation, but not with both
+    UserAccount.is_valid and Account.active
+
+    :param user: The user whose account authorizations should be updated
+    :type user: :class:`~ifxuser.models.IfxUser`
+
+    :return: Updated user.
+    :rtype: :class:`~ifxuser.models.IfxUser`
     '''
 
     ifxid = user.ifxid
@@ -87,30 +99,43 @@ def update_user_accounts(user):
     # Substitute object code for the facility if it has one
     fiine_accounts = []
     product_accounts = []
+
+    # Setup facility accounts first. Then, go through default accounts and add if organization is not already covered
+    organizations_covered_by_facility_account = []
     for facility in models.Facility.objects.all():
         facility_object_code = facility.object_code
         if not facility_object_code:
             raise Exception(f'Facility object code not set for {facility}')
 
-        fiine_accounts.extend([replace_object_code_in_fiine_account(acct, facility_object_code) for acct in fiine_person.accounts])
         for facility_account in fiine_person.facility_accounts:
             if facility_account.facility == facility.name:
-                facility_account = replace_object_code_in_fiine_account(facility_account, facility_object_code)
-                facility_account_data = facility_account
+                # replace code and dict-ify
+                facility_account_data = replace_object_code_in_fiine_account(facility_account, facility_object_code)
                 facility_account_data.pop('facility', None)
                 fiine_accounts.append(facility_account_data)
-        logger.debug('fiine_person has %d accounts', len(fiine_accounts))
+                if facility_account_data['is_valid'] and facility_account_data['account']['active']:
+                    organizations_covered_by_facility_account.append(facility_account_data['account']['organization'])
 
-        product_accounts = []
-        for acct in [replace_object_code_in_fiine_account(pacct, facility_object_code) for pacct in fiine_person.product_accounts]:
-            # Don't include authorizations from non-local products
-            try:
-                models.Product.objects.get(product_number=acct['product']['product_number'])
-                product_accounts.append(acct)
-            except models.Product.DoesNotExist:
-                pass
+    for default_account in fiine_person.accounts:
+        try:
+            if default_account.account.active and default_account.is_valid and default_account.account.organization not in organizations_covered_by_facility_account:
+                fiine_accounts.append(replace_object_code_in_fiine_account(default_account, facility_object_code))
+        except Exception as e:
+            logger.error(f'Error with default account {default_account}: {e}')
 
-    # Go through fiine_accounts and product accounts. Create any missing Account objects or update with Fiine information
+    logger.debug('fiine_person has %d accounts', len(fiine_accounts))
+
+
+    product_accounts = []
+    for acct in [replace_object_code_in_fiine_account(pacct, facility_object_code) for pacct in fiine_person.product_accounts]:
+        # Don't include authorizations from non-local products
+        try:
+            models.Product.objects.get(product_number=acct['product']['product_number'])
+            product_accounts.append(acct)
+        except models.Product.DoesNotExist:
+            pass
+
+   # Go through fiine_accounts and product accounts. Create any missing Account objects or update with Fiine information
     with transaction.atomic():
         for person_account_data in fiine_accounts + product_accounts:
             account_data = person_account_data['account']

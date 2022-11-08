@@ -10,20 +10,17 @@ Created on  2021-05-06
 All rights reserved.
 @license: GPL v2.0
 '''
-from copy import deepcopy
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from django.utils import timezone
-from ifxuser.models import Organization
 from ifxbilling.test import data
 from ifxbilling.fiine import update_user_accounts, update_products
 from ifxbilling import models
 
 
-class Testupdate_user_accounts(APITestCase):
+class TestUpdateUserAccounts(APITestCase):
     '''
     Test update_user_accounts
     '''
@@ -42,7 +39,7 @@ class Testupdate_user_accounts(APITestCase):
     def tearDown(self):
         data.clearTestData()
 
-    def testupdate_user_accounts(self):
+    def testUpdateUserAccounts(self):
         '''
         Ensure that UserAccounts can be updated from fiine, including creation of new Account
         '''
@@ -52,7 +49,9 @@ class Testupdate_user_accounts(APITestCase):
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         updated_user = update_user_accounts(user)
         user_accounts = updated_user.useraccount_set.all()
-        self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
+        self.assertTrue(len(user_accounts) == 3, f'Incorrect number of user_accounts {user_accounts}')
+        user_account = user_accounts[0]
+        self.assertTrue(user_account.account.name == 'Another code', f'Incorrect user acccount (should be Another code) {user_account.account}')
 
     def testUpdateUserAccountView(self):
         '''
@@ -69,7 +68,7 @@ class Testupdate_user_accounts(APITestCase):
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         user_accounts = user.useraccount_set.all()
 
-        self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
+        self.assertTrue(len(user_accounts) == 3, f'Incorrect number of user_accounts {len(user_accounts)}')
 
     def testUpdateAllUserAccountView(self):
         '''
@@ -88,7 +87,7 @@ class Testupdate_user_accounts(APITestCase):
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         user_accounts = user.useraccount_set.all()
 
-        self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
+        self.assertTrue(len(user_accounts) == 3, f'Incorrect number of user_accounts {len(user_accounts)}')
 
     def testUpdateUserAccountIsValid(self):
         '''
@@ -101,13 +100,14 @@ class Testupdate_user_accounts(APITestCase):
 
         account = models.Account.objects.get(name=data.FIINE_TEST_ACCOUNT['name'])
 
+        # pylint: disable=unused-variable
         user_account, created = models.UserAccount.objects.get_or_create(account=account, user=user)
         user_account.is_valid = False
         user_account.save()
 
         updated_user = update_user_accounts(user)
         user_accounts = updated_user.useraccount_set.all()
-        self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
+        self.assertTrue(len(user_accounts) == 3, f'Incorrect number of user_accounts {len(user_accounts)}')
         self.assertTrue(user_accounts[0].is_valid, f'is_valid flag not overridden {user_accounts}')
 
     def testUpdateUserProductAccount(self):

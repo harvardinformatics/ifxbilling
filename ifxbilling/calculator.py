@@ -21,7 +21,7 @@ from ifxbilling.models import Rate, BillingRecord, Transaction, BillingRecordSta
 
 
 logger = logging.getLogger('ifxbilling')
-initial_state = 'PENDING_LAB_APPROVAL'
+INITIAL_STATE = 'PENDING_LAB_APPROVAL'
 
 def getClassFromName(dotted_path):
     """
@@ -33,7 +33,7 @@ def getClassFromName(dotted_path):
         logging.debug(module_path)
         logging.debug(class_name)
     except ValueError as e:
-        msg = "%s doesn't look like a module path" % dotted_path
+        msg = f"{dotted_path} doesn't look like a module path"
         raise ImportError(msg) from e
 
     module = import_module(module_path)
@@ -41,8 +41,7 @@ def getClassFromName(dotted_path):
     try:
         return getattr(module, class_name)
     except AttributeError as e:
-        msg = 'Module "%s" does not define a "%s" attribute/class' % (
-            module_path, class_name)
+        msg = f'Module "{module_path}" does not define a "{class_name}" attribute/class'
         raise ImportError(msg) from e
 
 
@@ -62,6 +61,7 @@ def calculateBillingMonth(month, year, facility, recalculate=False, verbose=Fals
             try:
                 products.append(Product.objects.get(product_name=product_name))
             except Product.DoesNotExist:
+                # pylint: disable=raise-missing-from
                 raise Exception(f'Cannot filter by {product_name}: Product does not exist.')
         if products:
             product_usages = product_usages.filter(product__in=products)
@@ -298,6 +298,9 @@ class BasicBillingCalculator():
         return self.createBillingRecord(product_usage, account, year, month, transactions_data, percent, rate, description)
 
     def update_product_usage_processing(self, product_usage, attrs, update_only_unresolved=False):
+        '''
+        Update PUP
+        '''
         try:
             # if exists then update
             crit = {'product_usage': product_usage}
@@ -333,16 +336,15 @@ class BasicBillingCalculator():
                     year=year,
                     month=month,
                     description=description,
-                    current_state=initial_state,
+                    current_state=INITIAL_STATE,
                     percent=percent,
                     rate=rate,
                 )
                 billing_record.save()
                 billing_record_state = BillingRecordState(
                     billing_record=billing_record,
-                    name=initial_state,
+                    name=INITIAL_STATE,
                     user=product_usage.product_user,
-                    #TODO: add approvers
                     comment='created by billing calculator'
                 )
                 billing_record_state.save()
@@ -361,7 +363,6 @@ class BasicBillingCalculator():
         '''
         Perform any final cleanup functions
         '''
-        pass
 
 
 class NewBillingCalculator():
@@ -388,6 +389,7 @@ class NewBillingCalculator():
 
     def __init__(self):
         self.set_facility()
+        self.verbosity = self.QUIET
 
     def set_facility(self):
         '''
@@ -400,6 +402,7 @@ class NewBillingCalculator():
             try:
                 self.facility = Facility.objects.get(name=facility_name)
             except Facility.DoesNotExist:
+                # pylint: disable=raise-missing-from
                 raise Exception(f'Facility name {facility_name} cannot be found')
         else:
             facilities = Facility.objects.all()
@@ -751,6 +754,7 @@ class NewBillingCalculator():
         try:
             return product_usage.product.rate_set.get(is_active=True)
         except Rate.DoesNotExist:
+            # pylint: disable=raise-missing-from
             raise Exception(f'Cannot find an active rate for {product_usage.product.product_name}')
 
 
@@ -795,7 +799,7 @@ class NewBillingCalculator():
             raise Exception('No transactions.  Cannot set a rate on the billing record.')
         return transactions_data[0]['rate']
 
-    def create_billing_record(self, year, month, product_usage, account, transactions_data, percent, rate, description=None, initial_state='PENDING_LAB_APPROVAL'):
+    def create_billing_record(self, year, month, product_usage, account, transactions_data, percent, rate, description=None, initial_state=INITIAL_STATE):
         '''
         Create (and save) a BillingRecord and related Transactions.
         If an existing BillingRecord has the same product_usage and account an Exception will be thrown.????

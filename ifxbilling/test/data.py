@@ -22,8 +22,8 @@ from ifxbilling import models
 FIINE_TEST_USER = 'Slurpy Slurpiston'  # Full name of Fiine Person that is also an ifxbilling test person
 FIINE_TEST_ACCOUNT = {
     'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
-    'name': 'mycode',
-    'code': '370-31230-8100-000775-600200-0000-44075',
+    'name': 'Another code',
+    'code': '370-99999-8100-000775-600200-0000-44075',
 }
 FIINE_TEST_PRODUCT = 'Test Product'
 
@@ -318,7 +318,9 @@ def clearTestData():
 
 
 def clearFiineProducts():
-    # Clear stuff from fiine
+    '''
+    Clear stuff from fiine
+    '''
     products = FiineAPI.listProducts()
     for product in products:
         if product.product_name == 'Helium Dewar Test':
@@ -378,6 +380,9 @@ def init(types=None):
                 )
 
 def init_user_accounts():
+    '''
+    Initialize user accounts
+    '''
     for user_account_data in USER_ACCOUNTS:
         account = models.Account.objects.get(name=user_account_data['account'])
         user = get_user_model().objects.get(full_name=user_account_data['user'])

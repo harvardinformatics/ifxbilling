@@ -33,6 +33,7 @@ class TestProduct(APITestCase):
         self.token.save()
         self.client.login(username='john', password='johnpassword')
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        data.clearFiineProducts()
 
     def tearDown(self):
         data.clearFiineProducts()
