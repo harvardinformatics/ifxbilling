@@ -182,7 +182,8 @@ class Account(models.Model):
     )
 
     def __str__(self):
-        return '%s (%s) an %s %s' % (self.code, self.name, 'active' if self.active else 'inactive', self.account_type)
+        active_str = 'active' if self.active else 'inactive'
+        return f'{self.code} ({self.name}) an {active_str} {self.account_type}'
 
     def save(self, *args, **kwargs):
         '''
@@ -194,7 +195,7 @@ class Account(models.Model):
             else:
                 self.slug = self.code
         else:
-            self.slug = 'PO %s (%s)' % (self.code, self.organization.name)
+            self.slug = f'PO {self.code} ({self.organization.name})'
         super().save(*args, **kwargs)
 
     def replaceObjectCode(self, object_code):
@@ -612,7 +613,7 @@ class BillingRecord(models.Model):
         if self.canApprove(user):
             self.setState(newstate, user, approvers, comment)
         else:
-            raise Exception('User %s cannot approve this billing record.' % str(user))
+            raise Exception(f'User {user} cannot approve this billing record.')
 
     def delete(self):
         """
