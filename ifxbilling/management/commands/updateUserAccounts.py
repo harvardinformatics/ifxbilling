@@ -3,7 +3,6 @@
 '''
 Update UserAccount, UserProductAccount records from Fiine
 '''
-import sys
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from ifxbilling.fiine import update_user_accounts, sync_fiine_accounts
