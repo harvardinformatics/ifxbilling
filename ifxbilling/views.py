@@ -391,6 +391,8 @@ def get_billing_record_list(request):
             p.product_name,
             p.product_number,
             pu.id as product_usage_id,
+            pu.start_date,
+            pu.end_date,
             txn.id as transaction_id,
             txn.description as transaction_description,
             txn.charge as transaction_charge,
@@ -487,7 +489,9 @@ def get_billing_record_list(request):
                             'ifxid': row_dict['product_user_ifxid'],
                             'primary_affiliation': row_dict['product_user_primary_affiliation'],
                             'full_name': row_dict['product_user_full_name']
-                        }
+                        },
+                        'start_date': row_dict['start_date'],
+                        'end_date': row_dict.get('end_date', None),
                     },
                     'transactions': [
                         make_transaction_from_query_result(row_dict)
