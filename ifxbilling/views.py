@@ -361,6 +361,8 @@ def get_billing_record_list(request):
     '''
     Return trimmed down listing for billing record displays
     '''
+    local_tz = timezone.get_current_timezone()
+
     year = request.GET.get('year', None)
     month = request.GET.get('month', None)
     invoice_prefix = request.GET.get('invoice_prefix', None)
@@ -368,7 +370,7 @@ def get_billing_record_list(request):
     organization = request.GET.get('organization', None)
     root = request.GET.get('root', None)
     results = {}
-    sql = '''
+    sql = f'''
         select
             br.id as billing_record_id,
             br.charge as billing_record_charge,
@@ -391,8 +393,8 @@ def get_billing_record_list(request):
             p.product_name,
             p.product_number,
             pu.id as product_usage_id,
-            pu.start_date,
-            pu.end_date,
+            CONVERT_TZ(pu.start_date, 'UTC', '{local_tz}') as start_date,
+            CONVERT_TZ(pu.end_date, 'UTC', '{local_tz}') as end_date,
             txn.id as transaction_id,
             txn.description as transaction_description,
             txn.charge as transaction_charge,
