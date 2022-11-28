@@ -51,7 +51,10 @@ def sync_fiine_accounts(code=None):
 
     Returns tuple of integers (accounts_updated, accounts_created, and total_accounts)
     '''
-    accounts = FiineAPI.listAccounts(code=code)
+    if code:
+        accounts = FiineAPI.listAccounts(code=code)
+    else:
+        accounts = FiineAPI.listAccounts()
     total_accounts = 0
     accounts_updated = 0
     accounts_created = 0
