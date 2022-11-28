@@ -295,11 +295,13 @@ def handle_fiine_ifxapps_messages(messages):
     for message in messages:
         if message['subject'] and message['subject'].startswith('fiine'):
             subject = message['subject']
+            logger.debug(f'Checking subject {subject}')
 
             # Check for an ifxid (an authorization message). If an ifxid is found, add to to be updated list
             match = ifxid_re.match(subject)
             if match:
                 ifxid = match.group(1)
+                logger.debug(f'Matched an ifxid {ifxid}')
                 ifxids_to_be_updated.add(ifxid)
                 seen_ids.append(message['id'])
             else:
@@ -307,11 +309,13 @@ def handle_fiine_ifxapps_messages(messages):
                 match = account_re.match(subject)
                 if match:
                     account_code = match.group(1)
+                    logger.debug(f'Matched an account code {account_code}')
                     account_codes_to_be_updated.add(account_code)
                     seen_ids.append(message['id'])
 
 
     if ifxids_to_be_updated:
+        logger.debug(f'Updating accounts for ids {ifxids_to_be_updated}')
         for ifxid in ifxids_to_be_updated:
             try:
                 user = get_user_model().objects.get(ifxid=ifxid)
@@ -324,6 +328,7 @@ def handle_fiine_ifxapps_messages(messages):
                 errors.append(f'Error updating user accounts for {ifxid}: {e}')
 
     if account_codes_to_be_updated:
+        logger.debug(f'Updating accounts {account_codes_to_be_updated}')
         for account_code in account_codes_to_be_updated:
             try:
                 sync_fiine_accounts(code=account_code)
@@ -333,6 +338,7 @@ def handle_fiine_ifxapps_messages(messages):
                 errors.append(f'Error syncing account code {account_code}: {e}')
 
     if seen_ids:
+        logger.debug(f'Marking ids as seen {seen_ids}')
         IfxMailAPI.markSeen(data={'ids': seen_ids})
 
     return successes, errors
