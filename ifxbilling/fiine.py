@@ -12,12 +12,14 @@ All rights reserved.
 '''
 
 import logging
+import re
 from copy import deepcopy
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from fiine.client import API as FiineAPI
 from fiine.client import ApiException
+from ifxmail.client import API as IfxMailAPI
 from ifxuser.models import Organization
 from ifxvalidcode.ec_functions import ExpenseCodeFields
 from rest_framework import status
@@ -40,13 +42,19 @@ def replace_object_code_in_fiine_account(acct_data, object_code):
         )
     return acct_data.to_dict()
 
-def sync_fiine_accounts():
+def sync_fiine_accounts(code=None):
     '''
     Sync all accounts from fiine.
     If all accounts are being sync'd, existing accounts are first disabled and then set enabled from fiine data.
+    :param code: Only sync a single code if specified
+    :type code: str
+
     Returns tuple of integers (accounts_updated, accounts_created, and total_accounts)
     '''
-    accounts = FiineAPI.listAccounts()
+    if code:
+        accounts = FiineAPI.listAccounts(code=code)
+    else:
+        accounts = FiineAPI.listAccounts()
     total_accounts = 0
     accounts_updated = 0
     accounts_created = 0
@@ -265,3 +273,72 @@ def create_new_product(product_name, product_description, facility, object_code_
             ) from e
         if e.status == status.HTTP_401_UNAUTHORIZED:
             raise NotAuthenticated(detail=str(e)) from e
+
+
+def handle_fiine_ifxapps_messages(messages):
+    '''
+    Go through fiine ifxapps messages and update relevant authorizations and accounts. Marks them seen using IfxAPI.markSeen
+    Returns success count and error list.
+
+    If the message has an IFXID in it and the user exists locally, updateUserAccounts will be called for that user.
+
+    :param messages: List of dicts of the form {'id': 123, 'subject': 'fiine reports update of authorizations for Aaron Kitzmiller (IFXID: IFXID0000000001)}
+    :type messages: list
+    '''
+    ifxid_re = re.compile(r'.*?\(IFXID: ([A-Z0-9]{15})\)$')
+    account_re = re.compile(r'.*? account code ([^\s]+) for organization .*')
+    seen_ids = []
+    successes = 0
+    errors = []
+    ifxids_to_be_updated = set()
+    account_codes_to_be_updated = set()
+    for message in messages:
+        if message['subject'] and message['subject'].startswith('fiine'):
+            subject = message['subject']
+            logger.debug(f'Checking subject {subject}')
+
+            # Check for an ifxid (an authorization message). If an ifxid is found, add to to be updated list
+            match = ifxid_re.match(subject)
+            if match:
+                ifxid = match.group(1)
+                logger.debug(f'Matched an ifxid {ifxid}')
+                ifxids_to_be_updated.add(ifxid)
+                seen_ids.append(message['id'])
+            else:
+                # Check for an account
+                match = account_re.match(subject)
+                if match:
+                    account_code = match.group(1)
+                    logger.debug(f'Matched an account code {account_code}')
+                    account_codes_to_be_updated.add(account_code)
+                    seen_ids.append(message['id'])
+
+
+    if ifxids_to_be_updated:
+        logger.debug(f'Updating accounts for ids {ifxids_to_be_updated}')
+        for ifxid in ifxids_to_be_updated:
+            try:
+                user = get_user_model().objects.get(ifxid=ifxid)
+                update_user_accounts(user)
+                successes += 1
+            except get_user_model().DoesNotExist:
+                pass
+            except Exception as e:
+                logger.exception(e)
+                errors.append(f'Error updating user accounts for {ifxid}: {e}')
+
+    if account_codes_to_be_updated:
+        logger.debug(f'Updating accounts {account_codes_to_be_updated}')
+        for account_code in account_codes_to_be_updated:
+            try:
+                sync_fiine_accounts(code=account_code)
+                successes += 1
+            except Exception as e:
+                logger.exception(e)
+                errors.append(f'Error syncing account code {account_code}: {e}')
+
+    if seen_ids:
+        logger.debug(f'Marking ids as seen {seen_ids}')
+        IfxMailAPI.markSeen(data={'ids': seen_ids})
+
+    return successes, errors
