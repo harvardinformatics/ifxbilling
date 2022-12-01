@@ -55,30 +55,35 @@ def sync_fiine_accounts(code=None):
         accounts = FiineAPI.listAccounts(code=code)
     else:
         accounts = FiineAPI.listAccounts()
+
     total_accounts = 0
     accounts_updated = 0
     accounts_created = 0
 
-    for account_obj in accounts:
-        account_data = account_obj.to_dict()
-        total_accounts += 1
-        organization_name = account_data.pop('organization')
-        account_data.pop('id')
-        try:
-            account_data['organization'] = Organization.objects.get(name=organization_name, org_tree='Harvard')
-        except Organization.DoesNotExist:
-            # pylint: disable=raise-missing-from
-            raise Exception(f'While synchronizing accounts from fiine, organization {organization_name} in account {account_data["name"]} was not found.')
+    for facility in models.Facility.objects.all():
+        facility_object_code = facility.object_code
+        if not facility_object_code:
+            raise Exception(f'Facility object code not set for {facility}')
+        for account_obj in accounts:
+            account_data = replace_object_code_in_fiine_account(account_obj, facility_object_code)
+            total_accounts += 1
+            organization_name = account_data.pop('organization')
+            account_data.pop('id')
+            try:
+                account_data['organization'] = Organization.objects.get(name=organization_name, org_tree='Harvard')
+            except Organization.DoesNotExist:
+                # pylint: disable=raise-missing-from
+                raise Exception(f'While synchronizing accounts from fiine, organization {organization_name} in account {account_data["name"]} was not found.')
 
-        try:
-            models.Account.objects.get(code=account_data['code'], organization=account_data['organization'])
-            models.Account.objects.filter(code=account_data['code'], organization=account_data['organization']).update(**account_data)
-            accounts_updated += 1
-        except models.Account.DoesNotExist:
-            models.Account.objects.create(**account_data)
-            accounts_created += 1
-        except Exception as e:
-            raise Exception(f'Unable to create account {account_data["name"]}: {e}') from e
+            try:
+                models.Account.objects.get(code=account_data['code'], organization=account_data['organization'])
+                models.Account.objects.filter(code=account_data['code'], organization=account_data['organization']).update(**account_data)
+                accounts_updated += 1
+            except models.Account.DoesNotExist:
+                models.Account.objects.create(**account_data)
+                accounts_created += 1
+            except Exception as e:
+                raise Exception(f'Unable to create account {account_data["name"]}: {e}') from e
     return (accounts_updated, accounts_created, total_accounts)
 
 
