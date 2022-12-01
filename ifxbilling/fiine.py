@@ -65,7 +65,13 @@ def sync_fiine_accounts(code=None):
         if not facility_object_code:
             raise Exception(f'Facility object code not set for {facility}')
         for account_obj in accounts:
-            account_data = replace_object_code_in_fiine_account(account_obj, facility_object_code)
+            if account_obj.account_type == 'Expense Code':
+                account_obj.code = ExpenseCodeFields.replace_field(
+                    account_obj.code,
+                    ExpenseCodeFields.OBJECT_CODE,
+                    facility_object_code
+                )
+            account_data = account_obj.to_dict()
             total_accounts += 1
             organization_name = account_data.pop('organization')
             account_data.pop('id')
