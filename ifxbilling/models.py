@@ -22,6 +22,7 @@ from django.db.models.signals import post_save, post_delete
 from django.db.models import ProtectedError
 from django.dispatch import receiver
 from author.decorators import with_author
+from natural_keys import NaturalKeyModel
 from ifxuser.models import Organization
 from ifxvalidcode.ec_functions import ExpenseCodeFields
 
@@ -72,13 +73,19 @@ def reset_billing_record_charge(billing_record):
     post_save.connect(billing_record_post_save, sender=BillingRecord)
 
 
-class Facility(models.Model):
+class Facility(NaturalKeyModel):
     '''
     Facility, roughly equivalent to an application
     '''
     class Meta:
         db_table = 'facility'
         verbose_name_plural = 'facilities'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('name',),
+                name='facility_natural_key',
+            )
+        ]
 
     name = models.CharField(
         max_length=200,
@@ -118,7 +125,7 @@ class Facility(models.Model):
     def __str__(self):
         return self.name
 
-class Account(models.Model):
+class Account(NaturalKeyModel):
     """
     Model for accounts, including both expense codes and POs
     """
@@ -207,7 +214,7 @@ class Account(models.Model):
 
 
 
-class UserAccount(models.Model):
+class UserAccount(NaturalKeyModel):
     '''
     Provide default accounts for a user
     '''
@@ -233,13 +240,19 @@ class UserAccount(models.Model):
         return f'{valid_str} authorization of {self.account} for {self.user}'
 
 
-class Product(models.Model):
+class Product(NaturalKeyModel):
     '''
     General name of product and product number.  Helium dewar,  ELYRA microscope, Lustre disk, Promethion sequencing could
     all be Products.  Rate sets are associated with products.  Actual usage of a product is a ProductUsage
     '''
     class Meta:
         db_table = 'product'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('product_number',),
+                name='product_natural_key',
+            )
+        ]
 
     product_number = models.CharField(
         max_length=14,
@@ -332,12 +345,18 @@ class Rate(models.Model):
     )
 
 
-class UserProductAccount(models.Model):
+class UserProductAccount(NaturalKeyModel):
     '''
     Provide accounts specific for a particular product
     '''
     class Meta:
         db_table = 'user_product_account'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('account', 'user', 'product'),
+                name='user_product_account_natural_key',
+            )
+        ]
 
     account = models.ForeignKey(
         Account,

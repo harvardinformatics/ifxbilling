@@ -153,35 +153,35 @@ USER_PRODUCT_ACCOUNTS = [
     {
         'user': 'Slurpy Slurpiston',
         'account': 'Alternate code',
-        'product': 'Helium Dewar',
+        'product': 'Dev Helium Dewar',
         'percent': 25,
         'is_valid': True,
     },
     {
         'user': 'Slurpy Slurpiston',
         'account': 'Another code',
-        'product': 'Helium Dewar',
+        'product': 'Dev Helium Dewar',
         'percent': 75,
         'is_valid': True,
     },
     {
         'user': 'Markos Hankin',
         'account': 'Alternate code',
-        'product': 'Helium Dewar',
+        'product': 'Dev Helium Dewar',
         'percent': 50,
         'is_valid': True,
     },
     {
         'user': 'Markos Hankin',
         'account': 'mycode',
-        'product': 'Helium Dewar',
+        'product': 'Dev Helium Dewar',
         'percent': 50,
         'is_valid': True,
     },
     {
         'user': 'Markos Hankin',
         'account': 'mycode',
-        'product': 'Helium Balloon',
+        'product': 'Dev Helium Balloon',
         'percent': 100,
         'is_valid': True,
     },
@@ -189,8 +189,8 @@ USER_PRODUCT_ACCOUNTS = [
 
 PRODUCTS = [
     {
-        'product_number': 'IFXP0000000001',
-        'product_name': 'Helium Dewar',
+        'product_number': 'IFXPX000000001',
+        'product_name': 'Dev Helium Dewar',
         'product_description': 'A dewar of helium',
         'rates': [
             {
@@ -203,8 +203,8 @@ PRODUCTS = [
         'facility': 'Helium Recovery Service',
     },
     {
-        'product_number': 'IFXP0000000002',
-        'product_name': 'Helium Balloon',
+        'product_number': 'IFXPX000000002',
+        'product_name': 'Dev Helium Balloon',
         'product_description': 'A balloon of helium',
         'rates': [
             {
@@ -220,7 +220,7 @@ PRODUCTS = [
 
 PRODUCT_USAGES = [
     {
-        'product': 'Helium Dewar',
+        'product': 'Dev Helium Dewar',
         'product_user': 'Slurpy Slurpiston',
         'quantity': 1,
         'decimal_quantity': 1.0,
@@ -232,7 +232,7 @@ PRODUCT_USAGES = [
         'logged_by': 'john@snow.com',
     },
     {
-        'product': 'Helium Dewar',
+        'product': 'Dev Helium Dewar',
         'product_user': 'Markos Hankin',
         'quantity': 1,
         'decimal_quantity': 1.0,
@@ -244,7 +244,7 @@ PRODUCT_USAGES = [
         'logged_by': 'john@snow.com',
     },
     {
-        'product': 'Helium Dewar',
+        'product': 'Dev Helium Dewar',
         'product_user': 'Markos Hankin',
         'quantity': 1,
         'decimal_quantity': 1.0,
@@ -256,7 +256,7 @@ PRODUCT_USAGES = [
         'logged_by': 'john@snow.com',
     },
     {
-        'product': 'Helium Dewar',
+        'product': 'Dev Helium Dewar',
         'product_user': 'Markos Hankin',
         'quantity': 1,
         'decimal_quantity': 1.0,
@@ -268,7 +268,7 @@ PRODUCT_USAGES = [
         'logged_by': 'john@snow.com',
     },
     {
-        'product': 'Helium Balloon',
+        'product': 'Dev Helium Balloon',
         'product_user': 'Markos Hankin',
         'quantity': 1,
         'decimal_quantity': 1.0,
@@ -280,7 +280,7 @@ PRODUCT_USAGES = [
         'logged_by': 'john@snow.com',
     },
     {
-        'product': 'Helium Balloon',
+        'product': 'Dev Helium Balloon',
         'product_user': 'Markos Hankin',
         'quantity': 1,
         'decimal_quantity': 1.0,

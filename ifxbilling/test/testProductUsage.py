@@ -43,7 +43,7 @@ class TestProductUsage(APITestCase):
         year = 2021
         month = 2
         product_usage_data = {
-            'product': 'Helium Dewar',
+            'product': 'Dev Helium Dewar',
             'product_user': {
                 'ifxid': data.USERS[0]['ifxid']
             },
@@ -69,7 +69,7 @@ class TestProductUsage(APITestCase):
         year = 2021
         month = 2
         product_usage_data = {
-            'product': 'Helium Dewar',
+            'product': 'Dev Helium Dewar',
             'product_user': {
                 'ifxid': data.USERS[0]['ifxid']
             },
@@ -114,7 +114,7 @@ class TestProductUsage(APITestCase):
         Ensure that a ProductUsage can be retrieved by Product id
         '''
         data.init(['Product', 'ProductUsage'])
-        product_name = 'Helium Balloon'
+        product_name = 'Dev Helium Balloon'
         product_id = Product.objects.get(product_name=product_name).id
         url = reverse('product-usages-list')
         response = self.client.get(url, { 'product': product_id}, format='json')

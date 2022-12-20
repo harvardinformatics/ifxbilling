@@ -154,6 +154,7 @@ def update_user_accounts(user):
         except models.Product.DoesNotExist:
             pass
 
+
    # Go through fiine_accounts and product accounts. Create any missing Account objects or update with Fiine information
     with transaction.atomic():
         for person_account_data in fiine_accounts + product_accounts:

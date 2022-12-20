@@ -46,7 +46,7 @@ class TestUnauthorized(APITestCase):
         ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
-                'product': 'Helium Dewar',
+                'product': 'Dev Helium Dewar',
                 'product_user': {
                     'ifxid': ifxid
                 },
@@ -77,7 +77,7 @@ class TestUnauthorized(APITestCase):
         ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
-                'product': 'Helium Dewar',
+                'product': 'Dev Helium Dewar',
                 'product_user': {
                     'ifxid': ifxid
                 },
@@ -111,7 +111,7 @@ class TestUnauthorized(APITestCase):
         ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
-                'product': 'Helium Balloon',
+                'product': 'Dev Helium Balloon',
                 'product_user': {
                     'ifxid': ifxid
                 },
@@ -144,7 +144,7 @@ class TestUnauthorized(APITestCase):
         ifxid_without_user_account = 'IFXID000000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
-                'product': 'Helium Dewar',
+                'product': 'Dev Helium Dewar',
                 'product_user': {
                     'ifxid': ifxid
                 },
