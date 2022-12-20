@@ -57,7 +57,7 @@ class TestBillingRecordAuthorship(APITestCase):
         author = get_user_model().objects.get(username=data.USERS[0]['username']) # sslurpiston
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -92,7 +92,7 @@ class TestBillingRecordAuthorship(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -138,7 +138,7 @@ class TestBillingRecordAuthorship(APITestCase):
         author = get_user_model().objects.get(username=data.USERS[0]['username']) # sslurpiston
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {

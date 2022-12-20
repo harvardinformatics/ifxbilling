@@ -12,10 +12,7 @@ All rights reserved.
 '''
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
-from rest_framework.reverse import reverse
-from rest_framework import status
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from ifxbilling.test import data
 from ifxbilling.calculator import calculateBillingMonth
 from ifxbilling import models
@@ -49,13 +46,13 @@ class TestCalculateBillingMonth(APITestCase):
         # Values on Helium Balloon
         year = 2022
         month = 1
-        (successes, errors) = calculateBillingMonth(month, year, facility, product_names=['Helium Balloon'])
+        (successes, errors) = calculateBillingMonth(month, year, facility, product_names=['Dev Helium Balloon'])
         self.assertTrue(successes == 2, f'Incorrect result {successes} {errors}')
         self.assertTrue(len(errors) == 0, f'Errors returned! {errors}')
 
         year = 2021
         month = 3
-        (successes, errors) = calculateBillingMonth(month, year, facility, product_names=['Helium Dewar'])
+        (successes, errors) = calculateBillingMonth(month, year, facility, product_names=['Dev Helium Dewar'])
         self.assertTrue(successes == 1, f'Incorrect result {successes} {errors}')
         self.assertTrue(len(errors) == 0, f'Errors returned! {errors}')
 

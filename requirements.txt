@@ -14,3 +14,4 @@ sphinxcontrib-openapi
 django-mysql==3.12.0
 logging_tree
 drf-yasg
+natural-keys

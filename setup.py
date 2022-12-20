@@ -46,7 +46,8 @@ setup(
     install_requires = [
         'Django>2, <3',
         'requests',
-        'djangorestframework>3.8'
+        'djangorestframework>3.8',
+        'natural-keys',
     ],
     dependency_links = [
         'git+https://github.com/harvardinformatics/ifxurls.git'

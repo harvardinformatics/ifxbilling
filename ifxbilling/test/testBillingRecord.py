@@ -53,7 +53,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -98,7 +98,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.get(code='370-11111-8100-000775-600200-0000-44075')
         new_account = models.Account.objects.get(code='370-31230-8100-000775-600200-0000-44075')
 
@@ -154,7 +154,7 @@ class TestBillingRecord(APITestCase):
         author = get_user_model().objects.get(username=data.USERS[0]['username']) # sslurpiston
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -196,7 +196,7 @@ class TestBillingRecord(APITestCase):
         author = get_user_model().objects.get(username=data.USERS[0]['username']) # sslurpiston
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -236,7 +236,7 @@ class TestBillingRecord(APITestCase):
         author = get_user_model().objects.get(username=data.USERS[0]['username']) # sslurpiston
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -288,7 +288,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -313,7 +313,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -358,7 +358,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -403,7 +403,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -445,7 +445,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
 
         billing_record_data = {
@@ -491,7 +491,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
         charge = 999
         description = 'Dewar charge'
@@ -529,7 +529,7 @@ class TestBillingRecord(APITestCase):
         data.init(types=['Account', 'Product', 'ProductUsage'])
 
         # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Helium Dewar').first()
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
         charge = 999
         description = 'Dewar charge'
