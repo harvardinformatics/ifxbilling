@@ -299,12 +299,13 @@ class Product(NaturalKeyModel):
         return f'{self.product_name} ({self.product_number})'
 
 
-class Rate(models.Model):
+class Rate(NaturalKeyModel):
     '''
     Rates for chargeable products
     '''
     class Meta:
         db_table = 'rate'
+        unique_together = ('product', 'name')
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     name = models.CharField(
