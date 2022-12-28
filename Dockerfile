@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:experimental
-FROM python:3.6
+FROM python:3.10-bullseye
 
 EXPOSE 80
 RUN apt-get update -y
@@ -13,16 +13,16 @@ COPY requirements.txt /app
 
 ARG DJVOCAB_COMMIT=a0cfeba93ea805d3861e97e9c38fd27447e5b58a
 ARG IFXURLS_COMMIT=30d093a410e405dac650e7904e6e140e87a9e95b
-ARG NANITES_CLIENT_COMMIT=a11ff96ccb2c888d0d07ac97f27de1153463bf59
-ARG IFXUSER_COMMIT=63b7065fb2700966d2f0e036c68a1344f3371995
-ARG IFXAUTH_COMMIT=afcaad2b05f5dd90e86e53b2de864bef04c91898
-ARG IFXMAIL_CLIENT_COMMIT=5fc6d834c76c0f66d823ff0b5d384ab7b30009b0
-ARG FIINE_CLIENT_COMMIT=1ccb266c7f3c735f39c32067ce71294ecee35747
+ARG NANITES_CLIENT_COMMIT=bf5ac0ba32790463a663025cdea2dee6ea9342e9
+ARG IFXUSER_COMMIT=6bba3758930ca0cc2410d014d2497074476b2c6f
+ARG IFXAUTH_COMMIT=1e4fa823367f5309cf8e49857bbcf1f5931aa9d8
+ARG IFXMAIL_CLIENT_COMMIT=5f4adf6e5de1f7db716c1cde5b63dda6ec8c241c
+ARG FIINE_CLIENT_COMMIT=1946c8db410077d374b8b16f6de5199d9ed10d7e
 ARG IFXVALIDCODE_COMMIT=4dd332c5a8e13d904a90da014094406a81b617e6
 
 RUN --mount=type=ssh pip install --upgrade pip && \
-    pip install 'Django>2.2,<3' && \
-    pip install 'djangorestframework>3.9.1,<3.12.0' && \
+    pip install 'Django>3,<4' && \
+    pip install 'djangorestframework==3.14.0' && \
     pip install git+ssh://git@github.com/harvardinformatics/djvocab.git@${DJVOCAB_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/ifxurls.git@${IFXURLS_COMMIT} && \
     pip install git+ssh://git@github.com/harvardinformatics/nanites.client.git@${NANITES_CLIENT_COMMIT} && \
