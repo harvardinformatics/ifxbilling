@@ -15,6 +15,7 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
@@ -45,10 +46,6 @@ if IFX_APP['token'] == 'FIXME':
 
 IFX_AUTH_META_KEY = 'HTTP_HKEY_EDUPERSONPRINCIPALNAME'
 
-# Erroneous error for json field with mariadb
-# timezone.now() is used for models.Account.valid_from, but the complaint persists
-SILENCED_SYSTEM_CHECKS = ['django_mysql.E016', 'fields.W161']
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -59,8 +56,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_mysql',
-    'django_nose',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -208,10 +203,6 @@ LOGGING = {
         }
     },
 }
-
-
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-
 
 class GROUPS():
     '''
