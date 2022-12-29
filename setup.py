@@ -44,9 +44,9 @@ setup(
         "Topic :: Utilities",
     ],
     install_requires = [
-        'Django>2, <3',
+        'Django>3, <4',
         'requests',
-        'djangorestframework>3.8',
+        'djangorestframework==3.14.0',
         'natural-keys',
     ],
     dependency_links = [
