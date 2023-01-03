@@ -68,7 +68,7 @@ class AccountInlineForm(forms.ModelForm):
     class Meta:
         widgets = {
             'account': AutocompleteSelect(
-                models.UserAccount._meta.get_field('account').remote_field,
+                models.UserAccount._meta.get_field('account'),
                 admin.site,
                 attrs={'style': 'width: 500px'}
             ),
@@ -83,7 +83,7 @@ class UserAccountInlineAdmin(admin.TabularInline):
     Inline for user account listing.  To be used on UserAdmin
     '''
     model = models.UserAccount
-    autocomplete_fields = ('user', 'account')
+    autocomplete_fields = ('user',)
     extra = 0
     form = AccountInlineForm
 

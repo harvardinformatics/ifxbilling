@@ -526,7 +526,7 @@ class NewBillingCalculator():
         :rtype: :class:`~django.db.models.query.QuerySet`
         '''
         product_usages = ProductUsage.objects.filter(organization=organization, year=year, month=month, product__facility=self.facility, product__billable=True)
-        if not product_usages:
+        if not product_usages and self.verbosity > self.CHATTY:
             logger.info(f'No product usages for: {organization.name}, {month}, {year}')
         return product_usages
 
