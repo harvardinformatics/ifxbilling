@@ -75,6 +75,25 @@ class AccountInlineForm(forms.ModelForm):
         }
 
 
+class ProductAccountInlineForm(forms.ModelForm):
+    '''
+    Just makes the account and product field widget larger
+    '''
+    class Meta:
+        widgets = {
+            'account': AutocompleteSelect(
+                models.UserProductAccount._meta.get_field('account'),
+                admin.site,
+                attrs={'style': 'width: 500px'}
+            ),
+            'product': AutocompleteSelect(
+                models.UserProductAccount._meta.get_field('product'),
+                admin.site,
+                attrs={'style': 'width: 500px'}
+            ),
+        }
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -304,9 +323,8 @@ class UserProductAccountInlineAdmin(admin.TabularInline):
     Inline for UserProductAccounts
     '''
     model = models.UserProductAccount
-    autocomplete_fields = ('account', 'product')
     extra = 0
-    form = AccountInlineForm
+    form = ProductAccountInlineForm
 
 
 class ProductUsageInlineAdmin(admin.TabularInline):
