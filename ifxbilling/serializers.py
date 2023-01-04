@@ -415,6 +415,20 @@ class ProductUsageSerializer(serializers.ModelSerializer):
                     'product_user': f'Cannot find product user with ifxid {product_user_ifxid}'
                 }
             )
+        except get_user_model().MultipleObjectsReturned:
+            # Might be multiple user records with the same ifxid
+            product_user_id = product_user_data.get('id')
+            try:
+                product_user = get_user_model().objects.get(id=product_user_id)
+                validated_data['product_user'] = product_user
+            except get_user_model().DoesNotExist:
+                raise serializers.ValidationError(
+                    detail={
+                        'product_user': f'Cannot find product user with id {product_user_id}'
+                    }
+                )
+
+
         if 'start_date' not in validated_data:
             validated_data['start_date'] = timezone.now()
         validated_data['logged_by'] = self.context['request'].user
