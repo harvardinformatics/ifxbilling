@@ -611,7 +611,7 @@ class NewBillingCalculator():
             pup.message = message
             pup.save()
         except ProductUsageProcessing.DoesNotExist:
-            ProductUsageProcessing.objects.create(
+            pup = ProductUsageProcessing.objects.create(
                 product_usage=product_usage,
                 error_message=message,
                 resolved=resolved
