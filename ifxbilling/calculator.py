@@ -611,7 +611,8 @@ class NewBillingCalculator():
         except ProductUsageProcessing.DoesNotExist:
             ProductUsageProcessing.objects.create(
                 product_usage=product_usage,
-                error_message=message
+                error_message=message,
+                resolved=resolved
             )
 
     def generate_billing_record_for_usage(self, year, month, product_usage, account, percent, **kwargs):
