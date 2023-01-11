@@ -608,7 +608,7 @@ class NewBillingCalculator():
                 logger.info(f'Found previous ProductUsageProcessing {pup.id} will update it with resolved={resolved} and message {message}.')
 
             pup.resolved = resolved
-            pup.message = message
+            pup.error_message = message
             pup.save()
         except ProductUsageProcessing.DoesNotExist:
             pup = ProductUsageProcessing.objects.create(
