@@ -584,6 +584,8 @@ class NewBillingCalculator():
         Create or update a :class:`~ifxbilling.models.ProductUsageProcessing` instance.  If `resolved=True`,
         the message 'OK' is set.  Otherwise, the message parameter is used.
 
+        The PUP is returned, but only for debugging purposes; it is not directly used by the calling code.
+
         :param product_usage: The :class:`~ifxbilling.models.ProductUsage` associated with the instance
         :type product_usage: :class:`~ifxbilling.models.ProductUsage`
 
@@ -593,7 +595,7 @@ class NewBillingCalculator():
         :param message: String message if not resolved
         :type message: str, optional
 
-        :return: None
+        :return: :class:`~ifxbilling.models.ProductUsageProcessing`
         '''
         if resolved:
             message = 'OK'
@@ -614,6 +616,7 @@ class NewBillingCalculator():
                 error_message=message,
                 resolved=resolved
             )
+        return pup
 
     def generate_billing_record_for_usage(self, year, month, product_usage, account, percent, **kwargs):
         '''
