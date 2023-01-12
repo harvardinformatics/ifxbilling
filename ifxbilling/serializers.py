@@ -186,13 +186,15 @@ class AccountViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for Account models
 
-    Filter by name, active status, or account_type.
+    Filter by name, active status, organization, or account_type.
 
     If the 'active' query param is present, it must be set to 'true' (or True or TRUE) to get active
     accounts.  Any other value will get inactive accounts.  If the param is missing both
     active and inactive accounts will be returned.
 
     The account_type parameter can be set to Expense Code or PO
+
+    The organization parameter can either be a slug or a name (distinguishes using " (a")
     '''
     serializer_class = AccountSerializer
 
@@ -200,6 +202,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         name = self.request.query_params.get('name')
         active = self.request.query_params.get('active', False)
         account_type = self.request.query_params.get('account_type')
+        organizationstr = self.request.query_params.get('organization')
 
         queryset = models.Account.objects.all()
 
@@ -209,7 +212,17 @@ class AccountViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(active=active.upper() == 'TRUE')
         if account_type:
             queryset = queryset.filter(account_type=account_type)
-
+        if organizationstr:
+            try:
+                if ' (a' in organizationstr:
+                    organization = Organization.objects.get(slug=organizationstr)
+                else:
+                    organization = Organization.objects.get(name=organizationstr)
+                queryset = queryset.filter(organization=organization)
+            except Organization.DoesNotExist:
+                raise serializers.ValidationError(
+                    detail=f'Cannot find organization identified by {organizationstr}'
+                )
         return queryset
 
 

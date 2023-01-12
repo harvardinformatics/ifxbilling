@@ -165,7 +165,6 @@ class TestAccount(APITestCase):
         url = reverse('account-list')
         response = self.client.get(url, { 'name': 'mycode' }, format='json')
         account = response.data[0]
-        print(repr(account))
         self.assertTrue(len(account['user_accounts']) == 1, f'Account has incorrect number of user_accounts {account}')
         self.assertTrue(len(account['user_product_accounts']) == 2, f'Account has incorrect number of user_product_accounts {account}')
         upa = account['user_product_accounts'][0]
@@ -206,3 +205,38 @@ class TestAccount(APITestCase):
         url = reverse('account-list')
         response = self.client.get(url, { 'account_type': 'Expense Code' }, format='json')
         self.assertTrue(len(response.data) == expected_number_of_accts, f'Incorrect number of accts returned {response.data}')
+
+    def testFilterByOrganizationSlug(self):
+        '''
+        Ensure that the correct accounts are returned using an organization slug.
+        '''
+        data.init(['Account'])
+        organization_slug = 'Nobody Lab (a Harvard Laboratory)'
+        expected_number_of_accts = reduce(lambda x,y: x + 1 if y.get('organization') == organization_slug else x, data.ACCOUNTS, 0)
+
+        url = reverse('account-list')
+        response = self.client.get(url, { 'organization': organization_slug }, format='json')
+        self.assertTrue(len(response.data) == expected_number_of_accts, f'Incorrect number of accts returned {response.data}')
+
+    def testFilterByOrganizationName(self):
+        '''
+        Ensure that the correct accounts are returned using an organization name.
+        '''
+        data.init(['Account'])
+        organization_name = 'Nobody Lab'
+        expected_number_of_accts = reduce(lambda x,y: x + 1 if organization_name in y.get('organization') else x, data.ACCOUNTS, 0)
+
+        url = reverse('account-list')
+        response = self.client.get(url, { 'organization': organization_name }, format='json')
+        self.assertTrue(len(response.data) == expected_number_of_accts, f'Incorrect number of accts returned {response.data}')
+
+    def testFilterByBadOrganizationName(self):
+        '''
+        Ensure that a 400 error is returned when a bad account name is used.
+        '''
+        data.init(['Account'])
+        organization_name = 'Nonexistent Lab'
+
+        url = reverse('account-list')
+        response = self.client.get(url, { 'organization': organization_name }, format='json')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response to bad org {response.status_code}')
