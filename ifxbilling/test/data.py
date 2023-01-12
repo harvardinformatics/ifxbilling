@@ -59,6 +59,11 @@ ORGS = [
         'name': 'Derpiston Lab',
         'rank': 'lab',
         'org_tree': 'Harvard'
+    },
+    {
+        'name': 'Aliens',
+        'rank': 'company',
+        'org_tree': 'Harvard'
     }
 ]
 
@@ -138,6 +143,15 @@ ACCOUNTS = [
         'active': False,
         'valid_from': '2000-01-01',
         'expiration_date': '2100-01-01',
+    },
+    {
+        'code': 'XFC1298w4r',
+        'organization': 'Aliens (a Harvard Company)',
+        'name': 'Alien PO',
+        'active': True,
+        'valid_from': '2000-01-01',
+        'expiration_date': '2100-01-01',
+        'account_type': 'PO',
     },
 ]
 

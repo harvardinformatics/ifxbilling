@@ -10,6 +10,7 @@ Created on  2021-02-10
 All rights reserved.
 @license: GPL v2.0
 '''
+from functools import reduce
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
@@ -180,3 +181,28 @@ class TestAccount(APITestCase):
         response = self.client.get(url, { 'active': 'true' }, format='json')
         accounts = response.data
         self.assertTrue(len(accounts) == len(data.ACCOUNTS) - 1, f'active filter for account list did not work')
+
+    def testFilterPO(self):
+        '''
+        Ensure that only POs are returned when account_type is set to PO.
+        '''
+        data.init(['Account'])
+        expected_number_of_accts = reduce(lambda x,y: x + 1 if y.get('account_type') == 'PO' else x, data.ACCOUNTS, 0)
+        expected_po_name = 'Alien PO'
+
+        url = reverse('account-list')
+        response = self.client.get(url, { 'account_type': 'PO' }, format='json')
+        self.assertTrue(len(response.data) == expected_number_of_accts, f'Incorrect number of POs returned {response.data}')
+        po_account = response.data[0]
+        self.assertTrue(po_account['name'] == expected_po_name, f'Incorrect PO returned {po_account}')
+
+    def testFilterExpenseCode(self):
+        '''
+        Ensure that only expense codes are returned when account_type is set to Expense Code.
+        '''
+        data.init(['Account'])
+        expected_number_of_accts = reduce(lambda x,y: x + 1 if y.get('account_type') != 'PO' else x, data.ACCOUNTS, 0)
+
+        url = reverse('account-list')
+        response = self.client.get(url, { 'account_type': 'Expense Code' }, format='json')
+        self.assertTrue(len(response.data) == expected_number_of_accts, f'Incorrect number of accts returned {response.data}')
