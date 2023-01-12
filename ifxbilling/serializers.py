@@ -185,16 +185,21 @@ class AccountSerializer(serializers.ModelSerializer):
 class AccountViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for Account models
-    Filter by name or active status.
+
+    Filter by name, active status, or account_type.
+
     If the 'active' query param is present, it must be set to 'true' (or True or TRUE) to get active
     accounts.  Any other value will get inactive accounts.  If the param is missing both
     active and inactive accounts will be returned.
+
+    The account_type parameter can be set to Expense Code or PO
     '''
     serializer_class = AccountSerializer
 
     def get_queryset(self):
         name = self.request.query_params.get('name')
         active = self.request.query_params.get('active', False)
+        account_type = self.request.query_params.get('account_type')
 
         queryset = models.Account.objects.all()
 
@@ -202,6 +207,8 @@ class AccountViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(name=name)
         if active:
             queryset = queryset.filter(active=active.upper() == 'TRUE')
+        if account_type:
+            queryset = queryset.filter(account_type=account_type)
 
         return queryset
 

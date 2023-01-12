@@ -666,7 +666,7 @@ class NewBillingCalculator():
         :raises: Exception if set of matching :class:`~ifxbilling.models.UserProductAccount` percents do not add up to 100
         :raises: Exception if no matching active authorization can be found
 
-        :return: list of (:class:`~ifxbilling.models.UserAccount`, percent) tuples
+        :return: list of (:class:`~ifxbilling.models.Account`, percent) tuples
         :rtype: list
         '''
         account_percentages = []
