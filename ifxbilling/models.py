@@ -587,6 +587,18 @@ class BillingRecord(models.Model):
         null=True,
         help_text='Text description of the rate used to calculate the charge'
     )
+    product_usage_link_text = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text='Display text for link to associated ProductUsage',
+    )
+    product_usage_url = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text='URL link for product usage display.  Should be a full URL so that it works in both facility applications and fiine',
+    )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
