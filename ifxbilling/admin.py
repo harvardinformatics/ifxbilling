@@ -239,7 +239,9 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'created',
         'updated',
         'percent',
-        'rate'
+        'rate',
+        'product_usage_link_text',
+        'product_usage_url',
     )
     list_display = (
         'id',

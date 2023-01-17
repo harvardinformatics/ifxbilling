@@ -564,6 +564,8 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     billing_record_states = BillingRecordStateSerializer(source='billingrecordstate_set', many=True, read_only=True)
     percent = serializers.IntegerField(required=False)
     author = UserSerializer(read_only=True)
+    product_usage_link_text = serializers.CharField(read_only=True)
+    product_usage_url = serializers.CharField(read_only=True)
 
     class Meta:
         model = models.BillingRecord
@@ -584,6 +586,8 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             'percent',
             'author',
             'rate',
+            'product_usage_link_text',
+            'product_usage_url',
         )
         read_only_fields = ('id', 'created', 'updated', 'rate')
         list_serializer_class = BillingRecordListSerializer
