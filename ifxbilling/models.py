@@ -653,7 +653,14 @@ class BillingRecord(models.Model):
         """
         if self.current_state and self.current_state not in ['INIT', 'PENDING_LAB_APPROVAL']:
             raise ProtectedError('Billing Records can not be deleted.', self)
-        super().delete()
+
+        # Need to prevent transactions from trying to update the billing record
+        post_save.disconnect(transaction_post_delete, sender=Transaction)
+        try:
+            super().delete()
+        finally:
+            post_save.connect(transaction_post_delete, sender=Transaction)
+
 
     def addTransaction(self, charge, rate, description, author):
         '''
