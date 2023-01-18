@@ -688,10 +688,7 @@ def billing_record_post_save(sender, instance, **kwargs):
     """
     Add description to BillingRecord if null, reset charge on billing record
     """
-    # post_save.disconnect(billing_record_post_save, sender=BillingRecord)
     reset_billing_record_charge(instance)
-    # post_save.connect(billing_record_post_save, sender=BillingRecord)
-
 
 
 class BillingRecordState(models.Model):
