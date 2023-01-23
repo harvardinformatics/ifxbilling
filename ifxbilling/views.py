@@ -380,6 +380,8 @@ def get_billing_record_list(request):
             br.description as billing_record_description,
             br.year,
             br.month,
+            br.product_usage_link_text,
+            br.product_usage_url,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
             product_user_organization.slug as product_user_primary_affiliation,
@@ -477,6 +479,8 @@ def get_billing_record_list(request):
                     'current_state': row_dict['billing_record_current_state'],
                     'year': row_dict['year'],
                     'month': row_dict['month'],
+                    'product_usage_link_text': row_dict['product_usage_link_text'],
+                    'product_usage_url': row_dict['product_usage_url'],
                     'account': {
                         'id': row_dict['account_id'],
                         'code': row_dict['account_code'],
