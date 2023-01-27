@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinxcontrib.openapi',
+    'sphinxcontrib_django',
     'sphinx.ext.autosectionlabel',
     'recommonmark',
 ]
