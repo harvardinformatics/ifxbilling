@@ -330,8 +330,8 @@ def handle_fiine_ifxapps_messages(messages):
         logger.debug(f'Updating accounts for ids {ifxids_to_be_updated}')
         for ifxid in ifxids_to_be_updated:
             try:
-                user = get_user_model().objects.get(ifxid=ifxid)
-                update_user_accounts(user)
+                for user in get_user_model().objects.filter(ifxid=ifxid):
+                    update_user_accounts(user)
                 successes += 1
             except get_user_model().DoesNotExist:
                 pass
