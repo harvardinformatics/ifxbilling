@@ -380,8 +380,6 @@ def get_billing_record_list(request):
             br.description as billing_record_description,
             br.year,
             br.month,
-            br.product_usage_link_text,
-            br.product_usage_url,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
             product_user_organization.slug as product_user_primary_affiliation,
