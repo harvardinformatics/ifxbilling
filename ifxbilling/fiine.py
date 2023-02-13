@@ -333,8 +333,6 @@ def handle_fiine_ifxapps_messages(messages):
                 for user in get_user_model().objects.filter(ifxid=ifxid):
                     update_user_accounts(user)
                 successes += 1
-            except get_user_model().DoesNotExist:
-                pass
             except Exception as e:
                 logger.exception(e)
                 errors.append(f'Error updating user accounts for {ifxid}: {e}')
