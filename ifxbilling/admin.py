@@ -293,6 +293,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
         'end_date'
     )
     list_display = (
+        'id',
         'product',
         'product_user',
         'organization',

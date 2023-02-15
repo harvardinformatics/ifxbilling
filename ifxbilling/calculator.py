@@ -570,13 +570,13 @@ class NewBillingCalculator():
 
                 # processing complete update any product_usage_processing as resolved
                 self.update_product_usage_processing(product_usage, resolved=True)
-        except Exception as e:
+        except Exception as ex:
             if self.verbosity == self.CHATTY:
-                logger.error(e)
+                logger.error(ex)
             if self.verbosity == self.LOUD:
-                logger.exception(e)
-            self.update_product_usage_processing(product_usage, resolved=False, message=str(e))
-            raise e
+                logger.exception(ex)
+            self.update_product_usage_processing(product_usage, resolved=False, message=str(ex))
+            raise ex
         return brs
 
     def update_product_usage_processing(self, product_usage, resolved=True, message=None):
