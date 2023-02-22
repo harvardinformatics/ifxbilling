@@ -853,7 +853,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                     ExpenseCodeFields.OBJECT_CODE,
                     facility_object_code
                 )
-
+                logger.debug(f'account code being checked is {account_data["code"]}')
             # Organization may be name if coming from fiine or slug if coming from facility application
             account = models.Account.objects.get(Q(organization__name=account_data['organization']) | Q(organization__slug=account_data['organization']), code=account_data['code'])
             instance.account = account
