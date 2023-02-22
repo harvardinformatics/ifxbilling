@@ -25,6 +25,7 @@ from rest_framework import status
 from ifxuser.models import Organization
 from ifxuser.serializers import UserSerializer
 from fiine.client import API as FiineAPI
+from ifxvalidcode.ec_functions import ExpenseCodeFields
 from ifxbilling import models
 from ifxbilling import fiine
 from ifxbilling.permissions import BillingRecordUpdatePermissions
@@ -155,14 +156,14 @@ class AccountSerializer(serializers.ModelSerializer):
         if not re.match(r'^[0-9]{5}$', validated_data['root']):
             raise serializers.ValidationError(
                 detail={
-                    'root': f'Root must be a 5 digit number.'
+                    'root': 'Root must be a 5 digit number.'
                 }
             )
         if 'account_type' not in validated_data or validated_data['account_type'] == 'Expense Code':
             if not models.EXPENSE_CODE_RE.match(validated_data['code']) and not models.EXPENSE_CODE_SANS_OBJECT_RE.match(validated_data['code']):
                 raise serializers.ValidationError(
                     detail={
-                        'code': f'Expense codes must be dash separated and contain either 33 digits or 29 (33 sans object code)'
+                        'code': 'Expense codes must be dash separated and contain either 33 digits or 29 (33 sans object code)'
                     }
                 )
 
@@ -176,7 +177,7 @@ class AccountSerializer(serializers.ModelSerializer):
         if not re.match(r'^[0-9]{5}$', validated_data['root']):
             raise serializers.ValidationError(
                 detail={
-                    'root': f'Root must be a 5 digit number.'
+                    'root': 'Root must be a 5 digit number.'
                 }
             )
         return super().update(validated_data)
@@ -417,7 +418,9 @@ class ProductUsageSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created', 'updated')
 
     def get_validated_data(self, validated_data, initial_data):
-        # Pop the user
+        '''
+        Sets product user, start date (if missing), and logged by to request.user (if missing)
+        '''
         if 'product_user' not in initial_data:
             raise serializers.ValidationError(
                 detail={
@@ -429,24 +432,24 @@ class ProductUsageSerializer(serializers.ModelSerializer):
             product_user_ifxid = product_user_data['ifxid']
             product_user = get_user_model().objects.get(ifxid=product_user_ifxid)
             validated_data['product_user'] = product_user
-        except get_user_model().DoesNotExist:
+        except get_user_model().DoesNotExist as dne:
             raise serializers.ValidationError(
                 detail={
                     'product_user': f'Cannot find product user with ifxid {product_user_ifxid}'
                 }
-            )
+            ) from dne
         except get_user_model().MultipleObjectsReturned:
             # Might be multiple user records with the same ifxid
             product_user_id = product_user_data.get('id')
             try:
                 product_user = get_user_model().objects.get(id=product_user_id)
                 validated_data['product_user'] = product_user
-            except get_user_model().DoesNotExist:
+            except get_user_model().DoesNotExist as dne2:
                 raise serializers.ValidationError(
                     detail={
                         'product_user': f'Cannot find product user with id {product_user_id}'
                     }
-                )
+                ) from dne2
 
 
         if 'start_date' not in validated_data:
@@ -609,12 +612,12 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                 try:
                     author = get_user_model().objects.get(ifxid=real_user_ifxid)
                     return author
-                except get_user_model().DoesNotExist:
+                except get_user_model().DoesNotExist as dne:
                     raise serializers.ValidationError(
                         detail={
                             'real_user_ifxid': f'Cannot find user with ifxid {real_user_ifxid}'
                         }
-                    )
+                    ) from dne
                 except get_user_model().MultipleObjectsReturned:
                     try:
                         author = get_user_model().objects.get(ifxid=real_user_ifxid, groups__name=settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME)
@@ -623,7 +626,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                             detail={
                                 'real_user_ifxid': f'Attempting to approve billing records with user {real_user_ifxid} that has multiple logins none of which is in the {settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME} auth group.'
                             }
-                        )
+                        ) from e
             else:
                 raise serializers.ValidationError(
                     detail={
@@ -642,12 +645,12 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         if 'author' in transaction_data and transaction_data['author'] and 'ifxid' in transaction_data['author'] and transaction_data['author']['ifxid']:
             try:
                 author = get_user_model().objects.get(ifxid=transaction_data['author']['ifxid'])
-            except get_user_model().DoesNotExist:
+            except get_user_model().DoesNotExist as dne:
                 raise serializers.ValidationError(
                     detail={
                         'transactions': f'Cannot find transaction author with ifxid {transaction_data["author"]["ifxid"]}'
                     }
-                )
+                ) from dne
             if current_user.username not in ['fiine', author.username]:
                 raise serializers.ValidationError(
                     detail={
@@ -666,30 +669,30 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             if current_user.username == 'fiine':
                 try:
                     state_username = get_user_model().objects.get(ifxid=state_data['user']).username
-                except get_user_model().DoesNotExist:
+                except get_user_model().DoesNotExist as dne:
                     raise serializers.ValidationError(
                         detail={
                             'states': f'Unable to find user with ifxid {state_data["user"]}'
                         }
-                    )
-                except MultipleObjectsReturned:
+                    ) from dne
+                except MultipleObjectsReturned as mor:
                     # Try the Preferred Billing Record Approval Account
                     if hasattr(settings, 'GROUPS') and hasattr(settings.GROUPS, 'PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME'):
                         preferred_account_group_name = settings.GROUPS.PREFERRED_BILLING_RECORD_APPROVAL_ACCOUNT_GROUP_NAME
                         try:
                             state_username = get_user_model().objects.get(ifxid=state_data['user'], groups__name=preferred_account_group_name).username
-                        except get_user_model().DoesNotExist:
+                        except get_user_model().DoesNotExist as dne:
                             raise serializers.ValidationError(
                                 detail={
                                     'states': f'User with ifxid {state_data["user"]} has multiple user records, but none has {preferred_account_group_name} set.'
                                 }
-                            )
+                            ) from dne
                     else:
                         raise serializers.ValidationError(
                             detail={
                                 'states': f'User with ifxid {state_data["user"]} has multiple user records and there is no way to set a preference for billing.'
                             }
-                        )
+                        ) from mor
             else:
                 raise serializers.ValidationError(
                     detail={
@@ -746,12 +749,12 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             account_id = account_data['id']
             account = models.Account.objects.get(id=account_id)
             validated_data['account'] = account
-        except models.Account.DoesNotExist:
+        except models.Account.DoesNotExist as dne:
             raise serializers.ValidationError(
                 detail={
                     'account': f'Cannot find expense code / PO with account id {account_id}'
                 }
-            )
+            ) from dne
 
         # Set the "author"
         validated_data['author'] = self.get_billing_record_author(self.initial_data)
@@ -836,16 +839,31 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         # Find account for updating based on code and organization because the id may be from fiine
         account_data = initial_data['account']
         try:
+            # Ensure that account string has the right object code
+            if account_data['account_type'] == 'Expense Code':
+                facility_object_code = product_usage.product.facility.object_code
+                if not facility_object_code:
+                    raise serializers.ValidationError(
+                        detail={
+                            'product_usage': f'Cannot find object code for {product_usage.product.facility}'
+                        }
+                    )
+                account_data['code'] = ExpenseCodeFields.replace_field(
+                    account_data['code'],
+                    ExpenseCodeFields.OBJECT_CODE,
+                    facility_object_code
+                )
+
             # Organization may be name if coming from fiine or slug if coming from facility application
             account = models.Account.objects.get(Q(organization__name=account_data['organization']) | Q(organization__slug=account_data['organization']), code=account_data['code'])
             instance.account = account
-        except models.Account.DoesNotExist:
+        except models.Account.DoesNotExist as dne:
             logger.error('Could not find account with code %s and organization %s when updating billing record %d', account_data['code'], account_data['organization'], instance.id)
             raise serializers.ValidationError(
                 detail={
                     'account': f'Cannot find code {account_data["code"]} to update billing record {instance}'
                 }
-            )
+            ) from dne
 
         instance.description = validated_data['description']
         instance.updated_by = self.get_billing_record_author(initial_data)

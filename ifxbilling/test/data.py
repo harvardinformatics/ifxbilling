@@ -100,7 +100,7 @@ USERS = [
 
 ACCOUNTS = [
     {
-        'code': '370-11111-8100-000775-600200-0000-44075',
+        'code': '370-11111-6600-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'Alternate code',
         'root': '44075',
@@ -109,7 +109,7 @@ ACCOUNTS = [
         'expiration_date': '2100-01-01',
     },
     {
-        'code': '370-31230-8100-000775-600200-0000-44075',
+        'code': '370-31230-6600-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'mycode',
         'root': '12345',
@@ -118,7 +118,7 @@ ACCOUNTS = [
         'expiration_date': '2100-01-01',
     },
     {
-        'code': '370-99999-8100-000775-600200-0000-44075',
+        'code': '370-99999-6600-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'Another code',
         'root': '44075',
@@ -127,7 +127,7 @@ ACCOUNTS = [
         'expiration_date': '2100-01-01',
     },
     {
-        'code': '370-11111-8100-000775-600200-0000-33333',
+        'code': '370-11111-6600-000775-600200-0000-33333',
         'organization': 'Nobody Lab (a Harvard Laboratory)',
         'name': 'Nobody lab code',
         'root': '33333',
@@ -136,7 +136,7 @@ ACCOUNTS = [
         'expiration_date': '2100-01-01',
     },
     {
-        'code': '370-11111-8100-000775-600200-0000-99999',
+        'code': '370-11111-6600-000775-600200-0000-99999',
         'organization': 'Nobody Lab (a Harvard Laboratory)',
         'name': 'inactive code',
         'root': '99999',
