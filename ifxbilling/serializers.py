@@ -239,7 +239,7 @@ class RateSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(required=False)
 
     class Meta:
-        model = models.Product
+        model = models.Rate
         fields = ('id', 'name', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated')
         read_only_fields = ('id', 'created', 'updated')
 
