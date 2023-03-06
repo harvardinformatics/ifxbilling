@@ -232,6 +232,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'account',
         'charge',
         'decimal_charge',
+        'decimal_quantity',
         'description',
         'year',
         'month',
@@ -240,6 +241,7 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'updated',
         'percent',
         'rate',
+        'rate_obj',
         'product_usage_link_text',
         'product_usage_url',
     )
@@ -254,7 +256,8 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'year',
         'current_state',
         'description',
-        'rate'
+        'rate',
+        'rate_obj',
     )
     ordering = ('year', 'month', 'product_usage__id')
     search_fields = (

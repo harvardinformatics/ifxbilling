@@ -382,6 +382,7 @@ def get_billing_record_list(request):
             br.month,
             br.product_usage_link_text,
             br.product_usage_url,
+            br.decimal_quantity as billing_record_decimal_quantity,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
             product_user_organization.slug as product_user_primary_affiliation,
@@ -403,7 +404,10 @@ def get_billing_record_list(request):
             txn.decimal_charge as transaction_decimal_charge,
             txn.rate as transaction_rate,
             txn_user.full_name as transaction_user_full_name,
-            txn_user.ifxid as transaction_user_ifxid
+            txn_user.ifxid as transaction_user_ifxid,
+            r.name as rate_obj_name,
+            r.id as rate_obj_id,
+            r.decimal_price as rate_obj_decimal_price
         from
             billing_record br
             inner join product_usage pu on pu.id = br.product_usage_id
@@ -415,6 +419,7 @@ def get_billing_record_list(request):
             inner join transaction txn on txn.billing_record_id = br.id
             inner join ifxuser txn_user on txn_user.id = txn.author_id
             inner join facility f on f.id = p.facility_id
+            left join rate r on br.rate_obj_id = r.id
     '''
     where_clauses = []
     query_args = []

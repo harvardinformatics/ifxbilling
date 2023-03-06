@@ -599,6 +599,19 @@ class BillingRecord(models.Model):
         null=True,
         help_text='URL link for product usage display.  Should be a full URL so that it works in both facility applications and fiine',
     )
+    rate_obj = models.ForeignKey(
+        Rate,
+        on_delete=models.PROTECT,
+        help_text='The rate used to calculate this charge',
+        null=True,
+    )
+    decimal_quantity = models.DecimalField(
+        max_digits=19,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text='Decimal quantity of the Product used for this billing record'
+    )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

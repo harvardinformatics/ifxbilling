@@ -569,6 +569,8 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     product_usage_link_text = serializers.CharField(read_only=True)
     product_usage_url = serializers.CharField(read_only=True)
+    rate_obj = RateSerializer(read_only=True)
+    decimal_quantity = serializers.DecimalField(read_only=True, max_digits=19, decimal_places=4)
 
     class Meta:
         model = models.BillingRecord
@@ -591,6 +593,8 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             'rate',
             'product_usage_link_text',
             'product_usage_url',
+            'rate_obj',
+            'decimal_quantity',
         )
         read_only_fields = ('id', 'created', 'updated', 'rate')
         list_serializer_class = BillingRecordListSerializer
