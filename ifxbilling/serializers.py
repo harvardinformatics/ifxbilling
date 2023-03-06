@@ -180,7 +180,7 @@ class AccountSerializer(serializers.ModelSerializer):
                     'root': 'Root must be a 5 digit number.'
                 }
             )
-        return super().update(validated_data)
+        return super().update(instance, validated_data)
 
 
 class AccountViewSet(viewsets.ModelViewSet):
@@ -220,10 +220,10 @@ class AccountViewSet(viewsets.ModelViewSet):
                 else:
                     organization = Organization.objects.get(name=organizationstr)
                 queryset = queryset.filter(organization=organization)
-            except Organization.DoesNotExist:
+            except Organization.DoesNotExist as dne:
                 raise serializers.ValidationError(
                     detail=f'Cannot find organization identified by {organizationstr}'
-                )
+                ) from dne
         return queryset
 
 

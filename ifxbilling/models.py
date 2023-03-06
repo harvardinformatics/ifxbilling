@@ -123,7 +123,7 @@ class Facility(NaturalKeyModel):
         help_text='The name of the class that selects product usages and creates billing records using the calculator class'
     )
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 class Account(NaturalKeyModel):
     """
@@ -347,6 +347,13 @@ class Rate(NaturalKeyModel):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        is_active_str = 'Active' if self.is_active else 'Inactive'
+        units_str = 'ea' if self.units == 'ea' else f'per {self.units}'
+
+        # pylint: disable=no-member
+        return f'{is_active_str} rate {self.name} of {self.decimal_price.quantize(Decimal("0.00"))} {units_str}'
+
 
 class UserProductAccount(NaturalKeyModel):
     '''
@@ -459,8 +466,10 @@ class ProductUsage(AbstractProductUsage):
         if not self.description:
             self.description = f'{self.quantity} {self.units} of {self.product} for {self.product_user} on {self.start_date}'
         if not self.month:
+            # pylint: disable=no-member
             self.month = self.start_date.month
         if not self.year:
+            # pylint: disable=no-member
             self.year = self.start_date.year
         super().save(*args, **kwargs)
 
@@ -686,6 +695,7 @@ class BillingRecord(models.Model):
 
     def __str__(self):
         if self.decimal_charge:
+            # pylint: disable=no-member
             dollar_charge = self.decimal_charge.quantize(Decimal('.01'))
         else:
             dollar_charge = Decimal(self.charge / 100).quantize(Decimal('1.00'))
