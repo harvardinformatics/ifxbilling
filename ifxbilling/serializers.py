@@ -240,8 +240,8 @@ class RateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ('id', 'name', 'price', 'decimal_price', 'units', 'is_active', 'max_qty')
-        read_only_fields = ('id',)
+        fields = ('id', 'name', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated')
+        read_only_fields = ('id', 'created', 'updated')
 
 
 class ProductSerializer(serializers.ModelSerializer):
