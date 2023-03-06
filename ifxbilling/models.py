@@ -344,6 +344,8 @@ class Rate(NaturalKeyModel):
         default=True,
         help_text='Is this rate currently active?'
     )
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
 
 class UserProductAccount(NaturalKeyModel):

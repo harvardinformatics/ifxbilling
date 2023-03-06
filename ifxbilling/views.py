@@ -407,7 +407,10 @@ def get_billing_record_list(request):
             txn_user.ifxid as transaction_user_ifxid,
             r.name as rate_obj_name,
             r.id as rate_obj_id,
-            r.decimal_price as rate_obj_decimal_price
+            r.decimal_price as rate_obj_decimal_price,
+            r.active as rate_obj_active,
+            CONVERT_TZ(r.created, 'UTC', '{local_tz}') as rate_obj_created,
+            CONVERT_TZ(r.updated, 'UTC', '{local_tz}') as rate_obj_updated
         from
             billing_record br
             inner join product_usage pu on pu.id = br.product_usage_id
@@ -479,6 +482,7 @@ def get_billing_record_list(request):
                     'id': billing_record_id,
                     'charge': row_dict['billing_record_charge'],
                     'decimal_charge': row_dict['billing_record_decimal_charge'],
+                    'decimal_quantity': row_dict['billing_record_decimal_quantity'],
                     'description': row_dict['billing_record_description'],
                     'percent': row_dict['billing_record_percent'],
                     'current_state': row_dict['billing_record_current_state'],
@@ -508,7 +512,12 @@ def get_billing_record_list(request):
                     },
                     'transactions': [
                         make_transaction_from_query_result(row_dict)
-                    ]
+                    ],
+                    'rate_obj': {
+                        'id': row_dict['rate_obj_id'],
+                        'name': row_dict['rate_obj_name'],
+                        'decimal_price': row_dict['rate_obj_decimal_price'],
+                    }
                 }
     except Exception as e:
         logger.exception(e)
