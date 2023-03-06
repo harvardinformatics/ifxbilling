@@ -408,9 +408,7 @@ def get_billing_record_list(request):
             r.name as rate_obj_name,
             r.id as rate_obj_id,
             r.decimal_price as rate_obj_decimal_price,
-            r.active as rate_obj_active,
-            CONVERT_TZ(r.created, 'UTC', '{local_tz}') as rate_obj_created,
-            CONVERT_TZ(r.updated, 'UTC', '{local_tz}') as rate_obj_updated
+            r.is_active as rate_obj_is_active
         from
             billing_record br
             inner join product_usage pu on pu.id = br.product_usage_id
@@ -517,6 +515,7 @@ def get_billing_record_list(request):
                         'id': row_dict['rate_obj_id'],
                         'name': row_dict['rate_obj_name'],
                         'decimal_price': row_dict['rate_obj_decimal_price'],
+                        'is_active': row_dict['rate_obj_is_active'],
                     }
                 }
     except Exception as e:
