@@ -20,8 +20,8 @@ class Migration(migrations.Migration):
             name='product_usage_url',
             field=models.CharField(blank=True, help_text='URL link for product usage display.  Should be a full URL so that it works in both facility applications and fiine', max_length=255, null=True),
         ),
-        migrations.AlterUniqueTogether(
-            name='rate',
-            unique_together={('product', 'name')},
-        ),
+#        migrations.AlterUniqueTogether(
+#            name='rate',
+#            unique_together={('product', 'name')},
+#        ),
     ]
