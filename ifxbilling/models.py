@@ -305,6 +305,7 @@ class Rate(NaturalKeyModel):
     '''
     class Meta:
         db_table = 'rate'
+        unique_together = ('product', 'name', 'version')
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     name = models.CharField(
@@ -342,6 +343,12 @@ class Rate(NaturalKeyModel):
     is_active = models.BooleanField(
         default=True,
         help_text='Is this rate currently active?'
+    )
+    version = models.IntegerField(
+        null=False,
+        blank=False,
+        default=1,
+        help_text='Version of the rate'
     )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

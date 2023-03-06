@@ -250,7 +250,7 @@ def update_products():
                 models.Product.objects.create(**fiine_product_data)
 
 
-def create_new_product(product_name, product_description, facility, object_code_category='Technical Services', billing_calculator=None):
+def create_new_product(product_name, product_description, facility, object_code_category='Technical Services', billing_calculator=None, billable=True):
     '''
     Creates product record in fiine, and creates the local record with product number
     '''

@@ -269,7 +269,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
             'facility': validated_data['facility'],
-            #'billable': validated_data['billable'],  TODO: add back in when client is updated to add billable
+            'billable': validated_data['billable'],
         }
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             kwargs['billing_calculator'] = validated_data['billing_calculator']
@@ -334,19 +334,53 @@ class ProductSerializer(serializers.ModelSerializer):
             instance.billing_calculator = validated_data['billing_calculator']
 
         instance.save()
-        instance.rate_set.all().delete()
 
+        # Only is_active flag can be updated for a Rate and only to set from true to false; other updates are an error
+        # If there is a new Rate, the version must be incremented
         if 'rates' in self.initial_data and self.initial_data['rates']:
+            # Enure that rate_data is not less than current number of rates
+            if len(self.initial_data['rates']) < models.Rate.objects.filter(product=instance).count():
+                raise serializers.ValidationError(
+                    detail={
+                        'rates': 'Rates cannot be removed'
+                    }
+                )
             for rate_data in self.initial_data['rates']:
-                try:
-                    models.Rate.objects.create(product=instance, **rate_data)
-                except Exception as e:
-                    logger.exception(e)
-                    raise serializers.ValidationError(
-                        detail={
-                            'rates': str(e)
-                        }
-                    )
+                if rate_data['id']:
+                    try:
+                        rate = models.Rate.objects.get(id=rate_data['id'])
+                        for field in ['name', 'decimal_price', 'max_qty', 'price', 'units']:
+                            if rate_data.get(field) != getattr(rate, field):
+                                raise serializers.ValidationError(
+                                    detail={
+                                        'rates': f'Cannot change {field} on a Rate. Must create a new Rate and deactivate old one.'
+                                    }
+                                )
+                        if not rate_data['is_active'] and rate.is_active:
+                            rate.is_active = rate_data['is_active']
+                            rate.save()
+                    except models.Rate.DoesNotExist as dne:
+                        raise serializers.ValidationError(
+                            detail={
+                                'rates': f'Cannot find rate with id {rate_data["id"]}'
+                            }
+                        ) from dne
+                else:
+                    # If there is a previous rate with the same name and product, increment the version
+                    old_rates = models.Rate.objects.filter(product=instance, name=rate_data['name']).order_by('-version')
+                    if old_rates:
+                        rate_data['version'] = old_rates[0].version + 1
+                    else:
+                        rate_data['version'] = 1
+                    try:
+                        models.Rate.objects.create(product=instance, **rate_data)
+                    except Exception as e:
+                        logger.exception(e)
+                        raise serializers.ValidationError(
+                            detail={
+                                'rates': str(e)
+                            }
+                        )
             # Reload the object with the new rates and return
             instance = models.Product.objects.get(id=instance.id)
         return instance
