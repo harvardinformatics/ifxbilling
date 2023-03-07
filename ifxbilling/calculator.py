@@ -561,14 +561,11 @@ class NewBillingCalculator():
         brs = []
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
-                account_percentages = self.get_account_percentages_for_product_usage(product_usage, **kwargs)
-                quantities_by_rate = self.get_quantities_by_rate(product_usage, account_percentages, **kwargs)
-                logger.debug('Creating %d billing records for product_usage %s', len(account_percentages), str(product_usage))
-                for quantity, rate in quantities_by_rate:
-                    for account, percent in account_percentages:
-                        br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, quantity=quantity, rate=rate, **kwargs)
-                        if br: # can be none
-                            brs.append(br)
+                billing_data_dicts = self.get_billing_data_dicts_for_usage(product_usage, **kwargs)
+                for billing_data_dict in billing_data_dicts:
+                    br = self.generate_billing_record_for_usage(year, month, product_usage, billing_data_dict)
+                    if br: # can be none
+                        brs.append(br)
 
                 # processing complete update any product_usage_processing as resolved
                 self.update_product_usage_processing(product_usage, resolved=True)
@@ -581,31 +578,27 @@ class NewBillingCalculator():
             raise ex
         return brs
 
-    def get_quantities_by_rate(self, product_usage, account_percentages, **kwargs):
+    def get_billing_data_dicts_for_usage(self, product_usage, **kwargs):
         '''
-        Return a list of (quantity, rate) tuples so that separate billing records can be created
-        for different components of the usage; quantity is a Decimal.  If the usage represents a reservation that spans
-        regular and off hours, for example, the time can be split into regular hours and off hours
-        along with their respective rates.
+        Return a list of dictionaries containing the data needed to create a billing record from the usage
+        Each dict should be enough for a single billing record.
 
-        By default a quantity that corresponds to the entire product usage and the first active rate
-        are returned.
+        This base class just returns a dict of 'account' and 'percent' corresponding to any splits along with the first active rate.
 
         :param product_usage: The :class:`~ifxbilling.models.ProductUsage` associated with the instance
         :type product_usage: :class:`~ifxbilling.models.ProductUsage`
 
-        :param account_percentages: List of tuples of :class:`~ifxbilling.models.Account` and the percent of a split.  Added
-            so that things like external vs. internal rates can be determined.
-        :type account_percentages: list
-
-        :return: A list of tuples of the form (:class:`~decimal.Decimal`, :class:`~ifxbilling.models.Rate`)
+        :return: A list of dictionaries
         :rtype: list
         '''
-
+        data_dicts = self.get_account_percentages_for_product_usage(product_usage)
         rate = product_usage.product.rate_set.filter(is_active=True).first()
         if not rate:
-            raise Exception(f'Unable to find an active Rate for product {product_usage.product}')
-        return [(product_usage.decimal_quantity, rate)]
+            raise Exception(f'Cannot find an active rate for product {product_usage.product}')
+
+        for data_dict in data_dicts:
+            data_dict['rate_obj'] = rate
+        return data_dicts
 
     def update_product_usage_processing(self, product_usage, resolved=True, message=None):
         '''
@@ -647,7 +640,7 @@ class NewBillingCalculator():
             )
         return pup
 
-    def generate_billing_record_for_usage(self, year, month, product_usage, account, percent, **kwargs):
+    def generate_billing_record_for_usage(self, year, month, product_usage, billing_data_dict):
         '''
         Create a single :class:`~ifxbilling.models.BillingRecord` for a :class:`~ifxbilling.models.ProductUsage`
 
@@ -665,18 +658,23 @@ class NewBillingCalculator():
         :param product_usage: The :class:`~ifxbilling.models.ProductUsage` being processed.
         :type product_usage: :class:`~ifxbilling.models.ProductUsage`
 
-        :param account: The :class:`~ifxbilling.models.Account` being charged.
-        :type account: :class:`~ifxbilling.models.Account`
+        :param billing_data_dict: A dictionary of data needed for creating the billing record.  The should at least
+            include the :class:`~ifxbilling.models.Account`.
+        :type account: dict
 
-        :param percent: The integer percent of the total :class:`~ifxbilling.models.ProductUsage` charge that this
-            :class:`~ifxbilling.models.BillingRecord` represents
-
+        :return: The created billing record
+        :rtype: :class:`~ifxbilling.models.BillingRecord`
         '''
-        transactions_data = self.calculate_charges(product_usage, percent, **kwargs)
+        account = billing_data_dict.pop('account')
+        percent = billing_data_dict.pop('percent')
+        rate_obj = billing_data_dict.pop('rate_obj')
+        if not account or not rate_obj or percent is None:
+            raise Exception('Cannot generate billing record without a percent, rate_obj or account')
+
+        transactions_data = self.calculate_charges(product_usage, percent)
         if not transactions_data:
             return None
-        rate = self.get_billing_record_rate_description(transactions_data, **kwargs)
-        return self.create_billing_record(year, month, product_usage, account, transactions_data, percent, rate)
+        return self.create_billing_record(year, month, product_usage, account, percent, rate_obj, transactions_data, billing_data_dict)
 
     def get_account_percentages_for_product_usage(self, product_usage, **kwargs):
         '''
@@ -720,7 +718,10 @@ class NewBillingCalculator():
             pct_total = 0
             for user_product_account in user_product_accounts:
                 account_percentages.append(
-                    (user_product_account.account, user_product_account.percent)
+                    {
+                        'account': user_product_account.account,
+                        'percent': user_product_account.percent,
+                    }
                 )
                 pct_total += user_product_account.percent
 
@@ -735,7 +736,10 @@ class NewBillingCalculator():
                 is_valid=True).first()
             if user_account:
                 account_percentages.append(
-                    (user_account.account, 100)
+                    {
+                        'account': user_account.account,
+                        'percent': 100,
+                    }
                 )
             else:
                 raise Exception(f'Unable to find an active user account record for {product_usage.product_user} with organization {organization.name}, product {product_usage.product} and start_date {product_usage.start_date}')
@@ -822,6 +826,8 @@ class NewBillingCalculator():
 
     def get_billing_record_rate_description(self, transactions_data, **kwargs):
         '''
+        This may no longer be needed if transactions are becoming pointless
+
         Get the rate description for the BillingRecord from the transactions_data.
         Basically just picking the first one.  If there are no transactions an exception is raised.
 
@@ -834,7 +840,7 @@ class NewBillingCalculator():
             raise Exception('No transactions.  Cannot set a rate on the billing record.')
         return transactions_data[0]['rate']
 
-    def create_billing_record(self, year, month, product_usage, account, transactions_data, percent, rate, description=None, initial_state=INITIAL_STATE):
+    def create_billing_record(self, year, month, product_usage, account, percent, rate_obj, transactions_data, billing_data_dict):
         '''
         Create (and save) a BillingRecord and related Transactions.
         If an existing BillingRecord has the same product_usage and account an Exception will be thrown.????
@@ -851,17 +857,32 @@ class NewBillingCalculator():
         :param account: The :class:`~ifxbilling.models.Account` being charged.
         :type account: :class:`~ifxbilling.models.Account`
 
-        :param transactions_data: List of dicts that can be used to create :class:`~ifxbilling.models.Transaction` instances
-        :type transactions_data: list
-
         :param percent: Percent of total :class:`~ifxbilling.models.ProductUsage` charge
             represented by this :class:`~ifxbilling.models.BillingRecord`
         :type percent: int
 
-        :return: The :class:`~ifxbilling.models.BillingRecord`.  Might be None????
+        :param transactions_data: List of dicts that can be used to create :class:`~ifxbilling.models.Transaction` instances
+        :type transactions_data: list
+
+        :param billing_data_dict: Dictionary of additional information needed to create the billing record.  This function checks for
+            initial_state, description, rate_description, decimal_quantity, billing_record_state_user, billing_record_state_comment.
+            Latter two are args for the setState function and default to product_usage.product_user and 'created by billing calculator'.
+            decimal_quantity defaults to the product_usage.decimal_quantity and initial_state defaults to the value of INITIAL_STATE.
+            rate_description defaults to value of get_rate_description
+        :type transactions_data: list
+
+        :return: The :class:`~ifxbilling.models.BillingRecord`.
         :rtype: :class:`~ifxbilling.models.BillingRecord`
         '''
+        initial_state = billing_data_dict.get('initial_state', INITIAL_STATE)
+        description = billing_data_dict.get('description')
+        rate_description = billing_data_dict.get('rate_description', self.get_rate_description(rate_obj))
+        decimal_quantity = billing_data_dict.get('decimal_quantity', product_usage.decimal_quantity)
+        billing_record_state_user = billing_data_dict.get('billing_record_state_user', product_usage.product_user)
+        billing_record_state_comment = billing_data_dict.get('billing_record_state_comment', 'created by billing calculator')
+
         billing_record = None
+
         try:
             BillingRecord.objects.get(product_usage=product_usage, account=account, percent=percent)
             raise Exception(f'Billing record for product usage {product_usage} and account {account} already exists.')
@@ -877,14 +898,16 @@ class NewBillingCalculator():
                     description=description,
                     current_state=initial_state,
                     percent=percent,
-                    rate=rate,
+                    rate=rate_description,
+                    rate_obj=rate_obj,
+                    decimal_quantity=decimal_quantity,
                 )
                 billing_record.save()
                 billing_record_state = BillingRecordState(
                     billing_record=billing_record,
                     name=initial_state,
-                    user=product_usage.product_user,
-                    comment='created by billing calculator'
+                    user=billing_record_state_user,
+                    comment=billing_record_state_comment
                 )
                 billing_record_state.save()
             trxn = Transaction(
