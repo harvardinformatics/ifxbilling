@@ -782,7 +782,7 @@ class NewBillingCalculator():
         )
         return transactions_data
 
-    def get_rate(self, product_usage):
+    def get_rate(self, product_usage, **kwargs):
         '''
         return the rate for calculating the charge for this product_usage
         '''
