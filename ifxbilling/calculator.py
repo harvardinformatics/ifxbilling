@@ -561,8 +561,8 @@ class NewBillingCalculator():
         brs = []
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
-                quantities_by_rate = self.get_quantities_by_rate(product_usage, **kwargs)
                 account_percentages = self.get_account_percentages_for_product_usage(product_usage, **kwargs)
+                quantities_by_rate = self.get_quantities_by_rate(product_usage, account_percentages, **kwargs)
                 logger.debug('Creating %d billing records for product_usage %s', len(account_percentages), str(product_usage))
                 for quantity, rate in quantities_by_rate:
                     for account, percent in account_percentages:
@@ -581,7 +581,7 @@ class NewBillingCalculator():
             raise ex
         return brs
 
-    def get_quantities_by_rate(self, product_usage, **kwargs):
+    def get_quantities_by_rate(self, product_usage, account_percentages, **kwargs):
         '''
         Return a list of (quantity, rate) tuples so that separate billing records can be created
         for different components of the usage; quantity is a Decimal.  If the usage represents a reservation that spans
@@ -593,6 +593,10 @@ class NewBillingCalculator():
 
         :param product_usage: The :class:`~ifxbilling.models.ProductUsage` associated with the instance
         :type product_usage: :class:`~ifxbilling.models.ProductUsage`
+
+        :param account_percentages: List of tuples of :class:`~ifxbilling.models.Account` and the percent of a split.  Added
+            so that things like external vs. internal rates can be determined.
+        :type account_percentages: list
 
         :return: A list of tuples of the form (:class:`~decimal.Decimal`, :class:`~ifxbilling.models.Rate`)
         :rtype: list
