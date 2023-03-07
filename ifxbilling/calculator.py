@@ -561,12 +561,14 @@ class NewBillingCalculator():
         brs = []
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
+                quantities_by_rate = self.get_quantities_by_rate(product_usage, **kwargs)
                 account_percentages = self.get_account_percentages_for_product_usage(product_usage, **kwargs)
                 logger.debug('Creating %d billing records for product_usage %s', len(account_percentages), str(product_usage))
-                for account, percent in account_percentages:
-                    br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, **kwargs)
-                    if br: # can be none
-                        brs.append(br)
+                for quantity, rate in quantities_by_rate:
+                    for account, percent in account_percentages:
+                        br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, quantity=quantity, rate=rate, **kwargs)
+                        if br: # can be none
+                            brs.append(br)
 
                 # processing complete update any product_usage_processing as resolved
                 self.update_product_usage_processing(product_usage, resolved=True)
@@ -578,6 +580,28 @@ class NewBillingCalculator():
             self.update_product_usage_processing(product_usage, resolved=False, message=str(ex))
             raise ex
         return brs
+
+    def get_quantities_by_rate(self, product_usage, **kwargs):
+        '''
+        Return a list of (quantity, rate) tuples so that separate billing records can be created
+        for different components of the usage; quantity is a Decimal.  If the usage represents a reservation that spans
+        regular and off hours, for example, the time can be split into regular hours and off hours
+        along with their respective rates.
+
+        By default a quantity that corresponds to the entire product usage and the first active rate
+        are returned.
+
+        :param product_usage: The :class:`~ifxbilling.models.ProductUsage` associated with the instance
+        :type product_usage: :class:`~ifxbilling.models.ProductUsage`
+
+        :return: A list of tuples of the form (:class:`~decimal.Decimal`, :class:`~ifxbilling.models.Rate`)
+        :rtype: list
+        '''
+
+        rate = product_usage.product.rate_set.filter(is_active=True).first()
+        if not rate:
+            raise Exception(f'Unable to find an active Rate for product {product_usage.product}')
+        return [(product_usage.decimal_quantity, rate)]
 
     def update_product_usage_processing(self, product_usage, resolved=True, message=None):
         '''
@@ -595,7 +619,8 @@ class NewBillingCalculator():
         :param message: String message if not resolved
         :type message: str, optional
 
-        :return: :class:`~ifxbilling.models.ProductUsageProcessing`
+        :return: A ProductUsageProcessing instance
+        :rtype: :class:`~ifxbilling.models.ProductUsageProcessing`
         '''
         if resolved:
             message = 'OK'
@@ -725,19 +750,21 @@ class NewBillingCalculator():
 
         '''
         product = product_usage.product
-        rate = self.get_rate(product_usage)
+        rate = kwargs['rate'] if kwargs.get('rate') else self.get_rate(product_usage)
         if rate.units != product_usage.units:
             raise Exception(f'Units for product usage do not match the active rate for {product}')
-        rate_desc = self.get_rate_description(rate, **kwargs)
+        rate_desc = self.get_rate_description(rate)
 
         transactions_data = []
 
         percent_str = ''
         if percent < 100:
             percent_str = f'{percent}% of '
-        description = f'{percent_str}{product_usage.quantity} {product_usage.units} at {rate_desc}'
-        charge = round(rate.price * product_usage.quantity * percent / 100)
-        decimal_charge = rate.decimal_price * product_usage.decimal_quantity * Decimal(percent / 100)
+
+        quantity = kwargs['quantity'] if kwargs.get('quantity') else product_usage.decimal_quantity
+        description = f'{percent_str}{quantity} {product_usage.units} at {rate_desc}'
+        charge = round(rate.price * quantity * percent / 100)
+        decimal_charge = rate.decimal_price * quantity * Decimal(percent / 100)
         user = product_usage.product_user
 
         transactions_data.append(
@@ -762,7 +789,7 @@ class NewBillingCalculator():
             raise Exception(f'Cannot find an active rate for {product_usage.product.product_name}')
 
 
-    def get_rate_description(self, rate, **kwargs):
+    def get_rate_description(self, rate):
         '''
         Text description of rate for use in txn rate and description.
         Empty string is returned if rate.price or rate.units is None.
