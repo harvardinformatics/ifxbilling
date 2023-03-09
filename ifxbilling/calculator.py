@@ -673,7 +673,7 @@ class NewBillingCalculator():
         :rtype: :class:`~ifxbilling.models.BillingRecord`
         '''
 
-        transactions_data = self.calculate_charges(product_usage, percent, rate_obj, decimal_quantity)
+        transactions_data = self.calculate_charges(product_usage, percent, rate_obj, decimal_quantity, billing_data_dict)
         if not transactions_data:
             return None
         return self.create_billing_record(year, month, product_usage, account, percent, rate_obj, transactions_data, billing_data_dict)
