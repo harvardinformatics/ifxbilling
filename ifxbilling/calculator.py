@@ -563,7 +563,11 @@ class NewBillingCalculator():
             with transaction.atomic():
                 billing_data_dicts = self.get_billing_data_dicts_for_usage(product_usage, **kwargs)
                 for billing_data_dict in billing_data_dicts:
-                    br = self.generate_billing_record_for_usage(year, month, product_usage, billing_data_dict)
+                    account = billing_data_dict.pop('account')
+                    percent = billing_data_dict.pop('percent')
+                    rate_obj = billing_data_dict.pop('rate_obj')
+                    decimal_quantity = billing_data_dict.pop('decimal_quantity')
+                    br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, rate_obj, decimal_quantity, billing_data_dict)
                     if br: # can be none
                         brs.append(br)
 
@@ -583,7 +587,9 @@ class NewBillingCalculator():
         Return a list of dictionaries containing the data needed to create a billing record from the usage
         Each dict should be enough for a single billing record.
 
-        This base class just returns a dict of 'account' and 'percent' corresponding to any splits along with the first active rate.
+        This base class just returns a dict of 'rate_obj', 'decimal_quantity', 'account' and 'percent' corresponding
+        to any splits along with the first active rate. The 'rate_obj' is the first active rate for the product and
+        the 'decimal_quantity' is the entire value from product_usage.
 
         :param product_usage: The :class:`~ifxbilling.models.ProductUsage` associated with the instance
         :type product_usage: :class:`~ifxbilling.models.ProductUsage`
@@ -598,6 +604,7 @@ class NewBillingCalculator():
 
         for data_dict in data_dicts:
             data_dict['rate_obj'] = rate
+            data_dict['decimal_quantity'] = product_usage.decimal_quantity
         return data_dicts
 
     def update_product_usage_processing(self, product_usage, resolved=True, message=None):
@@ -640,7 +647,7 @@ class NewBillingCalculator():
             )
         return pup
 
-    def generate_billing_record_for_usage(self, year, month, product_usage, billing_data_dict):
+    def generate_billing_record_for_usage(self, year, month, product_usage, account, percent, rate_obj, decimal_quantity, billing_data_dict):
         '''
         Create a single :class:`~ifxbilling.models.BillingRecord` for a :class:`~ifxbilling.models.ProductUsage`
 
@@ -665,13 +672,8 @@ class NewBillingCalculator():
         :return: The created billing record
         :rtype: :class:`~ifxbilling.models.BillingRecord`
         '''
-        account = billing_data_dict.pop('account')
-        percent = billing_data_dict.pop('percent')
-        rate_obj = billing_data_dict.pop('rate_obj')
-        if not account or not rate_obj or percent is None:
-            raise Exception('Cannot generate billing record without a percent, rate_obj or account')
 
-        transactions_data = self.calculate_charges(product_usage, percent)
+        transactions_data = self.calculate_charges(product_usage, percent, rate_obj, decimal_quantity)
         if not transactions_data:
             return None
         return self.create_billing_record(year, month, product_usage, account, percent, rate_obj, transactions_data, billing_data_dict)
@@ -693,7 +695,7 @@ class NewBillingCalculator():
         :raises: Exception if set of matching :class:`~ifxbilling.models.UserProductAccount` percents do not add up to 100
         :raises: Exception if no matching active authorization can be found
 
-        :return: list of (:class:`~ifxbilling.models.Account`, percent) tuples
+        :return: list of dicts of the form { 'account': :class:`~ifxbilling.models.Account`, 'percent': percent }
         :rtype: list
         '''
         account_percentages = []
@@ -748,7 +750,7 @@ class NewBillingCalculator():
         return account_percentages
 
 
-    def calculate_charges(self, product_usage, percent=100, **kwargs):
+    def calculate_charges(self, product_usage, percent, rate_obj, decimal_quantity, billing_data_dict=None):
         '''
         Calculates one or more charges that will be used to create transactions
         using a product_usage and an optional usage_data dictionary.
@@ -758,10 +760,9 @@ class NewBillingCalculator():
 
         '''
         product = product_usage.product
-        rate = kwargs['rate'] if kwargs.get('rate') else self.get_rate(product_usage)
-        if rate.units != product_usage.units:
+        if rate_obj.units != product_usage.units:
             raise Exception(f'Units for product usage do not match the active rate for {product}')
-        rate_desc = self.get_rate_description(rate)
+        rate_desc = self.get_rate_description(rate_obj)
 
         transactions_data = []
 
@@ -769,16 +770,14 @@ class NewBillingCalculator():
         if percent < 100:
             percent_str = f'{percent}% of '
 
-        quantity = kwargs['quantity'] if kwargs.get('quantity') else product_usage.decimal_quantity
-        description = f'{percent_str}{quantity} {product_usage.units} at {rate_desc}'
-        charge = round(rate.price * quantity * percent / 100)
-        decimal_charge = rate.decimal_price * quantity * Decimal(percent / 100)
+        description = f'{percent_str}{decimal_quantity} {product_usage.units} at {rate_desc}'
+        decimal_charge = rate_obj.decimal_price * decimal_quantity * Decimal(percent / 100)
         user = product_usage.product_user
 
         transactions_data.append(
             {
                 'decimal_charge': decimal_charge,
-                'charge': charge,
+                'charge': round(decimal_charge),
                 'description': description,
                 'author': user,
                 'rate': rate_desc,
@@ -865,17 +864,17 @@ class NewBillingCalculator():
         :type transactions_data: list
 
         :param billing_data_dict: Dictionary of additional information needed to create the billing record.  This function checks for
-            initial_state, description, rate_description, decimal_quantity, billing_record_state_user, billing_record_state_comment.
+            initial_state, billing_record_description, rate_description, decimal_quantity, billing_record_state_user, billing_record_state_comment.
             Latter two are args for the setState function and default to product_usage.product_user and 'created by billing calculator'.
             decimal_quantity defaults to the product_usage.decimal_quantity and initial_state defaults to the value of INITIAL_STATE.
-            rate_description defaults to value of get_rate_description
+            rate_description and billing_record_description default to value of get_rate_description
         :type transactions_data: list
 
         :return: The :class:`~ifxbilling.models.BillingRecord`.
         :rtype: :class:`~ifxbilling.models.BillingRecord`
         '''
         initial_state = billing_data_dict.get('initial_state', INITIAL_STATE)
-        description = billing_data_dict.get('description')
+        description = billing_data_dict.get('billing_record_description', self.get_rate_description(rate_obj))
         rate_description = billing_data_dict.get('rate_description', self.get_rate_description(rate_obj))
         decimal_quantity = billing_data_dict.get('decimal_quantity', product_usage.decimal_quantity)
         billing_record_state_user = billing_data_dict.get('billing_record_state_user', product_usage.product_user)
