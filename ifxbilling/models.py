@@ -61,13 +61,15 @@ def reset_billing_record_charge(billing_record):
     billing_record_charge = 0
     billing_record_decimal_charge = Decimal('0.0000')
     transactions = billing_record.transaction_set.all()
+    description_lines = []
     for trx in sorted(transactions, key=lambda transaction: transaction.created):
         billing_record_charge += trx.charge
         if trx.decimal_charge is not None:
             billing_record_decimal_charge += trx.decimal_charge
+        description_lines.append(trx.description)
     billing_record.charge = billing_record_charge
     billing_record.decimal_charge = billing_record_decimal_charge
-    billing_record.description = str(billing_record)
+    billing_record.description = '\n'.join(description_lines)
     post_save.disconnect(billing_record_post_save, sender=BillingRecord)
     billing_record.save()
     post_save.connect(billing_record_post_save, sender=BillingRecord)

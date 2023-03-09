@@ -864,17 +864,16 @@ class NewBillingCalculator():
         :type transactions_data: list
 
         :param billing_data_dict: Dictionary of additional information needed to create the billing record.  This function checks for
-            initial_state, billing_record_description, rate_description, decimal_quantity, billing_record_state_user, billing_record_state_comment.
+            initial_state, rate_description, decimal_quantity, billing_record_state_user, billing_record_state_comment.
             Latter two are args for the setState function and default to product_usage.product_user and 'created by billing calculator'.
             decimal_quantity defaults to the product_usage.decimal_quantity and initial_state defaults to the value of INITIAL_STATE.
-            rate_description and billing_record_description default to value of get_rate_description
+            rate_description defaults to value of get_rate_description
         :type transactions_data: list
 
         :return: The :class:`~ifxbilling.models.BillingRecord`.
         :rtype: :class:`~ifxbilling.models.BillingRecord`
         '''
         initial_state = billing_data_dict.get('initial_state', INITIAL_STATE)
-        description = billing_data_dict.get('billing_record_description', self.get_rate_description(rate_obj))
         rate_description = billing_data_dict.get('rate_description', self.get_rate_description(rate_obj))
         decimal_quantity = billing_data_dict.get('decimal_quantity', product_usage.decimal_quantity)
         billing_record_state_user = billing_data_dict.get('billing_record_state_user', product_usage.product_user)
@@ -894,7 +893,6 @@ class NewBillingCalculator():
                     account=account,
                     year=year,
                     month=month,
-                    description=description,
                     current_state=initial_state,
                     percent=percent,
                     rate=rate_description,
@@ -911,7 +909,6 @@ class NewBillingCalculator():
                 billing_record_state.save()
             trxn = Transaction(
                 billing_record=billing_record,
-                charge=transaction_data['charge'],
                 decimal_charge=transaction_data['decimal_charge'],
                 description=transaction_data['description'],
                 author=transaction_data['author'],
