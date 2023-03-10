@@ -882,8 +882,8 @@ class NewBillingCalculator():
         billing_record = None
 
         try:
-            BillingRecord.objects.get(product_usage=product_usage, account=account, percent=percent)
-            raise Exception(f'Billing record for product usage {product_usage} and account {account} already exists.')
+            BillingRecord.objects.get(product_usage=product_usage, account=account, percent=percent, rate_obj=rate_obj, decimal_quantity=decimal_quantity)
+            raise Exception(f'Billing record for product usage {product_usage} and account {account} already exists with percent = {percent}, rate = {rate_obj} and decimal_quantity = {decimal_quantity}.')
         except BillingRecord.DoesNotExist:
             pass
         for transaction_data in transactions_data:
