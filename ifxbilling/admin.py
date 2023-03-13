@@ -244,20 +244,22 @@ class BillingRecordAdmin(admin.ModelAdmin):
         'rate_obj',
         'product_usage_link_text',
         'product_usage_url',
+        'start_date',
+        'end_date',
     )
     list_display = (
         'id',
         'product_usage',
         'account',
-        'charge',
         'decimal_charge',
         'percent',
         'month',
         'year',
         'current_state',
         'description',
-        'rate',
         'rate_obj',
+        'start_date',
+        'end_date',
     )
     ordering = ('year', 'month', 'product_usage__id')
     search_fields = (

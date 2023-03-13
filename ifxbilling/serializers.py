@@ -605,6 +605,8 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     product_usage_url = serializers.CharField(read_only=True)
     rate_obj = RateSerializer(read_only=True)
     decimal_quantity = serializers.DecimalField(read_only=True, max_digits=19, decimal_places=4)
+    start_date = serializers.DateTimeField()
+    end_date = serializers.DateTimeField()
 
     class Meta:
         model = models.BillingRecord
@@ -629,8 +631,10 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             'product_usage_url',
             'rate_obj',
             'decimal_quantity',
+            'start_date',
+            'end_date',
         )
-        read_only_fields = ('id', 'created', 'updated', 'rate')
+        read_only_fields = ('id', 'created', 'updated', 'rate', 'rate_obj')
         list_serializer_class = BillingRecordListSerializer
 
     def get_current_user(self):

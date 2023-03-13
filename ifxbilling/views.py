@@ -382,6 +382,8 @@ def get_billing_record_list(request):
             br.month,
             br.product_usage_link_text,
             br.product_usage_url,
+            CONVERT_TZ(br.start_date, 'UTC', '{local_tz}') as br_start_date,
+            CONVERT_TZ(br.end_date, 'UTC', '{local_tz}') as br_end_date,
             br.decimal_quantity as billing_record_decimal_quantity,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
@@ -488,6 +490,8 @@ def get_billing_record_list(request):
                     'month': row_dict['month'],
                     'product_usage_link_text': row_dict['product_usage_link_text'],
                     'product_usage_url': row_dict['product_usage_url'],
+                    'start_date': row_dict['br_start_date'],
+                    'end_date': row_dict['br_end_date'],
                     'account': {
                         'id': row_dict['account_id'],
                         'code': row_dict['account_code'],

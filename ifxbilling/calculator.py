@@ -878,6 +878,8 @@ class NewBillingCalculator():
         decimal_quantity = billing_data_dict.get('decimal_quantity', product_usage.decimal_quantity)
         billing_record_state_user = billing_data_dict.get('billing_record_state_user', product_usage.product_user)
         billing_record_state_comment = billing_data_dict.get('billing_record_state_comment', 'created by billing calculator')
+        start_date = billing_data_dict.get('start_date', product_usage.start_date)
+        end_date = billing_data_dict.get('end_date', product_usage.end_date)
 
         billing_record = None
 
@@ -898,6 +900,8 @@ class NewBillingCalculator():
                     rate=rate_description,
                     rate_obj=rate_obj,
                     decimal_quantity=decimal_quantity,
+                    start_date=start_date,
+                    end_date=end_date,
                 )
                 billing_record.save()
                 billing_record_state = BillingRecordState(

@@ -632,6 +632,16 @@ class BillingRecord(models.Model):
         blank=True,
         help_text='Decimal quantity of the Product used for this billing record'
     )
+    start_date = models.DateTimeField(
+        help_text='Start date for time span billed.',
+        null=True,
+        blank=True,
+    )
+    end_date = models.DateTimeField(
+        help_text='End date for the time span billed.',
+        null=True,
+        blank=True,
+    )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
