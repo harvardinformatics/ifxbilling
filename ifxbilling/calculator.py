@@ -387,6 +387,8 @@ class NewBillingCalculator():
     # if subclassing set the facility name constant in your class
     FACILITY_NAME = None
 
+    PUP_MESSAGES = {}
+
     def __init__(self):
         self.set_facility()
         self.verbosity = self.QUIET
@@ -609,8 +611,12 @@ class NewBillingCalculator():
 
     def update_product_usage_processing(self, product_usage, resolved=True, message=None):
         '''
-        Create or update a :class:`~ifxbilling.models.ProductUsageProcessing` instance.  If `resolved=True`,
-        the message 'OK' is set.  Otherwise, the message parameter is used.
+        Create or update a :class:`~ifxbilling.models.ProductUsageProcessing` instance.
+        If `resolved=True` and `message=None` the message 'OK' is set.
+        Otherwise, the message parameter is used.
+
+        If the message matches one of the values of the PUP_MESSAGES dictionary, resolved will be
+        set to True.  This is for handling "exceptions" that are actually valid non-charge situations.
 
         The PUP is returned, but only for debugging purposes; it is not directly used by the calling code.
 
@@ -626,8 +632,11 @@ class NewBillingCalculator():
         :return: A ProductUsageProcessing instance
         :rtype: :class:`~ifxbilling.models.ProductUsageProcessing`
         '''
-        if resolved:
+        if resolved and message is None:
             message = 'OK'
+
+        if message in self.PUP_MESSAGES.values():
+            resolved = True
 
         message = message[-2000:] # limit to last 2000 chars (db column max_length)
 
