@@ -605,8 +605,8 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     product_usage_url = serializers.CharField(read_only=True)
     rate_obj = RateSerializer(read_only=True)
     decimal_quantity = serializers.DecimalField(read_only=True, max_digits=19, decimal_places=4)
-    start_date = serializers.DateTimeField()
-    end_date = serializers.DateTimeField()
+    start_date = serializers.DateTimeField(read_only=True,)  # Read only because an empty value can't be properly validated
+    end_date = serializers.DateTimeField(read_only=True,)
 
     class Meta:
         model = models.BillingRecord
@@ -636,6 +636,13 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'created', 'updated', 'rate', 'rate_obj')
         list_serializer_class = BillingRecordListSerializer
+
+    def to_internal_value(self, data):
+        if data.get('start_date') == '':
+            data['start_date'] = None
+        if data.get('end_date') == '':
+            data['end_date'] = None
+        return super().to_internal_value(data)
 
     def get_current_user(self):
         '''
@@ -801,6 +808,14 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         # Set the "author"
         validated_data['author'] = self.get_billing_record_author(self.initial_data)
 
+        # If start_date and end_date are not set, get them from the product_usage
+        validated_data['start_date'] = self.initial_data.get('start_date')
+        if not validated_data['start_date']:
+            validated_data['start_date'] = product_usage.start_date
+        validated_data['end_date'] = self.initial_data.get('end_date')
+        if not validated_data['end_date']:
+            validated_data['end_date'] = product_usage.end_date
+
         # Create the billing record.  Charge will be 0
         billing_record = models.BillingRecord.objects.create(**validated_data)
 
@@ -906,6 +921,14 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                     'account': f'Cannot find code {account_data["code"]} to update billing record {instance}'
                 }
             ) from dne
+
+        # If start_date and end_date are not set, get them from the product_usage
+        validated_data['start_date'] = initial_data.get('start_date')
+        if not validated_data['start_date']:
+            validated_data['start_date'] = product_usage.start_date
+        validated_data['end_date'] = initial_data.get('end_date')
+        if not validated_data['end_date']:
+            validated_data['end_date'] = product_usage.end_date
 
         instance.description = validated_data['description']
         instance.updated_by = self.get_billing_record_author(initial_data)
