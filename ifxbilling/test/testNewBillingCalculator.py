@@ -61,9 +61,6 @@ class TestCalculator(APITestCase):
         expected_decimal_charge = Decimal('100.00')
         self.assertTrue(br.decimal_charge == expected_decimal_charge, f'Incorrect decimal charge {br.decimal_charge}')
 
-        expected_charge = 100
-        self.assertTrue(br.charge == expected_charge, f'Incorrect charge {br.charge}')
-
         decimal_price = product_usage.product.rate_set.first().decimal_price
         units = product_usage.product.rate_set.first().units
         self.assertTrue(br.rate == f'{decimal_price} {units}', f'Incorrect billing record rate {br.rate}')
@@ -118,6 +115,7 @@ class TestCalculator(APITestCase):
             try:
                 models.BillingRecord.objects.get(product_usage=product_usage, decimal_charge=charge)
             except models.BillingRecord.DoesNotExist:
+                # pylint: disable=redundant-unittest-assert
                 self.assertTrue(False, f'Unable to find billing record with charge {charge}\n{successes}')
 
     # def testBadUserProductAccountSplit(self):

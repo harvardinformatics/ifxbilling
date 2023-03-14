@@ -382,6 +382,9 @@ def get_billing_record_list(request):
             br.month,
             br.product_usage_link_text,
             br.product_usage_url,
+            CONVERT_TZ(br.start_date, 'UTC', '{local_tz}') as br_start_date,
+            CONVERT_TZ(br.end_date, 'UTC', '{local_tz}') as br_end_date,
+            br.decimal_quantity as billing_record_decimal_quantity,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
             product_user_organization.slug as product_user_primary_affiliation,
@@ -403,7 +406,11 @@ def get_billing_record_list(request):
             txn.decimal_charge as transaction_decimal_charge,
             txn.rate as transaction_rate,
             txn_user.full_name as transaction_user_full_name,
-            txn_user.ifxid as transaction_user_ifxid
+            txn_user.ifxid as transaction_user_ifxid,
+            r.name as rate_obj_name,
+            r.id as rate_obj_id,
+            r.decimal_price as rate_obj_decimal_price,
+            r.is_active as rate_obj_is_active
         from
             billing_record br
             inner join product_usage pu on pu.id = br.product_usage_id
@@ -415,6 +422,7 @@ def get_billing_record_list(request):
             inner join transaction txn on txn.billing_record_id = br.id
             inner join ifxuser txn_user on txn_user.id = txn.author_id
             inner join facility f on f.id = p.facility_id
+            left join rate r on br.rate_obj_id = r.id
     '''
     where_clauses = []
     query_args = []
@@ -474,6 +482,7 @@ def get_billing_record_list(request):
                     'id': billing_record_id,
                     'charge': row_dict['billing_record_charge'],
                     'decimal_charge': row_dict['billing_record_decimal_charge'],
+                    'decimal_quantity': row_dict['billing_record_decimal_quantity'],
                     'description': row_dict['billing_record_description'],
                     'percent': row_dict['billing_record_percent'],
                     'current_state': row_dict['billing_record_current_state'],
@@ -481,6 +490,8 @@ def get_billing_record_list(request):
                     'month': row_dict['month'],
                     'product_usage_link_text': row_dict['product_usage_link_text'],
                     'product_usage_url': row_dict['product_usage_url'],
+                    'start_date': row_dict['br_start_date'],
+                    'end_date': row_dict['br_end_date'],
                     'account': {
                         'id': row_dict['account_id'],
                         'code': row_dict['account_code'],
@@ -503,7 +514,13 @@ def get_billing_record_list(request):
                     },
                     'transactions': [
                         make_transaction_from_query_result(row_dict)
-                    ]
+                    ],
+                    'rate_obj': {
+                        'id': row_dict['rate_obj_id'],
+                        'name': row_dict['rate_obj_name'],
+                        'decimal_price': row_dict['rate_obj_decimal_price'],
+                        'is_active': row_dict['rate_obj_is_active'],
+                    }
                 }
     except Exception as e:
         logger.exception(e)

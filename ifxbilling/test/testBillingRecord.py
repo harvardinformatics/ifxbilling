@@ -10,6 +10,7 @@ Created on  2021-02-10
 All rights reserved.
 @license: GPL v2.0
 '''
+from dateutil.parser import parse
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
@@ -90,6 +91,11 @@ class TestBillingRecord(APITestCase):
         # Check that the year and month are set
         self.assertTrue(response.data['year'] == timezone.now().year, f'Incorrect year setting {response.data}')
         self.assertTrue(response.data['month'] == timezone.now().month, f'Incorrect month setting {response.data}')
+
+        # Check that start_date and end_date are identical to product_usage
+        start = parse(response.data['start_date'])
+        self.assertTrue(start == product_usage.start_date, f'Incorrect billing record start date {start}, should be {product_usage.start_date}')
+        self.assertTrue(response.data['end_date'] is None, f'Incorrect billing record end date {response.data["end_date"]} should be None')
 
     def testBillingRecordUpdate(self):
         '''

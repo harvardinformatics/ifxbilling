@@ -180,7 +180,7 @@ class AccountSerializer(serializers.ModelSerializer):
                     'root': 'Root must be a 5 digit number.'
                 }
             )
-        return super().update(validated_data)
+        return super().update(instance, validated_data)
 
 
 class AccountViewSet(viewsets.ModelViewSet):
@@ -220,10 +220,10 @@ class AccountViewSet(viewsets.ModelViewSet):
                 else:
                     organization = Organization.objects.get(name=organizationstr)
                 queryset = queryset.filter(organization=organization)
-            except Organization.DoesNotExist:
+            except Organization.DoesNotExist as dne:
                 raise serializers.ValidationError(
                     detail=f'Cannot find organization identified by {organizationstr}'
-                )
+                ) from dne
         return queryset
 
 
@@ -239,9 +239,9 @@ class RateSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(required=False)
 
     class Meta:
-        model = models.Product
-        fields = ('id', 'name', 'price', 'decimal_price', 'units', 'is_active', 'max_qty')
-        read_only_fields = ('id',)
+        model = models.Rate
+        fields = ('id', 'name', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated')
+        read_only_fields = ('id', 'created', 'updated')
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -269,7 +269,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
             'facility': validated_data['facility'],
-            #'billable': validated_data['billable'],  TODO: add back in when client is updated to add billable
+            'billable': validated_data['billable'],
         }
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             kwargs['billing_calculator'] = validated_data['billing_calculator']
@@ -334,19 +334,53 @@ class ProductSerializer(serializers.ModelSerializer):
             instance.billing_calculator = validated_data['billing_calculator']
 
         instance.save()
-        instance.rate_set.all().delete()
 
+        # Only is_active flag can be updated for a Rate and only to set from true to false; other updates are an error
+        # If there is a new Rate, the version must be incremented
         if 'rates' in self.initial_data and self.initial_data['rates']:
+            # Enure that rate_data is not less than current number of rates
+            if len(self.initial_data['rates']) < models.Rate.objects.filter(product=instance).count():
+                raise serializers.ValidationError(
+                    detail={
+                        'rates': 'Rates cannot be removed'
+                    }
+                )
             for rate_data in self.initial_data['rates']:
-                try:
-                    models.Rate.objects.create(product=instance, **rate_data)
-                except Exception as e:
-                    logger.exception(e)
-                    raise serializers.ValidationError(
-                        detail={
-                            'rates': str(e)
-                        }
-                    )
+                if rate_data['id']:
+                    try:
+                        rate = models.Rate.objects.get(id=rate_data['id'])
+                        for field in ['name', 'decimal_price', 'max_qty', 'price', 'units']:
+                            if rate_data.get(field) != getattr(rate, field):
+                                raise serializers.ValidationError(
+                                    detail={
+                                        'rates': f'Cannot change {field} on a Rate. Must create a new Rate and deactivate old one.'
+                                    }
+                                )
+                        if not rate_data['is_active'] and rate.is_active:
+                            rate.is_active = rate_data['is_active']
+                            rate.save()
+                    except models.Rate.DoesNotExist as dne:
+                        raise serializers.ValidationError(
+                            detail={
+                                'rates': f'Cannot find rate with id {rate_data["id"]}'
+                            }
+                        ) from dne
+                else:
+                    # If there is a previous rate with the same name and product, increment the version
+                    old_rates = models.Rate.objects.filter(product=instance, name=rate_data['name']).order_by('-version')
+                    if old_rates:
+                        rate_data['version'] = old_rates[0].version + 1
+                    else:
+                        rate_data['version'] = 1
+                    try:
+                        models.Rate.objects.create(product=instance, **rate_data)
+                    except Exception as e:
+                        logger.exception(e)
+                        raise serializers.ValidationError(
+                            detail={
+                                'rates': str(e)
+                            }
+                        )
             # Reload the object with the new rates and return
             instance = models.Product.objects.get(id=instance.id)
         return instance
@@ -569,6 +603,10 @@ class BillingRecordSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     product_usage_link_text = serializers.CharField(read_only=True)
     product_usage_url = serializers.CharField(read_only=True)
+    rate_obj = RateSerializer(read_only=True)
+    decimal_quantity = serializers.DecimalField(read_only=True, max_digits=19, decimal_places=4)
+    start_date = serializers.DateTimeField(read_only=True,)  # Read only because an empty value can't be properly validated
+    end_date = serializers.DateTimeField(read_only=True,)
 
     class Meta:
         model = models.BillingRecord
@@ -591,9 +629,20 @@ class BillingRecordSerializer(serializers.ModelSerializer):
             'rate',
             'product_usage_link_text',
             'product_usage_url',
+            'rate_obj',
+            'decimal_quantity',
+            'start_date',
+            'end_date',
         )
-        read_only_fields = ('id', 'created', 'updated', 'rate')
+        read_only_fields = ('id', 'created', 'updated', 'rate', 'rate_obj')
         list_serializer_class = BillingRecordListSerializer
+
+    def to_internal_value(self, data):
+        if data.get('start_date') == '':
+            data['start_date'] = None
+        if data.get('end_date') == '':
+            data['end_date'] = None
+        return super().to_internal_value(data)
 
     def get_current_user(self):
         '''
@@ -759,6 +808,14 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         # Set the "author"
         validated_data['author'] = self.get_billing_record_author(self.initial_data)
 
+        # If start_date and end_date are not set, get them from the product_usage
+        validated_data['start_date'] = self.initial_data.get('start_date')
+        if not validated_data['start_date']:
+            validated_data['start_date'] = product_usage.start_date
+        validated_data['end_date'] = self.initial_data.get('end_date')
+        if not validated_data['end_date']:
+            validated_data['end_date'] = product_usage.end_date
+
         # Create the billing record.  Charge will be 0
         billing_record = models.BillingRecord.objects.create(**validated_data)
 
@@ -864,6 +921,14 @@ class BillingRecordSerializer(serializers.ModelSerializer):
                     'account': f'Cannot find code {account_data["code"]} to update billing record {instance}'
                 }
             ) from dne
+
+        # If start_date and end_date are not set, get them from the product_usage
+        validated_data['start_date'] = initial_data.get('start_date')
+        if not validated_data['start_date']:
+            validated_data['start_date'] = product_usage.start_date
+        validated_data['end_date'] = initial_data.get('end_date')
+        if not validated_data['end_date']:
+            validated_data['end_date'] = product_usage.end_date
 
         instance.description = validated_data['description']
         instance.updated_by = self.get_billing_record_author(initial_data)

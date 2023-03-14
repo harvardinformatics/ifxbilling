@@ -10,6 +10,7 @@ Created on  2021-02-10
 All rights reserved.
 @license: GPL v2.0
 '''
+from decimal import Decimal
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
@@ -47,6 +48,7 @@ class TestProduct(APITestCase):
             'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
+            'billable': True,
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
@@ -90,6 +92,7 @@ class TestProduct(APITestCase):
         product_data = {
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
+            'billable': True,
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
@@ -104,6 +107,7 @@ class TestProduct(APITestCase):
         product_data = {
             'product_name': 'Helium Dewar Test',
             'facility': 'Liquid Nitrogen Service',
+            'billable': True,
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
@@ -119,6 +123,7 @@ class TestProduct(APITestCase):
             'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
+            'billable': True,
             'rates': [
                 {
                     'name': 'Helium Dewar Internal Rate',
@@ -142,15 +147,59 @@ class TestProduct(APITestCase):
         # Make sure the rates are saved
         self.assertTrue(len(product.rate_set.all()) == 2, f'Rates were not properly saved {product}')
 
-    def testUpdateProductWithRates(self):
+    def testUpdateProductRatePrice(self):
         '''
-        Ensure that a product rates can be updated
+        Ensure that a product rates cannot be updated
         '''
         data.init()
         product_data = {
             'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
+            'billable': True,
+            'rates': [
+                {
+                    'name': 'Helium Dewar Internal Rate',
+                    'decimal_price': Decimal('1000'),
+                    'units': 'Dewar',
+                    'is_active': True
+                },
+                {
+                    'name': 'Helium Dewar External Rate',
+                    'decimal_price': Decimal('1000'),
+                    'units': 'Dewar',
+                    'is_active': True
+                }
+            ]
+        }
+        url = reverse('product-list')
+        response = self.client.post(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
+
+        # Fetch the existing object
+        url = reverse('product-detail', kwargs={'pk': response.data['id']})
+        response = self.client.get(url, format='json')
+        self.assertTrue(response.data['product_name'] == 'Helium Dewar Test', f'Incorrect response {response.data}')
+        product_data = response.data
+        for i, rate in enumerate(product_data['rates']):
+            if rate['name'] == 'Helium Dewar External Rate':
+                self.assertTrue(Decimal(rate['decimal_price']) == Decimal('1000'), f'Rate was incorrectly saved {rate}')
+                product_data['rates'][i]['decimal_price'] = Decimal('9999')
+
+        # Update object
+        response = self.client.put(url, product_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response code {response.status_code}')
+
+    def testUpdateProductRateIsActive(self):
+        '''
+        Ensure that a product rate is active flag can be updated
+        '''
+        data.init()
+        product_data = {
+            'product_name': 'Helium Dewar Test',
+            'product_description': 'A dewar of helium',
+            'facility': 'Liquid Nitrogen Service',
+            'billable': True,
             'rates': [
                 {
                     'name': 'Helium Dewar Internal Rate',
@@ -177,29 +226,23 @@ class TestProduct(APITestCase):
         product_data = response.data
         for i, rate in enumerate(product_data['rates']):
             if rate['name'] == 'Helium Dewar External Rate':
-                self.assertTrue(rate['price'] == 10000, f'Rate was incorrectly saved {rate}')
-                product_data['rates'][i]['price'] = 9999
+                self.assertTrue(rate['is_active'], f'Rate was incorrectly saved {rate}')
+                product_data['rates'][i]['is_active'] = False
 
         # Update object
         response = self.client.put(url, product_data, format='json')
         self.assertTrue(response.status_code == status.HTTP_200_OK, f'Incorrect response code {response.status_code}')
-        found = False
-        for rate in response.data['rates']:
-            if rate['name'] == 'Helium Dewar External Rate':
-                self.assertTrue(rate['price'] == 9999, f'Update failed {rate}')
-                found = True
-        if not found:
-            self.assertTrue(False, f'Updated rate was not found')
 
     def testRemoveProductRate(self):
         '''
-        Ensure that a product rates can be removed
+        Ensure that a product rates cannot be removed
         '''
         data.init()
         product_data = {
             'product_name': 'Helium Dewar Test',
             'product_description': 'A dewar of helium',
             'facility': 'Liquid Nitrogen Service',
+            'billable': True,
             'rates': [
                 {
                     'name': 'Helium Dewar Internal Rate',
@@ -230,7 +273,4 @@ class TestProduct(APITestCase):
 
         # Update object
         response = self.client.put(url, product_data, format='json')
-        self.assertTrue(response.status_code == status.HTTP_200_OK, f'Incorrect response code {response.status_code}')
-
-        product = Product.objects.get(id=response.data['id'])
-        self.assertTrue(len(product.rate_set.all()) == 1, f'Incorrect number of product rates {product}')
+        self.assertTrue(response.status_code == status.HTTP_400_BAD_REQUEST, f'Incorrect response code {response.status_code}')

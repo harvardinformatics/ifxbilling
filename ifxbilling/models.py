@@ -61,13 +61,15 @@ def reset_billing_record_charge(billing_record):
     billing_record_charge = 0
     billing_record_decimal_charge = Decimal('0.0000')
     transactions = billing_record.transaction_set.all()
+    description_lines = []
     for trx in sorted(transactions, key=lambda transaction: transaction.created):
         billing_record_charge += trx.charge
         if trx.decimal_charge is not None:
             billing_record_decimal_charge += trx.decimal_charge
+        description_lines.append(trx.description)
     billing_record.charge = billing_record_charge
     billing_record.decimal_charge = billing_record_decimal_charge
-    billing_record.description = str(billing_record)
+    billing_record.description = '\n'.join(description_lines)
     post_save.disconnect(billing_record_post_save, sender=BillingRecord)
     billing_record.save()
     post_save.connect(billing_record_post_save, sender=BillingRecord)
@@ -123,7 +125,7 @@ class Facility(NaturalKeyModel):
         help_text='The name of the class that selects product usages and creates billing records using the calculator class'
     )
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 class Account(NaturalKeyModel):
     """
@@ -305,7 +307,7 @@ class Rate(NaturalKeyModel):
     '''
     class Meta:
         db_table = 'rate'
-        unique_together = ('product', 'name')
+        unique_together = ('product', 'name', 'version')
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     name = models.CharField(
@@ -344,6 +346,22 @@ class Rate(NaturalKeyModel):
         default=True,
         help_text='Is this rate currently active?'
     )
+    version = models.IntegerField(
+        null=False,
+        blank=False,
+        default=1,
+        help_text='Version of the rate'
+    )
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        is_active_str = 'Active' if self.is_active else 'Inactive'
+        units_str = 'ea' if self.units == 'ea' else f'per {self.units}'
+        dollar_str = '$' if self.decimal_price > 0 else '-$'
+
+        # pylint: disable=no-member
+        return f'{is_active_str} rate {self.name} of {dollar_str}{abs(self.decimal_price.quantize(Decimal("0.00")))} {units_str}'
 
 
 class UserProductAccount(NaturalKeyModel):
@@ -457,8 +475,10 @@ class ProductUsage(AbstractProductUsage):
         if not self.description:
             self.description = f'{self.quantity} {self.units} of {self.product} for {self.product_user} on {self.start_date}'
         if not self.month:
+            # pylint: disable=no-member
             self.month = self.start_date.month
         if not self.year:
+            # pylint: disable=no-member
             self.year = self.start_date.year
         super().save(*args, **kwargs)
 
@@ -599,6 +619,29 @@ class BillingRecord(models.Model):
         null=True,
         help_text='URL link for product usage display.  Should be a full URL so that it works in both facility applications and fiine',
     )
+    rate_obj = models.ForeignKey(
+        Rate,
+        on_delete=models.PROTECT,
+        help_text='The rate used to calculate this charge',
+        null=True,
+    )
+    decimal_quantity = models.DecimalField(
+        max_digits=19,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text='Decimal quantity of the Product used for this billing record'
+    )
+    start_date = models.DateTimeField(
+        help_text='Start date for time span billed.',
+        null=True,
+        blank=True,
+    )
+    end_date = models.DateTimeField(
+        help_text='End date for the time span billed.',
+        null=True,
+        blank=True,
+    )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -671,6 +714,7 @@ class BillingRecord(models.Model):
 
     def __str__(self):
         if self.decimal_charge:
+            # pylint: disable=no-member
             dollar_charge = self.decimal_charge.quantize(Decimal('.01'))
         else:
             dollar_charge = Decimal(self.charge / 100).quantize(Decimal('1.00'))
