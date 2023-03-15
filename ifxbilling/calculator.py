@@ -873,10 +873,20 @@ class NewBillingCalculator():
         :type transactions_data: list
 
         :param billing_data_dict: Dictionary of additional information needed to create the billing record.  This function checks for
-            initial_state, rate_description, decimal_quantity, billing_record_state_user, billing_record_state_comment.
-            Latter two are args for the setState function and default to product_usage.product_user and 'created by billing calculator'.
-            decimal_quantity defaults to the product_usage.decimal_quantity and initial_state defaults to the value of INITIAL_STATE.
-            rate_description defaults to value of get_rate_description
+            initial_state
+                The initial billing record state.  Defaults to INITIAL_STATE.
+            rate_description
+                Defaults to the value of get_rate_description
+            decimal_quantity
+                The decimal_quantity, some fraction of the product_usage.decimal_quantity.  Defaults to the value of product_usage.decimal_quantity
+            billing_record_state_user
+                User for the initial billing record state.  Defaults to product_usage.user
+            billing_record_state_comment
+                Comment to be placed on the initial billing record state.
+            product_usage_link_text
+                Display text for a link back to product usage.  Defaults to product_usage.id
+            product_usage_url
+                A url for accessing the product usage detail page
         :type transactions_data: list
 
         :return: The :class:`~ifxbilling.models.BillingRecord`.
@@ -889,6 +899,8 @@ class NewBillingCalculator():
         billing_record_state_comment = billing_data_dict.get('billing_record_state_comment', 'created by billing calculator')
         start_date = billing_data_dict.get('start_date', product_usage.start_date)
         end_date = billing_data_dict.get('end_date', product_usage.end_date)
+        product_usage_link_text = billing_data_dict.get('end_date', str(product_usage.id))
+        product_usage_url = billing_data_dict.get('product_usage_url')
 
         billing_record = None
 
@@ -911,6 +923,8 @@ class NewBillingCalculator():
                     decimal_quantity=decimal_quantity,
                     start_date=start_date,
                     end_date=end_date,
+                    product_usage_link_text=product_usage_link_text,
+                    product_usage_url=product_usage_url
                 )
                 billing_record.save()
                 billing_record_state = BillingRecordState(
