@@ -899,7 +899,7 @@ class NewBillingCalculator():
         billing_record_state_comment = billing_data_dict.get('billing_record_state_comment', 'created by billing calculator')
         start_date = billing_data_dict.get('start_date', product_usage.start_date)
         end_date = billing_data_dict.get('end_date', product_usage.end_date)
-        product_usage_link_text = billing_data_dict.get('end_date', str(product_usage.id))
+        product_usage_link_text = billing_data_dict.get('product_usage_link_text', str(product_usage.id))
         product_usage_url = billing_data_dict.get('product_usage_url')
 
         billing_record = None
