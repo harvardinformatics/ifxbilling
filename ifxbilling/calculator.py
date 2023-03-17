@@ -16,6 +16,7 @@ from decimal import Decimal
 from importlib import import_module
 from django.db import transaction
 from django.db.models import Q
+from django.conf import settings
 from ifxuser.models import Organization
 from ifxbilling.models import Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
@@ -393,6 +394,16 @@ class NewBillingCalculator():
         self.set_facility()
         self.verbosity = self.QUIET
 
+    def get_decimal_charge_str(self, decimal_charge):
+        '''
+        String with dollar sign, two digits, and proper negative
+        '''
+        sign_str = ''
+        if decimal_charge < 0:
+            sign_str = '-'
+        two_digits = abs(decimal_charge.quantize(settings.TWO_DIGIT_QUANTIZE))
+        return f'{sign_str}${two_digits}'
+
     def set_facility(self):
         '''
         return the facility name.  This function is needed if the baseclass is
@@ -753,7 +764,7 @@ class NewBillingCalculator():
                     }
                 )
             else:
-                raise Exception(f'Unable to find an active user account record for {product_usage.product_user} with organization {organization.name}, product {product_usage.product} and start_date {product_usage.start_date}')
+                raise Exception(f'Unable to find an active user account record for {product_usage.product_user.full_name} with organization {organization.name}, product {product_usage.product.product_name} and start_date {product_usage.start_date}')
         if product_usage and account_percentages:
             logger.debug('Account percentages for %s: %s', str(product_usage), str(account_percentages))
         return account_percentages
