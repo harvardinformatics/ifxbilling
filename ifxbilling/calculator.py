@@ -805,16 +805,40 @@ class NewBillingCalculator():
         )
         return transactions_data
 
-    def get_rate(self, product_usage, **kwargs):
+    def get_rate(self, product_usage=None, name=None):
         '''
-        return the rate for calculating the charge for this product_usage
-        '''
-        try:
-            return product_usage.product.rate_set.get(is_active=True)
-        except Rate.DoesNotExist:
-            # pylint: disable=raise-missing-from
-            raise Exception(f'Cannot find an active rate for {product_usage.product.product_name}')
+        Return the rate for calculating the charge.  If a product_usage is
+        provided, rates will be limited to the product.  If a name is
+        provided, the named rate will be retrieved.
 
+        is_active is always set to true.
+
+        An exception is thrown if a Rate is not found or if more than one is retrieved.
+
+        :return: Rate matching the criteria
+        :rtype: `~ifxbilling.models.Rate`
+        '''
+        if not product_usage and not name:
+            raise Exception('Need to specify either product_usage or name options')
+
+        rates = Rate.objects.filter(is_active=True)
+        if product_usage:
+            rates = rates.filter(product=product_usage.product)
+        if name:
+            rates = rates.filter(name=name)
+
+        if len(rates) != 1:
+            msgs = []
+            if product_usage:
+                msgs.append(f'product {product_usage.product.product_name}')
+            if name:
+                msgs.append(f'named {name}')
+            msgtxt = ', '.join(msgs)
+            if not rates:
+                raise Exception(f'Unable to find active rate with {msgtxt}')
+            raise Exception(f'More than one active rate was found with {msgtxt}; found {len(rates)}')
+
+        return rates[0]
 
     def get_rate_description(self, rate):
         '''
