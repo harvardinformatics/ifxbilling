@@ -17,6 +17,7 @@ from importlib import import_module
 from django.db import transaction
 from django.db.models import Q
 from django.conf import settings
+from django.utils import timezone
 from ifxuser.models import Organization
 from ifxbilling.models import Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
@@ -764,7 +765,9 @@ class NewBillingCalculator():
                     }
                 )
             else:
-                raise Exception(f'Unable to find an active user account record for {product_usage.product_user.full_name} with organization {organization.name}, product {product_usage.product.product_name} and start_date {product_usage.start_date}')
+                date_format_str = '%-I:%M %p on %-m/%d/%Y'
+                start_date_str = timezone.localtime(product_usage.start_date).strftime(date_format_str)
+                raise Exception(f'Unable to find an active user account record for {product_usage.product_user.full_name} with organization {organization.name}, product {product_usage.product.product_name} and start_date {start_date_str}')
         if product_usage and account_percentages:
             logger.debug('Account percentages for %s: %s', str(product_usage), str(account_percentages))
         return account_percentages
