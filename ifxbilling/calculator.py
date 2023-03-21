@@ -16,6 +16,8 @@ from decimal import Decimal
 from importlib import import_module
 from django.db import transaction
 from django.db.models import Q
+from django.conf import settings
+from django.utils import timezone
 from ifxuser.models import Organization
 from ifxbilling.models import Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
@@ -393,6 +395,16 @@ class NewBillingCalculator():
         self.set_facility()
         self.verbosity = self.QUIET
 
+    def get_decimal_charge_str(self, decimal_charge):
+        '''
+        String with dollar sign, two digits, and proper negative
+        '''
+        sign_str = ''
+        if decimal_charge < 0:
+            sign_str = '-'
+        two_digits = abs(decimal_charge.quantize(settings.TWO_DIGIT_QUANTIZE))
+        return f'{sign_str}${two_digits}'
+
     def set_facility(self):
         '''
         return the facility name.  This function is needed if the baseclass is
@@ -753,7 +765,9 @@ class NewBillingCalculator():
                     }
                 )
             else:
-                raise Exception(f'Unable to find an active user account record for {product_usage.product_user} with organization {organization.name}, product {product_usage.product} and start_date {product_usage.start_date}')
+                date_format_str = '%-I:%M %p on %-m/%d/%Y'
+                start_date_str = timezone.localtime(product_usage.start_date).strftime(date_format_str)
+                raise Exception(f'Unable to find an active user account record for {product_usage.product_user.full_name} with organization {organization.name}, product {product_usage.product.product_name} and start_date {start_date_str}')
         if product_usage and account_percentages:
             logger.debug('Account percentages for %s: %s', str(product_usage), str(account_percentages))
         return account_percentages
@@ -794,16 +808,40 @@ class NewBillingCalculator():
         )
         return transactions_data
 
-    def get_rate(self, product_usage, **kwargs):
+    def get_rate(self, product_usage=None, name=None):
         '''
-        return the rate for calculating the charge for this product_usage
-        '''
-        try:
-            return product_usage.product.rate_set.get(is_active=True)
-        except Rate.DoesNotExist:
-            # pylint: disable=raise-missing-from
-            raise Exception(f'Cannot find an active rate for {product_usage.product.product_name}')
+        Return the rate for calculating the charge.  If a product_usage is
+        provided, rates will be limited to the product.  If a name is
+        provided, the named rate will be retrieved.
 
+        is_active is always set to true.
+
+        An exception is thrown if a Rate is not found or if more than one is retrieved.
+
+        :return: Rate matching the criteria
+        :rtype: `~ifxbilling.models.Rate`
+        '''
+        if not product_usage and not name:
+            raise Exception('Need to specify either product_usage or name options')
+
+        rates = Rate.objects.filter(is_active=True)
+        if product_usage:
+            rates = rates.filter(product=product_usage.product)
+        if name:
+            rates = rates.filter(name=name)
+
+        if len(rates) != 1:
+            msgs = []
+            if product_usage:
+                msgs.append(f'product {product_usage.product.product_name}')
+            if name:
+                msgs.append(f'named {name}')
+            msgtxt = ', '.join(msgs)
+            if not rates:
+                raise Exception(f'Unable to find active rate with {msgtxt}')
+            raise Exception(f'More than one active rate was found with {msgtxt}; found {len(rates)}')
+
+        return rates[0]
 
     def get_rate_description(self, rate):
         '''

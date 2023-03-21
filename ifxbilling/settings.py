@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+from decimal import Decimal
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -235,3 +236,6 @@ class IFXMESSAGES():
 SWAGGER_SETTINGS = {
    'DEFAULT_INFO': 'ifxbilling.urls.API_INFO',
 }
+
+STANDARD_QUANTIZE = Decimal('0.0000')
+TWO_DIGIT_QUANTIZE = Decimal('0.00')
