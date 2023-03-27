@@ -358,10 +358,15 @@ class Rate(NaturalKeyModel):
     def __str__(self):
         is_active_str = 'Active' if self.is_active else 'Inactive'
         units_str = 'ea' if self.units == 'ea' else f'per {self.units}'
-        dollar_str = '$' if self.decimal_price > Decimal('0') else '-$'
+        dollar_str = ''
+        price_str = ''
+        if self.decimal_price:
+            dollar_str = '$' if self.decimal_price > Decimal('0') else '-$'
+            price_str = f'{abs(self.decimal_price.quantize(Decimal("0.00")))}'
+
 
         # pylint: disable=no-member
-        return f'{is_active_str} rate {self.name} of {dollar_str}{abs(self.decimal_price.quantize(Decimal("0.00")))} {units_str}'
+        return f'{is_active_str} rate {self.name} of {dollar_str}{price_str} {units_str}'
 
 
 class UserProductAccount(NaturalKeyModel):
