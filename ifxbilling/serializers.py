@@ -12,6 +12,7 @@ appropriate permissions.
 '''
 import re
 import logging
+from decimal import Decimal
 from django.db import transaction
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -350,8 +351,8 @@ class ProductSerializer(serializers.ModelSerializer):
                 if rate_data.get('id'):
                     try:
                         rate = models.Rate.objects.get(id=rate_data['id'])
+                        rate_data['decimal_price'] = Decimal(rate_data['decimal_price'])
                         for field in ['name', 'decimal_price', 'max_qty', 'price', 'units']:
-
                             if rate_data.get(field) != getattr(rate, field):
                                 raise serializers.ValidationError(
                                     detail={
