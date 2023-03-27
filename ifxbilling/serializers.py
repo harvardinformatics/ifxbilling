@@ -346,10 +346,12 @@ class ProductSerializer(serializers.ModelSerializer):
                     }
                 )
             for rate_data in self.initial_data['rates']:
+                logger.debug(f'Rate data {rate_data}')
                 if rate_data.get('id'):
                     try:
                         rate = models.Rate.objects.get(id=rate_data['id'])
                         for field in ['name', 'decimal_price', 'max_qty', 'price', 'units']:
+
                             if rate_data.get(field) != getattr(rate, field):
                                 raise serializers.ValidationError(
                                     detail={
