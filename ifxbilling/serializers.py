@@ -234,7 +234,7 @@ class RateSerializer(serializers.ModelSerializer):
     '''
     name = serializers.CharField(max_length=50)
     price = serializers.IntegerField()
-    decimal_price = serializers.DecimalField(max_digits=19, decimal_places=4, required=False)
+    decimal_price = serializers.DecimalField(max_digits=19, decimal_places=4)
     units = serializers.CharField(max_length=100)
     max_qty = serializers.IntegerField()
     is_active = serializers.BooleanField(required=False)
@@ -351,6 +351,12 @@ class ProductSerializer(serializers.ModelSerializer):
                 if rate_data.get('id'):
                     try:
                         rate = models.Rate.objects.get(id=rate_data['id'])
+                        if rate_data.get('decimal_price') is None:
+                            raise serializers.ValidationError(
+                                detail={
+                                    'rates': f'Rate {rate_data["name"]} needs a decimal price'
+                                }
+                            )
                         rate_data['decimal_price'] = Decimal(rate_data['decimal_price'])
                         for field in ['name', 'decimal_price', 'max_qty', 'price', 'units']:
                             if rate_data.get(field) != getattr(rate, field):

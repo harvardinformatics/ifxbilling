@@ -204,12 +204,14 @@ class TestProduct(APITestCase):
                 {
                     'name': 'Helium Dewar Internal Rate',
                     'price': 1000,
+                    'decimal_price': Decimal('10.00'),
                     'units': 'Dewar',
                     'is_active': True
                 },
                 {
                     'name': 'Helium Dewar External Rate',
                     'price': 10000,
+                    'decimal_price': Decimal('100.00'),
                     'units': 'Dewar',
                     'is_active': True
                 }
