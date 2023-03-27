@@ -346,7 +346,7 @@ class ProductSerializer(serializers.ModelSerializer):
                     }
                 )
             for rate_data in self.initial_data['rates']:
-                if rate_data['id']:
+                if rate_data.get('id'):
                     try:
                         rate = models.Rate.objects.get(id=rate_data['id'])
                         for field in ['name', 'decimal_price', 'max_qty', 'price', 'units']:
