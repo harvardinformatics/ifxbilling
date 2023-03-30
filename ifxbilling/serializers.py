@@ -238,10 +238,11 @@ class RateSerializer(serializers.ModelSerializer):
     units = serializers.CharField(max_length=100)
     max_qty = serializers.IntegerField()
     is_active = serializers.BooleanField(required=False)
+    sort_order = serializers.IntegerField()
 
     class Meta:
         model = models.Rate
-        fields = ('id', 'name', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated')
+        fields = ('id', 'name', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated', 'sort_order')
         read_only_fields = ('id', 'created', 'updated')
 
 
