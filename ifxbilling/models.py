@@ -308,6 +308,7 @@ class Rate(NaturalKeyModel):
     class Meta:
         db_table = 'rate'
         unique_together = ('product', 'name', 'version')
+        ordering = ('sort_order', '-version')
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     name = models.CharField(
@@ -351,6 +352,12 @@ class Rate(NaturalKeyModel):
         blank=False,
         default=1,
         help_text='Version of the rate'
+    )
+    sort_order = models.IntegerField(
+        null=False,
+        blank=False,
+        default=1,
+        help_text='Sort order for display purposes'
     )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
