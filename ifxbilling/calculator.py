@@ -697,7 +697,7 @@ class NewBillingCalculator():
         transactions_data = self.calculate_charges(product_usage, percent, rate_obj, decimal_quantity, billing_data_dict)
         if not transactions_data:
             return None
-        return self.create_billing_record(year, month, product_usage, account, percent, rate_obj, transactions_data, billing_data_dict)
+        return self.create_billing_record(year, month, product_usage, account, percent, rate_obj, decimal_quantity, transactions_data, billing_data_dict)
 
     def get_account_percentages_for_product_usage(self, product_usage, **kwargs):
         '''
@@ -886,7 +886,7 @@ class NewBillingCalculator():
             raise Exception('No transactions.  Cannot set a rate on the billing record.')
         return transactions_data[0]['rate']
 
-    def create_billing_record(self, year, month, product_usage, account, percent, rate_obj, transactions_data, billing_data_dict):
+    def create_billing_record(self, year, month, product_usage, account, percent, rate_obj, decimal_quantity, transactions_data, billing_data_dict):
         '''
         Create (and save) a BillingRecord and related Transactions.
         If an existing BillingRecord has the same product_usage and account an Exception will be thrown.????
@@ -907,6 +907,12 @@ class NewBillingCalculator():
             represented by this :class:`~ifxbilling.models.BillingRecord`
         :type percent: int
 
+        :param rate_obj: Rate object being used for calculations
+        :type rate_obj: :class:`~ifxbilling.models.Rate`
+
+        :param decimal_quantity: Quantity of usage being charged
+        :type decimal_quantity: :class:`~decimal.Decimal`
+
         :param transactions_data: List of dicts that can be used to create :class:`~ifxbilling.models.Transaction` instances
         :type transactions_data: list
 
@@ -915,8 +921,6 @@ class NewBillingCalculator():
                 The initial billing record state.  Defaults to INITIAL_STATE.
             rate_description
                 Defaults to the value of get_rate_description
-            decimal_quantity
-                The decimal_quantity, some fraction of the product_usage.decimal_quantity.  Defaults to the value of product_usage.decimal_quantity
             billing_record_state_user
                 User for the initial billing record state.  Defaults to product_usage.user
             billing_record_state_comment
@@ -932,7 +936,6 @@ class NewBillingCalculator():
         '''
         initial_state = billing_data_dict.get('initial_state', INITIAL_STATE)
         rate_description = billing_data_dict.get('rate_description', self.get_rate_description(rate_obj))
-        decimal_quantity = billing_data_dict.get('decimal_quantity', product_usage.decimal_quantity)
         billing_record_state_user = billing_data_dict.get('billing_record_state_user', product_usage.product_user)
         billing_record_state_comment = billing_data_dict.get('billing_record_state_comment', 'created by billing calculator')
         start_date = billing_data_dict.get('start_date', product_usage.start_date)
