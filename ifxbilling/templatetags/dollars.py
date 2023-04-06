@@ -23,6 +23,12 @@ def just_dollars(val):
     '''
     Only display as dollars without penny conversion
     '''
+    def val_sign(val):
+        '''
+        Return string tuple of the absolute value of val and a sign string.  (val, '') if positive and (val, '-') if negative
+        '''
+        return (f'{val:,}', '') if val > 0 else (f'{abs(val):,}', '-')
+
     try:
         int(val)
     except ValueError:
