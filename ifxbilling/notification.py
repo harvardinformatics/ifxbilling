@@ -235,9 +235,13 @@ class BillingRecordEmailGenerator():
         '''
         Compose data dict from billing record
         '''
+        decimal_quantity = rec.decimal_quantity if rec.decimal_quantity is not None else rec.product_usage.decimal_quantity
+        start_date = rec.start_date if rec.start_date else rec.product_usage.start_date
+        end_date = rec.end_date if rec.end_date else rec.product_usage.end_date
+
         return {
-          'start_date': rec.product_usage.start_date,
-          'end_date': rec.product_usage.end_date if rec.product_usage.end_date else None,
+          'start_date': start_date,
+          'end_date': end_date,
           'product': rec.product_usage.product.product_name,
           'user': rec.product_usage.product_user.full_name,
           'quantity': rec.product_usage.quantity,
@@ -247,6 +251,7 @@ class BillingRecordEmailGenerator():
           'charge': rec.charge,
           'decimal_charge': rec.decimal_charge,
           'transaction_descriptions': [txn.description for txn in rec.transaction_set.all()],
+          'decimal_quantity': decimal_quantity,
         }
 
     def get_billing_record_html_summary(self, org, brs):
