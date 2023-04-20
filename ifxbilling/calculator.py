@@ -942,6 +942,7 @@ class NewBillingCalculator():
         end_date = billing_data_dict.get('end_date', product_usage.end_date)
         product_usage_link_text = billing_data_dict.get('product_usage_link_text', str(product_usage.id))
         product_usage_url = billing_data_dict.get('product_usage_url')
+        billing_record_author = billing_data_dict.get('billing_record_author')
 
         billing_record = None
 
@@ -952,6 +953,10 @@ class NewBillingCalculator():
             pass
         for transaction_data in transactions_data:
             if not billing_record:
+
+                if not billing_record_author:
+                    billing_record_author = transaction_data['author']
+
                 billing_record = BillingRecord(
                     product_usage=product_usage,
                     account=account,
@@ -965,7 +970,9 @@ class NewBillingCalculator():
                     start_date=start_date,
                     end_date=end_date,
                     product_usage_link_text=product_usage_link_text,
-                    product_usage_url=product_usage_url
+                    product_usage_url=product_usage_url,
+                    author=billing_record_author,
+                    updated_by=billing_record_author
                 )
                 billing_record.save()
                 billing_record_state = BillingRecordState(
