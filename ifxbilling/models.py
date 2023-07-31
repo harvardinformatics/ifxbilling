@@ -318,6 +318,12 @@ class Rate(NaturalKeyModel):
         default=None,
         help_text='Name for this rate'
     )
+    description = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text='Description of the rate',
+    )
     price = models.IntegerField(
         null=False,
         blank=False,

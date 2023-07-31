@@ -233,6 +233,7 @@ class RateSerializer(serializers.ModelSerializer):
     Serializer for Rates
     '''
     name = serializers.CharField(max_length=50)
+    description = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
     price = serializers.IntegerField()
     decimal_price = serializers.DecimalField(max_digits=19, decimal_places=4)
     units = serializers.CharField(max_length=100)
@@ -243,7 +244,7 @@ class RateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Rate
-        fields = ('id', 'name', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated', 'version', 'sort_order')
+        fields = ('id', 'name', 'description', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated', 'version', 'sort_order')
         read_only_fields = ('id', 'created', 'updated', 'version')
 
 

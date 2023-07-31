@@ -127,6 +127,7 @@ class TestProduct(APITestCase):
             'rates': [
                 {
                     'name': 'Helium Dewar Internal Rate',
+                    'description': 'fy99',
                     'price': 1000,
                     'units': 'Dewar',
                     'is_active': True
@@ -166,6 +167,7 @@ class TestProduct(APITestCase):
                 },
                 {
                     'name': 'Helium Dewar External Rate',
+                    'description': 'fy00',
                     'decimal_price': Decimal('1000'),
                     'units': 'Dewar',
                     'is_active': True
