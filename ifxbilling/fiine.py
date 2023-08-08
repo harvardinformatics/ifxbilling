@@ -277,6 +277,7 @@ def create_new_product(product_name, product_description, facility, object_code_
         return product
 
     except ApiException as e:
+        logger.exception(e)
         if e.status == status.HTTP_400_BAD_REQUEST:
             raise ValidationError(
                 detail={
