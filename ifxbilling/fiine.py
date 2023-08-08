@@ -278,7 +278,7 @@ def create_new_product(product_name, product_description, facility, object_code_
 
     except ApiException as e:
         logger.exception(e)
-        if e.status == status.HTTP_400_BAD_REQUEST:
+        if e.status == status.HTTP_400_BAD_REQUEST or 'Duplicate' in str(e):
             raise ValidationError(
                 detail={
                     'product': str(e)
@@ -286,6 +286,7 @@ def create_new_product(product_name, product_description, facility, object_code_
             ) from e
         if e.status == status.HTTP_401_UNAUTHORIZED:
             raise NotAuthenticated(detail=str(e)) from e
+
 
 
 def handle_fiine_ifxapps_messages(messages):
