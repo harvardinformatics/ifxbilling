@@ -273,7 +273,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
             'facility': validated_data['facility'],
-            'billable': validated_data.get('billable', False),
+            'billable': validated_data['billable'],
         }
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             kwargs['billing_calculator'] = validated_data['billing_calculator']
@@ -314,12 +314,11 @@ class ProductSerializer(serializers.ModelSerializer):
         '''
         Update product and rates.  Ensure updated in Fiine as well.
         '''
-        validated_data = self.get_validated_data(validated_data)
         try:
             product = FiineAPI.readProduct(product_number=instance.product_number)
             product.product_name = validated_data['product_name']
             product.description = validated_data['product_description']
-            product.billable = validated_data.get('billable', False)
+            product.billable = validated_data['billable']
             FiineAPI.updateProduct(**product.to_dict())
         except Exception as e:
             logger.exception(e)
@@ -333,8 +332,10 @@ class ProductSerializer(serializers.ModelSerializer):
                 }
             )
 
-        for attr in ['product_name', 'product_description', 'billable', 'billing_calculator']:
+        for attr in ['product_name', 'product_description', 'billable']:
             setattr(instance, attr, validated_data[attr])
+        if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
+            instance.billing_calculator = validated_data['billing_calculator']
 
         instance.save()
 
