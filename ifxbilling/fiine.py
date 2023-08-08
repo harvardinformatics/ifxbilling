@@ -278,10 +278,16 @@ def create_new_product(product_name, product_description, facility, object_code_
 
     except ApiException as e:
         logger.exception(e)
-        if e.status == status.HTTP_400_BAD_REQUEST or 'Duplicate' in str(e):
+        if e.status == status.HTTP_400_BAD_REQUEST:
             raise ValidationError(
                 detail={
                     'product': str(e)
+                }
+            ) from e
+        if 'Duplicate' in str(e):
+            raise ValidationError(
+                detail={
+                    'product': 'Duplicate entry for product.'
                 }
             ) from e
         if e.status == status.HTTP_401_UNAUTHORIZED:
