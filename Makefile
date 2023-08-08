@@ -27,21 +27,21 @@ build: drf
 drf:
 	docker build -t $(DRFIMAGE) -f $(DRFFILE) $(DRFBUILDARGS) .
 migrate:
-	docker-compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py makemigrations
-	docker-compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py migrate
+	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py makemigrations
+	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py migrate
 test: migrate drf
-	docker-compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py test -v 2; docker-compose down
+	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py test -v 2; docker compose down
 prod:
 	docker build -t $(PRODIMAGE) $(PRODBUILDARGS) .
 	docker push $(PRODIMAGE)
 up: drf
-	docker-compose -f $(DOCKERCOMPOSEFILE) $(DOCKERCOMPOSEARGS) up
+	docker compose -f $(DOCKERCOMPOSEFILE) $(DOCKERCOMPOSEARGS) up
 down:
-	docker-compose -f $(DOCKERCOMPOSEFILE) down
+	docker compose -f $(DOCKERCOMPOSEFILE) down
 run: build
-	docker-compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) /bin/bash
+	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) /bin/bash
 docs:
-	docker-compose -f $(DOCKERCOMPOSEFILE) run drf make html; docker-compose down
+	docker compose -f $(DOCKERCOMPOSEFILE) run drf make html; docker compose down
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
