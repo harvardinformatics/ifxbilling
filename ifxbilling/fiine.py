@@ -285,13 +285,11 @@ def create_new_product(product_name, product_description, facility, object_code_
                 }
             ) from e
         if 'Duplicate' in str(e):
-            raise ValidationError(
-                detail={
-                    'product': 'Duplicate entry for product.'
-                }
-            ) from e
+            raise Exception('Duplicate entry for product') from e
         if e.status == status.HTTP_401_UNAUTHORIZED:
             raise NotAuthenticated(detail=str(e)) from e
+
+        raise Exception(str(e)) from e
 
 
 
