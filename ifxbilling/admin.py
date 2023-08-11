@@ -276,6 +276,12 @@ class BillingRecordAdmin(admin.ModelAdmin):
 
 admin.site.register(models.BillingRecord, BillingRecordAdmin)
 
+class ProductUsageProcessingInlineAdmin(admin.TabularInline):
+    '''
+    Inline for PUPs
+    '''
+    model = models.ProductUsageProcessing
+    extra = 0
 
 class ProductUsageAdmin(admin.ModelAdmin):
     '''
@@ -321,6 +327,7 @@ class ProductUsageAdmin(admin.ModelAdmin):
     list_filter = ('year', 'month', 'product', 'product_user')
     readonly_fields = ('created', 'updated')
     autocomplete_fields = ('product_user', )
+    inlines = [ProductUsageProcessingInlineAdmin]
 
 
 admin.site.register(models.ProductUsage, ProductUsageAdmin)
