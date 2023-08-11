@@ -459,7 +459,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
             'updated',
             'logged_by',
             'organization',
-            'processing'
+            'processing',
         )
         read_only_fields = ('id', 'created', 'updated')
 
@@ -534,6 +534,7 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         invoice_prefix = self.request.query_params.get('invoice_prefix')
         product_id = self.request.query_params.get('product')
+        product_name = self.request.query_params.get('product_name')
         year = self.request.query_params.get('year')
         month = self.request.query_params.get('month')
         product_user_username = self.request.query_params.get('product_user')
@@ -546,6 +547,8 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(month=month)
         if product_id:
             queryset = queryset.filter(product__id=product_id)
+        if product_name:
+            queryset = queryset.filter(product__product_name=product_name)
         if invoice_prefix:
             queryset = queryset.filter(product__facility__invoice_prefix=invoice_prefix)
         if product_user_username:

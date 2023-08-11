@@ -121,3 +121,16 @@ class TestProductUsage(APITestCase):
         pudata = response.data
         self.assertTrue(len(pudata) == 2, f'Incorrect number of product usages returned: {pudata}')
         self.assertTrue(pudata[0]['product'] == product_name, f'Incorrect product usage returned {pudata}')
+
+    def testRetrieveByProductName(self):
+        '''
+        Ensure that a ProductUsage can be retrieved by Product name
+        '''
+        data.init(['Product', 'ProductUsage'])
+        product_name = 'Dev Helium Balloon'
+        url = reverse('product-usages-list')
+        response = self.client.get(url, { 'product_name': product_name}, format='json')
+        pudata = response.data
+        self.assertTrue(len(pudata) == 2, f'Incorrect number of product usages returned: {pudata}')
+        for pud in pudata:
+            self.assertTrue(pud['product'] == product_name, f'Incorrect product usage returned {pudata}')
