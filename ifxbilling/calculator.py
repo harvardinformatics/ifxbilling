@@ -849,6 +849,7 @@ class NewBillingCalculator():
                     start_date__lt=product_usage.start_date,
                 ).rate.name
                 rate = self.get_rate(name=rate_name, product_usage=product_usage)
+                rates = [rate]
             except OrganizationRate.DoesNotExist:
                 # If there used to be explicit OrganizationRates, but isn't currently a valid one, it's an error.
                 if OrganizationRate.objects.filter(
@@ -864,7 +865,6 @@ class NewBillingCalculator():
                 rates = rates.filter(product=product_usage.product, name=settings.RATES.INTERNAL_RATE_NAME)
             except OrganizationRate.MultipleObjectsReturned as e:
                 raise Exception(f'There are overlapping rates for {product_usage.organization}') from e
-            rates = [rate]
 
         if len(rates) != 1:
             msgs = []
