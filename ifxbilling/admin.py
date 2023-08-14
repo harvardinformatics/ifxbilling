@@ -415,3 +415,35 @@ class ProductUsageProcessingAdmin(admin.ModelAdmin):
 
 
 admin.site.register(models.ProductUsageProcessing, ProductUsageProcessingAdmin)
+
+
+class OrganizationRateInlineAdmin(admin.TabularInline):
+    '''
+    inline for OrganizationRates
+    '''
+    model = models.OrganizationRate
+    autocomplete_fields = ('rate', 'organization')
+    extra = 0
+
+
+class RateAdmin(admin.ModelAdmin):
+    '''
+    Admin for Rates
+    '''
+    list_filter = ('is_active', )
+    list_display = (
+        'id',
+        'product',
+        'name',
+        'description',
+        'decimal_price',
+        'units',
+        'version',
+    )
+    search_fields = ('name', 'description', 'product__product_name')
+    inlines = [OrganizationRateInlineAdmin]
+    autocomplete_fields = ('product', )
+    readonly_fields = ('id', 'version')
+
+
+admin.site.register(models.Rate, RateAdmin)

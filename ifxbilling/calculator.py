@@ -19,7 +19,7 @@ from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 from ifxuser.models import Organization
-from ifxbilling.models import Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
+from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
 
 logger = logging.getLogger('ifxbilling')
@@ -810,11 +810,22 @@ class NewBillingCalculator():
 
     def get_rate(self, product_usage=None, name=None):
         '''
-        Return the rate for calculating the charge.  If a product_usage is
-        provided, rates will be limited to the product.  If a name is
-        provided, the named rate will be retrieved.
+        Return the rate for calculating the charge. Only rates with is_active set to true are returned.
 
-        is_active is always set to true.
+        If only a name is provided, the named rate will be retrieved.
+
+        If a name and product_usage are provided, the named rate for corresponding product will be returned
+
+        If there is no name, and a rate for the product_usage.organization (via :class:`~cbsn.models.OrganizationRate`)
+        where the start_date and end_date are appropriate for the usage, use that.
+        Otherwise, return settings.RATES.INTERNAL_RATE_NAME
+        If OrganizationRates were previously set, but currently expired, it's an error.
+
+        :param product_usage: The :class:`~ifxbilling.models.ProductUsage` associated with the instance
+        :type product_usage: :class:`~ifxbilling.models.ProductUsage`
+
+        :param name: The name of a Rate
+        :type name: str
 
         An exception is thrown if a Rate is not found or if more than one is retrieved.
 
@@ -825,10 +836,35 @@ class NewBillingCalculator():
             raise Exception('Need to specify either product_usage or name options')
 
         rates = Rate.objects.filter(is_active=True)
-        if product_usage:
-            rates = rates.filter(product=product_usage.product)
         if name:
             rates = rates.filter(name=name)
+            if product_usage:
+                rates = rates.filter(product=product_usage.product)
+        else:
+            try:
+                rate_name = OrganizationRate.objects.filter(
+                    Q(end_date__isnull=True) | Q(end_date__gte=product_usage.end_date)).get(
+                    organization=product_usage.organization,
+                    rate__product=product_usage.product,
+                    start_date__lt=product_usage.start_date,
+                ).rate.name
+                rate = self.get_rate(name=rate_name, product_usage=product_usage)
+            except OrganizationRate.DoesNotExist:
+                # If there used to be explicit OrganizationRates, but isn't currently a valid one, it's an error.
+                if OrganizationRate.objects.filter(
+                    organization=product_usage.organization,
+                    rate__product=product_usage.product,
+                    end_date__lt=product_usage.end_date
+                ).count():
+                    # pylint: disable=raise-missing-from
+                    raise Exception(
+                        f'Organization {product_usage.organization.name} has non-default rates, but they have expired.'
+                    )
+                # Default is INTERNAL_RATE_NAME matched to the product_usage.product
+                rates = rates.filter(product=product_usage.product, name=settings.RATES.INTERNAL_RATE_NAME)
+            except OrganizationRate.MultipleObjectsReturned as e:
+                raise Exception(f'There are overlapping rates for {product_usage.organization}') from e
+            rates = [rate]
 
         if len(rates) != 1:
             msgs = []

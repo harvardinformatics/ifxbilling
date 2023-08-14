@@ -382,6 +382,33 @@ class Rate(NaturalKeyModel):
         return f'{is_active_str} rate {self.name} of {dollar_str}{price_str} {units_str}'
 
 
+class OrganizationRate(NaturalKeyModel):
+    '''
+    Rate to be used for a particular organization
+    '''
+    class Meta:
+        db_table = 'organization_rate'
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        help_text='The organization that gets the rate'
+    )
+    rate = models.ForeignKey(
+        Rate,
+        on_delete=models.CASCADE,
+        help_text='The rate the organization gets'
+    )
+    start_date = models.DateField(
+        help_text='Start time that this rate applies'
+    )
+    end_date = models.DateField(
+        help_text='Time this rate stops applying',
+        blank=True,
+        null=True
+    )
+
+
 class UserProductAccount(NaturalKeyModel):
     '''
     Provide accounts specific for a particular product
