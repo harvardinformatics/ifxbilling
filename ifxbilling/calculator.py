@@ -581,12 +581,13 @@ class NewBillingCalculator():
                     percent = billing_data_dict.pop('percent')
                     rate_obj = billing_data_dict.pop('rate_obj')
                     decimal_quantity = billing_data_dict.pop('decimal_quantity')
+                    pup_message = billing_data_dict.pop('pup_message', 'OK')
                     br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, rate_obj, decimal_quantity, billing_data_dict)
                     if br: # can be none
                         brs.append(br)
 
                 # processing complete update any product_usage_processing as resolved
-                self.update_product_usage_processing(product_usage, resolved=True)
+                self.update_product_usage_processing(product_usage, resolved=True, message=pup_message)
         except Exception as ex:
             if self.verbosity == self.CHATTY:
                 logger.error(ex)
