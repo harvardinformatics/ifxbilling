@@ -1017,3 +1017,7 @@ class OrganizationRateSerializer(serializers.ModelSerializer):
     rate = RateSerializer()
     start_date = serializers.DateField()
     end_date = serializers.DateField()
+
+    class Meta:
+        model = models.OrganizationRate
+        fields = '__all__'
