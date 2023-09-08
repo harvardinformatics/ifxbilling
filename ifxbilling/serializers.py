@@ -1009,3 +1009,15 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+class OrganizationRateSerializer(serializers.ModelSerializer):
+    '''
+    Not meant for stand alone use.  Should be attached to OrganizationSerializers in applications
+    '''
+    rate = RateSerializer()
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+
+    class Meta:
+        model = models.OrganizationRate
+        fields = '__all__'
