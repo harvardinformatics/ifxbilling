@@ -588,6 +588,7 @@ class BillingRecordListSerializer(serializers.ListSerializer):
     '''
     Serializer for list of billing records for bulk update.
     '''
+    # pylint: disable=arguments-renamed
     def update(self, instances, validated_data):
         results = []
         for i, instance in enumerate(instances):
@@ -859,6 +860,7 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         initial_data = self.initial_data
         if bulk_id is not None:
             initial_data = self.initial_data[bulk_id]
+
         if 'billing_record_states' not in initial_data:
             raise serializers.ValidationError(
                 detail={
@@ -1003,12 +1005,18 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
         '''
         Call serializer update on an array of billing records
         '''
-        ids = [int(r['id']) for r in request.data]
-        instances = models.BillingRecord.objects.filter(id__in=ids)
-        serializer = self.get_serializer(instances, data=request.data, many=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
+        try:
+            instances = [models.BillingRecord.objects.get(id=int(r['id'])) for r in request.data]
+            serializer = self.get_serializer(instances, data=request.data, many=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            return Response(serializer.data)
+        except models.BillingRecord.DoesNotExist:
+            logger.error('Unable to find one of the billing records for update.')
+            return Response({'error': 'Unable to find billing record to update'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.exception(e)
+            return Response({'error': f'Problem updating billing records {e}'})
 
 class OrganizationRateSerializer(serializers.ModelSerializer):
     '''
