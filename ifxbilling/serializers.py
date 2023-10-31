@@ -1029,3 +1029,21 @@ class OrganizationRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.OrganizationRate
         fields = '__all__'
+
+class SkinnyAccountSerializer(serializers.ModelSerializer):
+    '''
+    Trimmed down serializer for NitrogenLogAccounts, DewarRequestAccounts, etc.
+    '''
+    class Meta:
+        model = models.Account
+        fields = (
+            'id',
+            'code',
+            'name',
+            'organization',
+            'slug',
+            'active',
+            'expiration_date',
+            'valid_from',
+        )
+    organization = serializers.SlugRelatedField(slug_field='name', queryset=models.Account.objects.all())
