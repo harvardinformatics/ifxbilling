@@ -264,7 +264,6 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility', 'billable')
         read_only_fields = ('id',)
 
-    @transaction.atomic
     def get_validated_data(self, validated_data):
         '''
         Create new product in fiine first, then save any rates
@@ -279,10 +278,11 @@ class ProductSerializer(serializers.ModelSerializer):
             kwargs['billing_calculator'] = validated_data['billing_calculator']
         return kwargs
 
+    @transaction.atomic
     def create(self, validated_data):
-        validated_data = self.get_validated_data(validated_data)
+        product_data = self.get_validated_data(validated_data)
         try:
-            product = fiine.create_new_product(**validated_data)
+            product = fiine.create_new_product(**product_data)
         except Exception as e:
             logger.exception(e)
             if 'Not authorized' in str(e):
