@@ -433,7 +433,7 @@ class ProductUsageSerializer(serializers.ModelSerializer):
     product = serializers.SlugRelatedField(slug_field='product_name', queryset=models.Product.objects.all())
     product_user = UserSerializer(many=False, read_only=True)
     start_date = serializers.DateTimeField(required=False)
-    end_date = serializers.DateTimeField(required=False)
+    end_date = serializers.DateTimeField(required=False, allow_null=True)
     description = serializers.CharField(max_length=2000, required=False)
     created = serializers.DateTimeField(read_only=True)
     updated = serializers.DateTimeField(read_only=True)

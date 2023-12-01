@@ -391,6 +391,10 @@ class NewBillingCalculator():
 
     PUP_MESSAGES = {}
 
+    STANDARD_QUANTIZE = Decimal('0.0000')
+    TWO_DIGIT_QUANTIZE = Decimal('0.00')
+
+
     def __init__(self):
         self.set_facility()
         self.verbosity = self.QUIET
@@ -794,7 +798,11 @@ class NewBillingCalculator():
         if percent < 100:
             percent_str = f'{percent}% of '
 
-        description = f'{percent_str}{decimal_quantity} {product_usage.units} at {rate_desc}'
+        plural = ''
+        if decimal_quantity != Decimal('1.0'):
+            if product_usage.units[-1] != 's':
+                plural = 's'
+        description = f'{percent_str}{decimal_quantity.quantize(self.TWO_DIGIT_QUANTIZE)} {product_usage.units}{plural} at {rate_desc}'
         decimal_charge = rate_obj.decimal_price * decimal_quantity * Decimal(percent / 100)
         user = product_usage.product_user
 
