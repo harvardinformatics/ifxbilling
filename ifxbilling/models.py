@@ -296,9 +296,19 @@ class Product(NaturalKeyModel):
         null=True
     )
     billable = models.BooleanField(default=True)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text='Parent product for this product'
+    )
 
     def __str__(self):
-        return f'{self.product_name} ({self.product_number})'
+        parent_str = ''
+        if self.parent:
+            parent_str = f' a {self.parent.product_name}'
+        return f'{self.product_name}{parent_str} ({self.product_number})'
 
 
 class Rate(NaturalKeyModel):

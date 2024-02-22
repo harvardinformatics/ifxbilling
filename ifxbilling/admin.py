@@ -174,7 +174,8 @@ class ProductAdmin(admin.ModelAdmin):
         'facility',
         'billing_calculator',
         'reporting_group',
-        'billable'
+        'billable',
+        'parent',
     )
     list_display = (
         'id',
