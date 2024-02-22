@@ -501,7 +501,15 @@ class NewBillingCalculator():
         successes = []
         errors = []
 
-        product_usages = self.get_product_usages_for_organization(year, month, organization, **kwargs)
+        try:
+            product_usages = self.get_product_usages_for_organization(year, month, organization, **kwargs)
+        except Exception as e:
+            logger.error(e)
+            errors.append(str(e))
+            return {
+                'successes': successes,
+                'errors': errors,
+            }
         for product_usage in product_usages:
             try:
                 if BillingRecord.objects.filter(product_usage=product_usage).exists():
