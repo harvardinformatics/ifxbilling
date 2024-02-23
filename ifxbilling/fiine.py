@@ -250,7 +250,7 @@ def update_products():
                 models.Product.objects.create(**fiine_product_data)
 
 
-def create_new_product(product_name, product_description, facility, object_code_category='Technical Services', billing_calculator=None, billable=True):
+def create_new_product(product_name, product_description, facility, object_code_category='Technical Services', billing_calculator=None, billable=True, parent=None):
     '''
     Creates product record in fiine, and creates the local record with product number
     '''
@@ -259,11 +259,18 @@ def create_new_product(product_name, product_description, facility, object_code_
         raise IntegrityError(f'Product with name {product_name} exists in fiine.')
 
     try:
+        product_data = {
+            'product_name': product_name,
+            'product_description': product_description,
+            'facility': facility.name,
+            'object_code_category': object_code_category,
+        }
+        if parent:
+            product_data['parent'] = {
+                'product_number': parent.product_number
+            }
         product_obj = FiineAPI.createProduct(
-            product_name=product_name,
-            product_description=product_description,
-            facility=facility.name,
-            object_code_category=object_code_category,
+            **product_data
         )
         product = models.Product(
             product_number=product_obj.product_number,
@@ -273,6 +280,14 @@ def create_new_product(product_name, product_description, facility, object_code_
         )
         if billing_calculator:
             product.billing_calculator = billing_calculator
+        if product_obj.parent:
+            try:
+                product_number = product_obj.parent.product_number
+                parent = models.Product.objects.get(product_number=product_number)
+            except models.Product.DoesNotExist as dne:
+                logger.exception(f'Unable to find parent product {product_number}')
+                raise Exception(f'Unable to find parent product {product_number}')
+            product.parent = parent
         product.save()
         return product
 

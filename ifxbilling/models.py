@@ -304,6 +304,25 @@ class Product(NaturalKeyModel):
         help_text='Parent product for this product'
     )
 
+    def get_active_rates(self):
+        '''
+        Returns a queryset of the currently active rates.
+        If self has no rates, but is billable, parent will be checked.
+        If not billable, None will be returned.
+        If billable, but no active rates can be found, an exception is thrown.
+        '''
+        if not self.billable:
+            return None
+        rates = self.rate_set.filter(is_active=True)
+        if rates:
+            return rates
+        else:
+            if self.parent:
+                rates = self.parent.get_active_rates()
+                if rates:
+                    return rates
+        raise Exception(f'No active rates for billable product {self}')
+
     def __str__(self):
         parent_str = ''
         if self.parent:
