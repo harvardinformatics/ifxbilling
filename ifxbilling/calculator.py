@@ -609,6 +609,23 @@ class NewBillingCalculator():
             raise ex
         return brs
 
+    def get_rate_for_product_usage(self, product_usage, **kwargs):
+        '''
+        Return the appropriate rate for a product_usage.
+        Base class uses Product.get_active_rates() and takes the first one.
+
+        kwargs from get_billing_data_dicts_for_usage are passed in.
+
+        Exception may be thrown if Product has no active rates
+
+        :param product_usage: The :class:`~ifxbilling.models.ProductUsage`
+        :type product_usage: :class:`~ifxbilling.models.ProductUsage`
+
+        :return: A single rate
+        :rtype: :class:`~ifxbilling.models.Rate`
+        '''
+        return product_usage.product.get_active_rates().first()
+
     def get_billing_data_dicts_for_usage(self, product_usage, **kwargs):
         '''
         Return a list of dictionaries containing the data needed to create a billing record from the usage
@@ -625,7 +642,7 @@ class NewBillingCalculator():
         :rtype: list
         '''
         data_dicts = self.get_account_percentages_for_product_usage(product_usage)
-        rate = product_usage.product.rate_set.filter(is_active=True).first()
+        rate = self.get_rate_for_product_usage(product_usage, **kwargs)
         if not rate:
             raise Exception(f'Cannot find an active rate for product {product_usage.product}')
 

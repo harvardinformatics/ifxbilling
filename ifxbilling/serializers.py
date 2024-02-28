@@ -248,7 +248,7 @@ class RateSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'created', 'updated', 'version')
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ParentProductSerializer(serializers.ModelSerializer):
     '''
     Serializer for Products
     '''
@@ -261,19 +261,40 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility', 'billable')
+        fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility', 'billable', 'parent')
         read_only_fields = ('id',)
 
     def get_validated_data(self, validated_data):
         '''
         Create new product in fiine first, then save any rates
         '''
+        parent_product_data = self.initial_data.get('parent')
+        if parent_product_data:
+            try:
+                product_number = parent_product_data['product_number']
+                parent_product = models.Product.objects.get(product_number=product_number)
+                validated_data['parent'] = parent_product
+            except KeyError as ke:
+                raise serializers.ValidationError(
+                    detail={
+                        'parent': 'Parent product must have a product number'
+                    }
+                ) from ke
+            except models.Product.DoesNotExist as dne:
+                raise serializers.ValidationError(
+                    detail={
+                        'parent': f'Cannot find parent product with number {product_number} to set as parent'
+                    }
+                ) from dne
+
         kwargs = {
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
             'facility': validated_data['facility'],
             'billable': validated_data['billable'],
         }
+        if validated_data.get('parent'):
+            kwargs['parent'] = validated_data['parent']
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             kwargs['billing_calculator'] = validated_data['billing_calculator']
         return kwargs
@@ -314,11 +335,14 @@ class ProductSerializer(serializers.ModelSerializer):
         '''
         Update product and rates.  Ensure updated in Fiine as well.
         '''
+        product_data = self.get_validated_data(validated_data)
         try:
             product = FiineAPI.readProduct(product_number=instance.product_number)
-            product.product_name = validated_data['product_name']
-            product.description = validated_data['product_description']
-            product.billable = validated_data['billable']
+            product.product_name = product_data['product_name']
+            product.description = product_data['product_description']
+            product.billable = product_data['billable']
+            if product_data.get('parent'):
+                product.parent = { 'product_number': product_data['parent'].product_number }
             FiineAPI.updateProduct(**product.to_dict())
         except Exception as e:
             logger.exception(e)
@@ -336,6 +360,8 @@ class ProductSerializer(serializers.ModelSerializer):
             setattr(instance, attr, validated_data[attr])
         if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
             instance.billing_calculator = validated_data['billing_calculator']
+        if 'parent' in validated_data and validated_data['parent']:
+            instance.parent = validated_data['parent']
 
         instance.save()
 
@@ -396,6 +422,18 @@ class ProductSerializer(serializers.ModelSerializer):
             # Reload the object with the new rates and return
             instance = models.Product.objects.get(id=instance.id)
         return instance
+
+
+class ProductSerializer(ParentProductSerializer):
+    '''
+    Serializer for parent Products
+    '''
+    class Meta:
+        model = models.Product
+        fields = ('id', 'product_name', 'product_number', 'product_description', 'facility', 'rates', 'billing_calculator', 'billable', 'parent')
+        read_only_fields = ('id', )
+
+    parent = ParentProductSerializer(many=False, read_only=True)
 
 
 class ProductViewSet(viewsets.ModelViewSet):

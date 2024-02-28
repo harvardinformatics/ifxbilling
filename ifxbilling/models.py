@@ -296,9 +296,38 @@ class Product(NaturalKeyModel):
         null=True
     )
     billable = models.BooleanField(default=True)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text='Parent product for this product'
+    )
+
+    def get_active_rates(self):
+        '''
+        Returns a queryset of the currently active rates.
+        If self has no rates, but is billable, parent will be checked.
+        If not billable, None will be returned.
+        If billable, but no active rates can be found, an exception is thrown.
+        '''
+        if not self.billable:
+            return None
+        rates = self.rate_set.filter(is_active=True)
+        if rates:
+            return rates
+        else:
+            if self.parent:
+                rates = self.parent.get_active_rates()
+                if rates:
+                    return rates
+        raise Exception(f'No active rates for billable product {self}')
 
     def __str__(self):
-        return f'{self.product_name} ({self.product_number})'
+        parent_str = ''
+        if self.parent:
+            parent_str = f' a {self.parent.product_name}'
+        return f'{self.product_name}{parent_str} ({self.product_number})'
 
 
 class Rate(NaturalKeyModel):
