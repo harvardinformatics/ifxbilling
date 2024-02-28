@@ -41,7 +41,7 @@ class TestProduct(APITestCase):
 
     def testProductInsert(self):
         '''
-        Insert a minimal Product
+        Insert a minimal Product with a parent.  Fetch by parent product number.
         '''
         data.init(['Product'])
         pp_data = data.PRODUCTS[0]
@@ -69,6 +69,12 @@ class TestProduct(APITestCase):
         rates = product.get_active_rates()
         self.assertTrue(len(rates) == rate_count, f'Incorrect number of rates {rates}')
         self.assertTrue(rates[0].name == rate_name, f'Incorrect rate name {rates[0]}')
+
+        # Return child product using parent number
+        response = self.client.get(url, {'parent_number': parent_product.product_number}, format='json')
+        self.assertTrue(response.status_code == status.HTTP_200_OK, f'Incorrect response status: {response.data}')
+        self.assertTrue(len(response.data) == 1, f'Incorrect response data {response.data}')
+        self.assertTrue(response.data[0]['product_name'] == product_name, f'Incorrect response data {response.data}')
 
 
     def testProductUpdate(self):
