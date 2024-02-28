@@ -440,9 +440,26 @@ class ProductViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for Product models
     '''
-    queryset = models.Product.objects.all()
     serializer_class = ProductSerializer
 
+    def get_queryset(self):
+        product_number = self.request.query_params.get('product_number')
+        product_name = self.request.query_params.get('product_name')
+        parent_number = self.request.query_params.get('parent_number')
+        parent_name = self.request.query_params.get('parent_name')
+
+        queryset = models.Product.objects.all()
+
+        if product_number:
+            queryset = queryset.filter(product_number=product_number)
+        if product_name:
+            queryset = queryset.filter(product_name=product_name)
+        if parent_number:
+            queryset = queryset.filter(parent__product_number=parent_number)
+        if parent_name:
+            queryset = queryset.filter(parent__product_name=parent_name)
+
+        return queryset
 
 class ProductUsageProcessingSerializer(serializers.ModelSerializer):
     '''
