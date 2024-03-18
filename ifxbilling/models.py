@@ -363,7 +363,13 @@ class Rate(NaturalKeyModel):
         unique_together = ('product', 'name', 'version')
         ordering = ('sort_order', '-version')
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        help_text='The product to which this rate applies',
+        blank=True,
+        null=True,
+    )
     name = models.CharField(
         max_length=50,
         null=False,

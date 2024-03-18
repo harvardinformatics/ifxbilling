@@ -228,14 +228,20 @@ class AccountViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-def update_rates(self, rates_data, product, rate_tier):
+def update_rates(self, rates_data, product=None, rate_tier=None):
     '''
-    Update rates for a product
+    Handle updating rates for either RateTiers or Products
     '''
-    if len(rates_data['rates']) < models.Rate.objects.filter(product=product).count():
+    if product and len(rates_data) < models.Rate.objects.filter(product=product).count():
         raise serializers.ValidationError(
             detail={
-                'rates': 'Rates cannot be removed'
+                'rates': 'Rates cannot be removed, only deactivated.'
+            }
+        )
+    if rate_tier and len(rates_data) < models.Rate.objects.filter(rate_tier=rate_tier).count():
+        raise serializers.ValidationError(
+            detail={
+                'rates': 'Rates cannot be removed, only deactivated.'
             }
         )
     for rate_data in rates_data:
@@ -266,22 +272,38 @@ def update_rates(self, rates_data, product, rate_tier):
                     }
                 ) from dne
         else:
-            # If there is a previous rate with the same name and product, increment the version
-            old_rates = models.Rate.objects.filter(product=product, name=rate_data['name']).order_by('-version')
-            if old_rates:
-                rate_data['version'] = old_rates[0].version + 1
-            else:
-                rate_data['version'] = 1
-            try:
-                models.Rate.objects.create(product=product, rate_tier=rate_tier, **rate_data)
-            except Exception as e:
-                logger.exception(e)
-                raise serializers.ValidationError(
-                    detail={
-                        'rates': str(e)
-                    }
-                )
-
+            if product:
+                # If there is a previous rate with the same name and product, increment the version
+                old_rates = models.Rate.objects.filter(product=product, name=rate_data['name']).order_by('-version')
+                if old_rates:
+                    rate_data['version'] = old_rates[0].version + 1
+                else:
+                    rate_data['version'] = 1
+                try:
+                    models.Rate.objects.create(product=product, rate_tier=rate_tier, **rate_data)
+                except Exception as e:
+                    logger.exception(e)
+                    raise serializers.ValidationError(
+                        detail={
+                            'rates': str(e)
+                        }
+                    )
+            elif rate_tier:
+                # If there is a previous rate with the same name and rate_tier, increment the version
+                old_rates = models.Rate.objects.filter(rate_tier=rate_tier, name=rate_data['name']).order_by('-version')
+                if old_rates:
+                    rate_data['version'] = old_rates[0].version + 1
+                else:
+                    rate_data['version'] = 1
+                try:
+                    models.Rate.objects.create(rate_tier=rate_tier, **rate_data)
+                except Exception as e:
+                    logger.exception(e)
+                    raise serializers.ValidationError(
+                        detail={
+                            'rates': str(e)
+                        }
+                    )
 class RateSerializer(serializers.ModelSerializer):
     '''
     Serializer for Rates
@@ -318,10 +340,11 @@ class RateTierSerializer(serializers.ModelSerializer):
         '''
         Create a RateTier and its Rates
         '''
-        rates_data = validated_data.pop('rates')
         rate_tier = models.RateTier.objects.create(**validated_data)
-        for rate_data in rates_data:
-            models.Rate.objects.create(rate_tier=rate_tier, **rate_data)
+        rates_data = self.initial_data.get('rates')
+        if rates_data:
+            for rate_data in rates_data:
+                models.Rate.objects.create(rate_tier=rate_tier, **rate_data)
         return rate_tier
 
     @transaction.atomic
@@ -331,13 +354,32 @@ class RateTierSerializer(serializers.ModelSerializer):
         '''
         rate_tier = super().update(instance, validated_data)
         if 'rates' in self.initial_data and self.initial_data['rates']:
-            for product in rate_tier.product_set.all():
-                update_rates(self, self.initial_data['rates'], product, instance)
+            update_rates(self, self.initial_data['rates'], product=None, rate_tier=instance)
+
+
+class RateTierViewSet(viewsets.ModelViewSet):
+    '''
+    ViewSet for RateTiers
+    '''
+    serializer_class = RateTierSerializer
+
+    def get_queryset(self):
+        '''
+        Allow query by name
+        '''
+        name = self.request.query_params.get('name')
+
+        queryset = models.RateTier.objects.all()
+
+        if name:
+            queryset = queryset.filter(name=name)
+
+        return queryset
 
 
 class ParentProductSerializer(serializers.ModelSerializer):
     '''
-    Serializer for Products
+    Serializer for Products.  Rates and RateTiers are mutually exclusive
     '''
     product_number = serializers.ReadOnlyField()
     product_name = serializers.CharField(max_length=50)
@@ -403,7 +445,12 @@ class ParentProductSerializer(serializers.ModelSerializer):
                     'product_name': msg
                 }
             )
-        if 'rates' in self.initial_data and self.initial_data['rates']:
+
+        # Rate tiers and rates are mutually exclusive.  One or the other.
+        if 'rate_tier' in validated_data and validated_data['rate_tier']:
+            product.rate_tier = validated_data['rate_tier']
+            product.save()
+        elif 'rates' in self.initial_data and self.initial_data['rates']:
             for rate_data in self.initial_data['rates']:
                 try:
                     models.Rate.objects.create(product=product, **rate_data)
@@ -453,60 +500,20 @@ class ParentProductSerializer(serializers.ModelSerializer):
 
         instance.save()
 
+        # Rate tiers and rates are mutually exclusive.  One or the other.
+        if 'rate_tier' in validated_data and validated_data['rate_tier']:
+            instance.rate_tier = validated_data['rate_tier']
+            instance.save()
+            # If a rate tier is set and there are rates, deactivate them
+            for rate in instance.rate_set.all():
+                rate.is_active = False
+                rate.save()
+
         # Only is_active flag can be updated for a Rate and only to set from true to false; other updates are an error
         # If there is a new Rate, the version must be incremented
-        if 'rates' in self.initial_data and self.initial_data['rates']:
+        elif 'rates' in self.initial_data and self.initial_data['rates']:
             # Enure that rate_data is not less than current number of rates
-            if len(self.initial_data['rates']) < models.Rate.objects.filter(product=instance).count():
-                raise serializers.ValidationError(
-                    detail={
-                        'rates': 'Rates cannot be removed'
-                    }
-                )
-            for rate_data in self.initial_data['rates']:
-                logger.debug(f'Rate data {rate_data}')
-                if rate_data.get('id'):
-                    try:
-                        rate = models.Rate.objects.get(id=rate_data['id'])
-                        if rate_data.get('decimal_price') is None:
-                            raise serializers.ValidationError(
-                                detail={
-                                    'rates': f'Rate {rate_data["name"]} needs a decimal price'
-                                }
-                            )
-                        rate_data['decimal_price'] = Decimal(rate_data['decimal_price'])
-                        for field in ['name', 'decimal_price', 'max_qty', 'price', 'units']:
-                            if rate_data.get(field) != getattr(rate, field):
-                                raise serializers.ValidationError(
-                                    detail={
-                                        'rates': f'Cannot change {field} on a Rate. Must create a new Rate and deactivate old one.'
-                                    }
-                                )
-                        if not rate_data['is_active'] and rate.is_active:
-                            rate.is_active = rate_data['is_active']
-                            rate.save()
-                    except models.Rate.DoesNotExist as dne:
-                        raise serializers.ValidationError(
-                            detail={
-                                'rates': f'Cannot find rate with id {rate_data["id"]}'
-                            }
-                        ) from dne
-                else:
-                    # If there is a previous rate with the same name and product, increment the version
-                    old_rates = models.Rate.objects.filter(product=instance, name=rate_data['name']).order_by('-version')
-                    if old_rates:
-                        rate_data['version'] = old_rates[0].version + 1
-                    else:
-                        rate_data['version'] = 1
-                    try:
-                        models.Rate.objects.create(product=instance, **rate_data)
-                    except Exception as e:
-                        logger.exception(e)
-                        raise serializers.ValidationError(
-                            detail={
-                                'rates': str(e)
-                            }
-                        )
+            update_rates(self, self.initial_data['rates'], instance)
             # Reload the object with the new rates and return
             instance = models.Product.objects.get(id=instance.id)
         return instance
