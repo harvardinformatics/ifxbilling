@@ -228,6 +228,60 @@ class AccountViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+def update_rates(self, rates_data, product, rate_tier):
+    '''
+    Update rates for a product
+    '''
+    if len(rates_data['rates']) < models.Rate.objects.filter(product=product).count():
+        raise serializers.ValidationError(
+            detail={
+                'rates': 'Rates cannot be removed'
+            }
+        )
+    for rate_data in rates_data:
+        if rate_data.get('id'):
+            try:
+                rate = models.Rate.objects.get(id=rate_data['id'])
+                if rate_data.get('decimal_price') is None:
+                    raise serializers.ValidationError(
+                        detail={
+                            'rates': f'Rate {rate_data["name"]} needs a decimal price'
+                        }
+                    )
+                rate_data['decimal_price'] = Decimal(rate_data['decimal_price'])
+                for field in ['name', 'decimal_price', 'max_qty', 'price', 'units']:
+                    if rate_data.get(field) != getattr(rate, field):
+                        raise serializers.ValidationError(
+                            detail={
+                                'rates': f'Cannot change {field} on a Rate. Must create a new Rate and deactivate old one.'
+                            }
+                        )
+                if not rate_data['is_active'] and rate.is_active:
+                    rate.is_active = rate_data['is_active']
+                    rate.save()
+            except models.Rate.DoesNotExist as dne:
+                raise serializers.ValidationError(
+                    detail={
+                        'rates': f'Cannot find rate with id {rate_data["id"]}'
+                    }
+                ) from dne
+        else:
+            # If there is a previous rate with the same name and product, increment the version
+            old_rates = models.Rate.objects.filter(product=product, name=rate_data['name']).order_by('-version')
+            if old_rates:
+                rate_data['version'] = old_rates[0].version + 1
+            else:
+                rate_data['version'] = 1
+            try:
+                models.Rate.objects.create(product=product, rate_tier=rate_tier, **rate_data)
+            except Exception as e:
+                logger.exception(e)
+                raise serializers.ValidationError(
+                    detail={
+                        'rates': str(e)
+                    }
+                )
+
 class RateSerializer(serializers.ModelSerializer):
     '''
     Serializer for Rates
@@ -247,6 +301,39 @@ class RateSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'description', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated', 'version', 'sort_order')
         read_only_fields = ('id', 'created', 'updated', 'version')
 
+class RateTierSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for RateTiers
+    '''
+    name = serializers.CharField(max_length=50)
+    rates = RateSerializer(many=True, read_only=True, source='rate_tier')
+
+    class Meta:
+        model = models.RateTier
+        fields = ('id', 'name', 'rates')
+        read_only_fields = ('id',)
+
+    @transaction.atomic
+    def create(self, validated_data):
+        '''
+        Create a RateTier and its Rates
+        '''
+        rates_data = validated_data.pop('rates')
+        rate_tier = models.RateTier.objects.create(**validated_data)
+        for rate_data in rates_data:
+            models.Rate.objects.create(rate_tier=rate_tier, **rate_data)
+        return rate_tier
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        '''
+        Cannot actually update Rate data.  Must create a new Rate.
+        '''
+        rate_tier = super().update(instance, validated_data)
+        if 'rates' in self.initial_data and self.initial_data['rates']:
+            for product in rate_tier.product_set.all():
+                update_rates(self, self.initial_data['rates'], product, instance)
+
 
 class ParentProductSerializer(serializers.ModelSerializer):
     '''
@@ -258,10 +345,11 @@ class ParentProductSerializer(serializers.ModelSerializer):
     facility = serializers.SlugRelatedField(slug_field='name', queryset=models.Facility.objects.all())
     billing_calculator = serializers.CharField(max_length=100, required=False)
     rates = RateSerializer(many=True, read_only=True, source='rate_set')
+    rate_tier = serializers.SlugRelatedField(slug_field='name', queryset=models.RateTier.objects.all(), many=False, required=False)
 
     class Meta:
         model = models.Product
-        fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility', 'billable', 'parent')
+        fields = ('id', 'rate_tier', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility', 'billable', 'parent')
         read_only_fields = ('id',)
 
     def get_validated_data(self, validated_data):

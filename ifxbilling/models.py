@@ -303,6 +303,13 @@ class Product(NaturalKeyModel):
         null=True,
         help_text='Parent product for this product'
     )
+    rate_tier = models.ForeignKey(
+        'RateTier',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text='Rate set for this product'
+    )
 
     def get_active_rates(self):
         '''
@@ -328,6 +335,23 @@ class Product(NaturalKeyModel):
         if self.parent:
             parent_str = f' a {self.parent.product_name}'
         return f'{self.product_name}{parent_str} ({self.product_number})'
+
+
+class RateTier(NaturalKeyModel):
+    '''
+    Group of Rates, e.g. Tier 1 Nanofab Training Rates
+    '''
+    class Meta:
+        db_table = 'rate_tier'
+
+    name = models.CharField(
+        max_length=50,
+        null=False,
+        blank=False,
+        default=None,
+        help_text='Name of the rate tier',
+        unique=True
+    )
 
 
 class Rate(NaturalKeyModel):
@@ -394,6 +418,14 @@ class Rate(NaturalKeyModel):
         default=1,
         help_text='Sort order for display purposes'
     )
+    rate_tier = models.ForeignKey(
+        RateTier,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        help_text='The rate tier to which this rate belongs'
+    )
+
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

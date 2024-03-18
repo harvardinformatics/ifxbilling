@@ -290,6 +290,7 @@ class TestProduct(APITestCase):
         # Fetch the existing object
         url = reverse('product-detail', kwargs={'pk': response.data['id']})
         response = self.client.get(url, format='json')
+        self.assertTrue('rates' in response.data and response.data['rates'], f'Incorrect response {response.data}')
         self.assertTrue(len(response.data['rates']) == 2, f'Incorrect response {response.data}')
         product_data = response.data
         for i, rate in enumerate(product_data['rates']):
