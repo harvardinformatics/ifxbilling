@@ -14,10 +14,8 @@ Submodules
 
    ifxbilling.test.data
    ifxbilling.test.testAccount
-   ifxbilling.test.testBillingCalculator
    ifxbilling.test.testBillingRecord
    ifxbilling.test.testBillingRecordAuthorship
-   ifxbilling.test.testCalculateBillingMonth
    ifxbilling.test.testNewBillingCalculator
    ifxbilling.test.testProduct
    ifxbilling.test.testProductUsage

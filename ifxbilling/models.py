@@ -273,7 +273,7 @@ class Product(NaturalKeyModel):
         help_text='Name of the product'
     )
     product_description = models.CharField(
-        max_length=200,
+        max_length=4000,
         null=False,
         blank=False,
         default=None,
