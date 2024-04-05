@@ -18,11 +18,19 @@ class BillingRecordUpdatePermissions(permissions.IsAuthenticated):
         Prevent DELETEs.  Require admin user or fiine application user.
         '''
         if request.method == 'DELETE':
-            return False
+            return Roles.userIsAdmin(request.user)
         if request.method in ['PUT', 'POST', 'GET']:
             return Roles.userIsAdmin(request.user) or request.user.username == 'fiine'
 
         return False
+
+    def has_object_permission(self, request, view, obj):
+        '''
+        Only allow deletes if the user is an admin and the current_state is 'PENDING_LAB_APPROVAL' or 'INIT'
+        '''
+        if request.method == 'DELETE':
+            return Roles.userIsAdmin(request.user) and obj.current_state in ['PENDING_LAB_APPROVAL', 'INIT']
+        return super().has_object_permission(request, view, obj)
 
 class AdminPermissions(permissions.IsAuthenticated):
     '''
