@@ -560,3 +560,58 @@ class TestBillingRecord(APITestCase):
         self.assertTrue(br.transaction_set.count() == 2, 'Transaction not added!')
         self.assertTrue(br.charge == 0, f'Incorrect adjusted billing record charge {br.charge}')
 
+    def testDeleteOKForAdmin(self):
+        '''
+        Ensure that admins can delete billing records via REST endpoint if in the PENDING_LAB_APPROVAL state
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage', 'UserProductAccount'])
+
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
+        account = models.Account.objects.first()
+
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                },
+                {
+                    'charge': -10,
+                    'description': '10%% off coupon',
+                }
+            ],
+            'billing_record_states': [
+                {
+                    'name': 'PENDING_LAB_APPROVAL'
+                }
+            ]
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+        self.assertTrue(response.data['current_state'] == 'PENDING_LAB_APPROVAL', f'Incorrect billing record state {response.data["current_state"]}')
+
+        id = response.data['id']
+
+        # Ensure that deletion fails when superuser has no groups
+        self.superuser.groups.clear()
+        url = reverse('billing-record-detail', kwargs={ 'pk': id })
+        response = self.client.delete(url)
+        self.assertTrue(response.status_code == status.HTTP_403_FORBIDDEN, f'Failed to delete {response}')
+
+        # Ensure that deletion succeeds when superuser is an admin
+        admin_group, created = Group.objects.get_or_create(name=settings.GROUPS.ADMIN_GROUP_NAME)
+        self.superuser.groups.add(admin_group)
+        url = reverse('billing-record-detail', kwargs={ 'pk': id })
+        response = self.client.delete(url)
+        self.assertTrue(response.status_code == status.HTTP_204_NO_CONTENT, f'Failed to delete {response}')
+
