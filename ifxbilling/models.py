@@ -214,6 +214,27 @@ class Account(NaturalKeyModel):
         ECFIELDS = ExpenseCodeFields()
         return ECFIELDS.replace_field(self.code, ECFIELDS.OBJECT_CODE, object_code)
 
+    def user_has_authorization(self, user, product=None, date=None):
+        '''
+        Check if a user has an authorization for this account.
+        If product is provided, check if the user has an authorization for the product or product parent or general authorization for the account.
+        If date is provided, check if the account is valid on that date.
+        '''
+        if date:
+            if self.expiration_date and self.expiration_date < date:
+                return False
+            if self.valid_from > date:
+                return False
+
+        if self.useraccount_set.filter(user=user, is_valid=True).exists():
+            return True
+
+        if product:
+            return self.userproductaccount_set.filter(user=user, is_valid=True, product=product).exists() or \
+                (product.parent and self.userproductaccount_set.filter(user=user, is_valid=True, product=product.parent).exists())
+
+        return False
+
 
 
 class UserAccount(NaturalKeyModel):
