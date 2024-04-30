@@ -324,6 +324,11 @@ class Product(NaturalKeyModel):
         null=True,
         help_text='Parent product for this product'
     )
+    product_category = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
 
     def get_active_rates(self):
         '''

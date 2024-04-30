@@ -261,7 +261,18 @@ class ParentProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Product
-        fields = ('id', 'product_number', 'product_name', 'product_description', 'billing_calculator', 'rates', 'facility', 'billable', 'parent')
+        fields = (
+            'id',
+            'product_number',
+            'product_name',
+            'product_description',
+            'billing_calculator',
+            'rates',
+            'facility',
+            'billable',
+            'parent',
+            'product_category',
+        )
         read_only_fields = ('id',)
 
     def get_validated_data(self, validated_data):
@@ -430,7 +441,18 @@ class ProductSerializer(ParentProductSerializer):
     '''
     class Meta:
         model = models.Product
-        fields = ('id', 'product_name', 'product_number', 'product_description', 'facility', 'rates', 'billing_calculator', 'billable', 'parent')
+        fields = (
+            'id',
+            'product_name',
+            'product_number',
+            'product_description',
+            'facility',
+            'rates',
+            'billing_calculator',
+            'billable',
+            'parent',
+            'product_category',
+        )
         read_only_fields = ('id', )
 
     parent = ParentProductSerializer(many=False, read_only=True)
@@ -447,6 +469,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         product_name = self.request.query_params.get('product_name')
         parent_number = self.request.query_params.get('parent_number')
         parent_name = self.request.query_params.get('parent_name')
+        product_category = self.request.query_params.get('product_category')
 
         queryset = models.Product.objects.all()
 
@@ -458,6 +481,8 @@ class ProductViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(parent__product_number=parent_number)
         if parent_name:
             queryset = queryset.filter(parent__product_name=parent_name)
+        if product_category:
+            queryset = queryset.filter(product_category=product_category)
 
         return queryset
 
