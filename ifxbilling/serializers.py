@@ -303,6 +303,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'product_description': validated_data['product_description'],
             'facility': validated_data['facility'],
             'billable': validated_data['billable'],
+            'product_category': validated_data.get('product_category', None),
         }
         if validated_data.get('parent'):
             kwargs['parent'] = validated_data['parent']
