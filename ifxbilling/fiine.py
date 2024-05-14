@@ -250,7 +250,7 @@ def update_products():
                 models.Product.objects.create(**fiine_product_data)
 
 
-def create_new_product(product_name, product_description, facility, object_code_category='Technical Services', billing_calculator=None, billable=True, parent=None):
+def create_new_product(product_name, product_description, facility, object_code_category='Technical Services', billing_calculator=None, billable=True, parent=None, product_category=None):
     '''
     Creates product record in fiine, and creates the local record with product number
     '''
@@ -264,6 +264,7 @@ def create_new_product(product_name, product_description, facility, object_code_
             'product_description': product_description,
             'facility': facility.name,
             'object_code_category': object_code_category,
+            'product_category': product_category,
         }
         if parent:
             product_data['parent'] = {
@@ -277,6 +278,7 @@ def create_new_product(product_name, product_description, facility, object_code_
             product_name=product_obj.product_name,
             product_description=product_obj.product_description,
             facility=facility,
+            product_category=product_obj.product_category,
         )
         if billing_calculator:
             product.billing_calculator = billing_calculator
@@ -286,7 +288,7 @@ def create_new_product(product_name, product_description, facility, object_code_
                 parent = models.Product.objects.get(product_number=product_number)
             except models.Product.DoesNotExist as dne:
                 logger.exception(f'Unable to find parent product {product_number}')
-                raise Exception(f'Unable to find parent product {product_number}')
+                raise Exception(f'Unable to find parent product {product_number}') from dne
             product.parent = parent
         product.save()
         return product

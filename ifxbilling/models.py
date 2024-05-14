@@ -23,8 +23,8 @@ from django.db.models import ProtectedError
 from django.dispatch import receiver
 from author.decorators import with_author
 from natural_keys import NaturalKeyModel
-from ifxuser.models import Organization
 from ifxvalidcode.ec_functions import ExpenseCodeFields
+from ifxuser.models import Organization
 
 
 logger = logging.getLogger('__name__')
