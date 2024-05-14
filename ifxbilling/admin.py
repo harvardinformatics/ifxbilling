@@ -176,6 +176,7 @@ class ProductAdmin(admin.ModelAdmin):
         'reporting_group',
         'billable',
         'parent',
+        'product_category',
     )
     list_display = (
         'id',
@@ -183,7 +184,8 @@ class ProductAdmin(admin.ModelAdmin):
         'product_name',
         'product_description',
         'facility',
-        'billable'
+        'billable',
+        'product_category',
     )
     ordering = ('product_number',)
     search_fields = (
@@ -194,7 +196,7 @@ class ProductAdmin(admin.ModelAdmin):
         'facility',
         'reporting_group'
      )
-    list_filter = ('billing_calculator', 'billable')
+    list_filter = ('billing_calculator', 'billable', 'product_category')
     inlines = (RateInlineAdmin,)
     readonly_fields = ('product_number',)
 
