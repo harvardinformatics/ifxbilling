@@ -193,7 +193,7 @@ class ProductAdmin(admin.ModelAdmin):
         'product_name',
         'product_description',
         'billing_calculator',
-        'facility',
+        'facility__name',
         'reporting_group'
      )
     list_filter = ('billing_calculator', 'billable', 'product_category')
