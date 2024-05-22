@@ -459,7 +459,7 @@ def get_billing_record_list(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' order by year, month, account_organization, start_date'
+    sql += ' order by year, month, account_organization, start_date, billing_record_id'
 
     try:
 
