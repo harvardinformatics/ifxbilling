@@ -26,6 +26,7 @@ from natural_keys import NaturalKeyModel
 from ifxvalidcode.ec_functions import ExpenseCodeFields
 from ifxuser.models import Organization
 
+from ifxuser.models import Organization
 
 logger = logging.getLogger('__name__')
 
@@ -330,6 +331,16 @@ class Product(NaturalKeyModel):
         null=True
     )
 
+    def is_billable(self):
+        '''
+        Return True if this product is billable or has a billable parent
+        '''
+        if self.billable:
+            return True
+        if self.parent:
+            return self.parent.is_billable()
+        return False
+
     def get_active_rates(self):
         '''
         Returns a queryset of the currently active rates.
@@ -430,6 +441,7 @@ class Rate(NaturalKeyModel):
         price_str = ''
         if self.decimal_price:
             dollar_str = '$' if self.decimal_price > Decimal('0') else '-$'
+            # pylint: disable=no-member
             price_str = f'{abs(self.decimal_price.quantize(Decimal("0.00")))}'
 
 

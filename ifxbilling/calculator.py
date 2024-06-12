@@ -406,7 +406,7 @@ class NewBillingCalculator():
         sign_str = ''
         if decimal_charge < 0:
             sign_str = '-'
-        two_digits = abs(decimal_charge.quantize(settings.TWO_DIGIT_QUANTIZE))
+        two_digits = abs(decimal_charge.quantize(self.TWO_DIGIT_QUANTIZE))
         return f'{sign_str}${two_digits}'
 
     def set_facility(self):
@@ -624,7 +624,10 @@ class NewBillingCalculator():
         :return: A single rate
         :rtype: :class:`~ifxbilling.models.Rate`
         '''
-        return product_usage.product.get_active_rates().first()
+        rates = product_usage.product.get_active_rates()
+        if not rates:
+            raise Exception(f'No active rates for product {product_usage.product}')
+        return rates[0]
 
     def get_billing_data_dicts_for_usage(self, product_usage, **kwargs):
         '''
@@ -758,15 +761,28 @@ class NewBillingCalculator():
         if not organization:
             raise Exception(f'Unable to get an organization for {product_usage}')
 
+        # First try for the product_usage.product, then try the parent
+        product = product_usage.product
         user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
             (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
-            product=product_usage.product,
+            product=product,
             account__organization=organization,
             account__valid_from__lte=product_usage.start_date,
             is_valid=True
         )
-        logger.debug(f'{len(user_product_accounts)} upas found for {product_usage.product}')
+        if not user_product_accounts:
+            product = product_usage.product.parent
+            logger.error(f'No user product accounts found for {product_usage.product}.  Trying {product}')
+            user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
+                (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
+                product=product,
+                account__organization=organization,
+                account__valid_from__lte=product_usage.start_date,
+                is_valid=True
+            )
+
         if len(user_product_accounts) > 0:
+            logger.error(f'{len(user_product_accounts)} upas found for {product_usage.product}')
             # Use them all.  If there is more than one ensure that percents add to 100.
             pct_total = 0
             for user_product_account in user_product_accounts:
