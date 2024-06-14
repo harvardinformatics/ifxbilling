@@ -1100,7 +1100,7 @@ class BillingRecordViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Unable to find billing record to update'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             logger.exception(e)
-            return Response({'error': f'Problem updating billing records {e}'})
+            return Response({'error': f'iiiiProblem updating billing records {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class OrganizationRateSerializer(serializers.ModelSerializer):
     '''
