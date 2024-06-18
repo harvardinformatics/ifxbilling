@@ -26,7 +26,6 @@ from natural_keys import NaturalKeyModel
 from ifxvalidcode.ec_functions import ExpenseCodeFields
 from ifxuser.models import Organization
 
-from ifxuser.models import Organization
 
 logger = logging.getLogger('__name__')
 
