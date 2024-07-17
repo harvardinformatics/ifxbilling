@@ -621,6 +621,7 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
         month = self.request.query_params.get('month')
         product_user_username = self.request.query_params.get('product_user')
         product_category = self.request.query_params.get('product_category')
+        parent_product_name = self.request.query_params.get('parent_product_name')
 
         queryset = models.ProductUsage.objects.all()
 
@@ -640,6 +641,8 @@ class ProductUsageViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(product_user__username=product_user_username)
         if product_category:
             queryset = queryset.filter(product__product_category=product_category)
+        if parent_product_name:
+            queryset = queryset.filter(product__parent__product_name=parent_product_name)
 
         return queryset.order_by('-start_date')
 
