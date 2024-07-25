@@ -329,6 +329,16 @@ class Product(NaturalKeyModel):
         blank=True,
         null=True
     )
+    object_code_category = models.CharField(
+        choices=(
+            ('Laboratory Consumables', 'Laboratory Consumables'),
+            ('Technical Services', 'Technical Services'),
+        ),
+        max_length=100,
+        blank=True,
+        null=True,
+        default='Technical Services',
+    )
 
     def is_billable(self):
         '''
