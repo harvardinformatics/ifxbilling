@@ -591,7 +591,9 @@ class NewBillingCalculator():
                 for billing_data_dict in billing_data_dicts:
                     account = billing_data_dict.pop('account')
                     percent = billing_data_dict.pop('percent')
-                    rate_obj = billing_data_dict.pop('rate_obj')
+                    rate_obj = billing_data_dict.pop('rate_obj', None)
+                    if not rate_obj:
+                        raise Exception(f'No rate_obj for billing_data_dict {billing_data_dict}')
                     decimal_quantity = billing_data_dict.pop('decimal_quantity')
                     pup_message = billing_data_dict.pop('pup_message', 'OK')
                     br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, rate_obj, decimal_quantity, billing_data_dict)
