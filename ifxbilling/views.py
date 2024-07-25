@@ -357,6 +357,109 @@ def make_transaction_from_query_result(row_dict):
     }
 
 @api_view(('GET', ))
+def get_product_usage_list(request):
+    '''
+    Intended as a fast way to get product usage information for a given month and year, particularly
+    for the Calculate Billing Month page.  This is a read-only view.
+    '''
+    local_tz = timezone.get_current_timezone()
+
+    year = request.GET.get('year', None)
+    month = request.GET.get('month', None)
+    facility = request.GET.get('facility_name', None)
+    organization = request.GET.get('organization_slug', None)
+    invoice_prefix = request.GET.get('invoice_prefix', None)
+
+    results = []
+    sql = f'''
+        select
+            pu.id,
+            pu.decimal_quantity,
+            pu.description,
+            CONVERT_TZ(pu.start_date, 'UTC', '{local_tz}') as start_date,
+            CONVERT_TZ(pu.end_date, 'UTC', '{local_tz}') as end_date,
+            pu.month,
+            pu.year,
+            o.slug as organization,
+            p.product_name as product,
+            product_user.full_name as product_user_full_name,
+            product_user.ifxid as product_user_ifxid,
+            pup.error_message,
+            pup.resolved
+        from
+            product_usage pu
+            inner join product p on p.id = pu.product_id
+            inner join facility f on f.id = p.facility_id
+            inner join ifxuser product_user on pu.product_user_id = product_user.id
+            inner join nanites_organization o on o.id = pu.organization_id
+            left join product_usage_processing pup on pup.product_usage_id = pu.id
+    '''
+    where_clauses = []
+    query_args = []
+    if year:
+        try:
+            year = int(year)
+        except ValueError:
+            return Response('year must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('pu.year = %s')
+        query_args.append(year)
+
+    if month:
+        try:
+            month = int(month)
+        except ValueError:
+            return Response('month must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('pu.month = %s')
+        query_args.append(month)
+
+    if invoice_prefix:
+        where_clauses.append('f.invoice_prefix = %s')
+        query_args.append(invoice_prefix)
+
+    if organization:
+        where_clauses.append('o.slug = %s')
+        query_args.append(organization)
+
+    if facility:
+        where_clauses.append('f.name = %s')
+        query_args.append(facility)
+
+    if where_clauses:
+        sql += ' where '
+        sql += ' and '.join(where_clauses)
+
+    sql += ' order by year, month, start_date'
+
+    try:
+
+        cursor = connection.cursor()
+        cursor.execute(sql, query_args)
+
+        desc = cursor.description
+
+        for row in cursor.fetchall():
+            # Make a dictionary labeled by column name
+            row_dict = dict(zip([col[0] for col in desc], row))
+            row_dict['product_user'] = {
+                'full_name': row_dict['product_user_full_name'],
+                'ifxid': row_dict['product_user_ifxid'],
+            }
+            row_dict['processing'] = []
+            if row_dict.get('error_message'):
+                row_dict['processing'] = [{
+                    'error_message': row_dict['error_message'],
+                    'resolved': row_dict['resolved']
+                }]
+            results.append(row_dict)
+    except Exception as e:
+        logger.exception(e)
+        return Response(f'Error getting protocol usages {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data=results
+    )
+
+@api_view(('GET', ))
 def get_billing_record_list(request):
     '''
     Return trimmed down listing for billing record displays
