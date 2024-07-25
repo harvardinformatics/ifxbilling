@@ -306,12 +306,11 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'facility': validated_data['facility'],
             'billable': validated_data['billable'],
             'product_category': validated_data.get('product_category', None),
-            'object_code_category': validated_data.get('object_code_category', None),
+            'object_code_category': validated_data.get('object_code_category', 'Technical Services'),
+            'billing_calculator': validated_data.get('billing_calculator', 'ifxbilling.calculator.BasicBillingCalculator'),
         }
         if validated_data.get('parent'):
             kwargs['parent'] = validated_data['parent']
-        if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
-            kwargs['billing_calculator'] = validated_data['billing_calculator']
         return kwargs
 
     @transaction.atomic
@@ -375,7 +374,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
 
         for attr in ['product_name', 'product_description', 'billable']:
             setattr(instance, attr, validated_data[attr])
-        instance.billing_calculator = validated_data.get('billing_calculator', None)
+        instance.billing_calculator = validated_data.get('billing_calculator', 'ifxbilling.calculator.BasicBillingCalculator')
         instance.parent = validated_data.get('parent')
         instance.product_category = validated_data.get('product_category', None)
         instance.object_code_category = validated_data.get('object_code_category', None)
