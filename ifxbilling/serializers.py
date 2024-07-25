@@ -258,6 +258,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
     facility = serializers.SlugRelatedField(slug_field='name', queryset=models.Facility.objects.all())
     billing_calculator = serializers.CharField(max_length=100, required=False)
     rates = RateSerializer(many=True, read_only=True, source='rate_set')
+    object_code_category = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = models.Product
@@ -272,6 +273,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'billable',
             'parent',
             'product_category',
+            'object_code_category',
         )
         read_only_fields = ('id',)
 
@@ -304,11 +306,11 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'facility': validated_data['facility'],
             'billable': validated_data['billable'],
             'product_category': validated_data.get('product_category', None),
+            'object_code_category': validated_data.get('object_code_category', 'Technical Services'),
+            'billing_calculator': validated_data.get('billing_calculator', 'ifxbilling.calculator.BasicBillingCalculator'),
         }
         if validated_data.get('parent'):
             kwargs['parent'] = validated_data['parent']
-        if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
-            kwargs['billing_calculator'] = validated_data['billing_calculator']
         return kwargs
 
     @transaction.atomic
@@ -353,6 +355,8 @@ class ParentProductSerializer(serializers.ModelSerializer):
             product.product_name = product_data['product_name']
             product.description = product_data['product_description']
             product.billable = product_data['billable']
+            product.product_category = product_data.get('product_category')
+            product.object_code_category = product_data.get('object_code_category')
             if product_data.get('parent'):
                 product.parent = { 'product_number': product_data['parent'].product_number }
             FiineAPI.updateProduct(**product.to_dict())
@@ -370,10 +374,10 @@ class ParentProductSerializer(serializers.ModelSerializer):
 
         for attr in ['product_name', 'product_description', 'billable']:
             setattr(instance, attr, validated_data[attr])
-        if 'billing_calculator' in validated_data and validated_data['billing_calculator']:
-            instance.billing_calculator = validated_data['billing_calculator']
-        if 'parent' in validated_data and validated_data['parent']:
-            instance.parent = validated_data['parent']
+        instance.billing_calculator = validated_data.get('billing_calculator', 'ifxbilling.calculator.BasicBillingCalculator')
+        instance.parent = validated_data.get('parent')
+        instance.product_category = validated_data.get('product_category', None)
+        instance.object_code_category = validated_data.get('object_code_category', None)
 
         instance.save()
 
@@ -453,6 +457,7 @@ class ProductSerializer(ParentProductSerializer):
             'billable',
             'parent',
             'product_category',
+            'object_code_category',
         )
         read_only_fields = ('id', )
 
