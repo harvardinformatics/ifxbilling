@@ -333,6 +333,7 @@ class Product(NaturalKeyModel):
         choices=(
             ('Laboratory Consumables', 'Laboratory Consumables'),
             ('Technical Services', 'Technical Services'),
+            ('Animal Per Diem Charges', 'Animal Per Diem Charges'),
         ),
         max_length=100,
         blank=True,
