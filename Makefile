@@ -29,7 +29,7 @@ drf:
 migrate:
 	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py makemigrations
 	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py migrate
-test: migrate drf
+test: drf migrate
 	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py test -v 2; docker compose down
 prod:
 	docker build -t $(PRODIMAGE) $(PRODBUILDARGS) .
