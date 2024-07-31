@@ -23,7 +23,7 @@ from django.db.models import ProtectedError
 from django.dispatch import receiver
 from author.decorators import with_author
 from natural_keys import NaturalKeyModel
-from ifxvalidcode.ec_functions import ExpenseCodeFields
+from ifxec import ExpenseCodeFields
 from ifxuser.models import Organization
 
 
