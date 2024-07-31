@@ -21,7 +21,7 @@ from fiine.client import API as FiineAPI
 from fiine.client import ApiException
 from ifxmail.client import API as IfxMailAPI
 from ifxuser.models import Organization
-from ifxvalidcode.ec_functions import ExpenseCodeFields
+from ifxec import ExpenseCodeFields
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, ValidationError
 

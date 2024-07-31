@@ -24,7 +24,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from fiine.client import API as FiineAPI
-from ifxvalidcode.ec_functions import ExpenseCodeFields
+from ifxec import ExpenseCodeFields
 from ifxuser.models import Organization
 from ifxuser.serializers import UserSerializer
 from ifxbilling import models
