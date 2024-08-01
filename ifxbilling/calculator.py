@@ -852,7 +852,8 @@ class NewBillingCalculator():
         description = f'{percent_str}{decimal_quantity.quantize(self.TWO_DIGIT_QUANTIZE)} {product_usage.units}{plural} at {rate_desc}'
 
         if self.is_flat_rate(rate_obj):
-            decimal_charge = rate_obj.decimal_price
+            decimal_charge = rate_obj.decimal_price * Decimal(percent / 100)
+            logger.debug(f'Flat rate charge: {decimal_charge} which is {percent}% of {rate_obj.decimal_price}')
         else:
             decimal_charge = rate_obj.decimal_price * decimal_quantity * Decimal(percent / 100)
 
