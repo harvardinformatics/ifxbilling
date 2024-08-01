@@ -399,6 +399,12 @@ class NewBillingCalculator():
         self.set_facility()
         self.verbosity = self.QUIET
 
+    def is_flat_rate(self, rate):
+        '''
+        Returns True if the rate is a flat rate
+        '''
+        return False
+
     def get_decimal_charge_str(self, decimal_charge):
         '''
         String with dollar sign, two digits, and proper negative
@@ -774,7 +780,6 @@ class NewBillingCalculator():
         )
         if not user_product_accounts:
             product = product_usage.product.parent
-            logger.error(f'No user product accounts found for {product_usage.product}.  Trying {product}')
             user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
                 (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
                 product=product,
@@ -784,7 +789,6 @@ class NewBillingCalculator():
             )
 
         if len(user_product_accounts) > 0:
-            logger.error(f'{len(user_product_accounts)} upas found for {product_usage.product}')
             # Use them all.  If there is more than one ensure that percents add to 100.
             pct_total = 0
             for user_product_account in user_product_accounts:
@@ -846,7 +850,12 @@ class NewBillingCalculator():
             if product_usage.units[-1] != 's':
                 plural = 's'
         description = f'{percent_str}{decimal_quantity.quantize(self.TWO_DIGIT_QUANTIZE)} {product_usage.units}{plural} at {rate_desc}'
-        decimal_charge = rate_obj.decimal_price * decimal_quantity * Decimal(percent / 100)
+
+        if self.is_flat_rate(rate_obj):
+            decimal_charge = rate_obj.decimal_price
+        else:
+            decimal_charge = rate_obj.decimal_price * decimal_quantity * Decimal(percent / 100)
+
         user = product_usage.product_user
 
         transactions_data.append(
