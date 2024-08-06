@@ -279,6 +279,7 @@ def create_new_product(product_name, product_description, facility, object_code_
             product_description=product_obj.product_description,
             facility=facility,
             product_category=product_obj.product_category,
+            object_code_category=product_obj.object_code_category,
         )
         if billing_calculator:
             product.billing_calculator = billing_calculator

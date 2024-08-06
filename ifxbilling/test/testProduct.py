@@ -49,6 +49,8 @@ class TestProduct(APITestCase):
         rate_name = pp_data['rates'][0]['name']
         parent_product = Product.objects.get(product_name=pp_data['product_name'])
         product_name = 'Helium Dewar Test'
+        object_code_category = 'Laboratory Consumables'
+        product_category = 'Stuff'
         product_data = {
             'product_name': product_name,
             'product_description': 'A dewar of helium',
@@ -56,7 +58,9 @@ class TestProduct(APITestCase):
             'billable': True,
             'parent': {
                 'product_number': parent_product.product_number
-            }
+            },
+            'object_code_category': object_code_category,
+            'product_category': product_category,
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')
@@ -64,6 +68,8 @@ class TestProduct(APITestCase):
         self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
         self.assertTrue(product.billing_calculator == 'ifxbilling.calculator.BasicBillingCalculator', f'Incorrect response data {response.data}')
         self.assertTrue(product.product_number, f'Product number not set {response.data}')
+        self.assertTrue(product.object_code_category == object_code_category, f'Incorrect object code category {response.data}')
+        self.assertTrue(product.product_category == product_category, f'Incorrect product category {response.data}')
 
         # Rates should be parent rates
         rates = product.get_active_rates()
