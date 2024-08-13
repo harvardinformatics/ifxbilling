@@ -42,6 +42,14 @@ def replace_object_code_in_fiine_account(acct_data, object_code):
         )
     return acct_data.to_dict()
 
+def sync_facilities():
+    '''
+    Sync local facilities with fiine facilities.  If a facility exists locally, update the facility name and object code.
+    If a facility does not exist locally, create a new facility.
+    '''
+    pass
+
+
 def sync_fiine_accounts(code=None):
     '''
     Sync all accounts from fiine.
