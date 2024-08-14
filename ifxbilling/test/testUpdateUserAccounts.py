@@ -44,11 +44,8 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that facilities can be updated from fiine
         '''
         data.init()
+        sync_facilities()
         number_of_facilities = len(data.FACILITIES)
-
-        # Make sure they are in sync
-        successes, errors = sync_facilities()
-        self.assertTrue(successes == number_of_facilities, f'Incorrect number of successes {successes}')
 
         # Modify one facility
         facility = models.Facility.objects.first()
@@ -69,12 +66,14 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that UserAccounts can be updated from fiine, including creation of new Account
         '''
         data.init(types=['User', 'Account', 'Organization'])
+        successes, errors = sync_facilities()
+        self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
         update_products()
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         updated_user = update_user_accounts(user)
         user_accounts = updated_user.useraccount_set.all()
-        self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {user_accounts}')
+        self.assertTrue(len(user_accounts) == 2, f'Incorrect number of user_accounts {user_accounts}')
         user_account = user_accounts[0]
         self.assertTrue(user_account.account.name == 'mycode', f'Incorrect user acccount (should be mycode) {user_account.account}')
 
@@ -83,6 +82,8 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that UserAccounts can be updated from fiine, including creation of new Account, via view
         '''
         data.init(types=['User', 'Account', 'Organization'])
+        successes, errors = sync_facilities()
+        self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
         update_products()
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
@@ -94,7 +95,7 @@ class TestUpdateUserAccounts(APITestCase):
         user_accounts = user.useraccount_set.all()
         user_product_accounts = user.userproductaccount_set.all()
 
-        self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
+        self.assertTrue(len(user_accounts) == 2, f'Incorrect number of user_accounts {len(user_accounts)}')
         self.assertTrue(len(user_product_accounts) == 2, f'Incorrect number of user_accounts {len(user_product_accounts)}')
 
     def testUpdateAllUserAccountView(self):
@@ -102,6 +103,8 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that all UserAccounts can be updated from fiine, including creation of new Account, via view
         '''
         data.init(types=['User', 'Account', 'Organization'])
+        successes, errors = sync_facilities()
+        self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
         update_products()
 
         url = reverse('update-user-accounts')
@@ -115,7 +118,7 @@ class TestUpdateUserAccounts(APITestCase):
         user_accounts = user.useraccount_set.all()
         user_product_accounts = user.userproductaccount_set.all()
 
-        self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {len(user_accounts)}')
+        self.assertTrue(len(user_accounts) == 2, f'Incorrect number of user_accounts {len(user_accounts)}')
         self.assertTrue(len(user_product_accounts) == 2, f'Incorrect number of user_accounts {len(user_product_accounts)}')
 
     def testUpdateUserAccountIsValid(self):
@@ -123,11 +126,13 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that existing UserAccount can have is_valid flag changed when fiine updates
         '''
         data.init(types=['User', 'Organization'])
+        successes, errors = sync_facilities()
+        self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
         update_products()
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         updated_user = update_user_accounts(user)
 
-        account = models.Account.objects.get(name='mycode')
+        account = models.Account.objects.filter(name='mycode').first()
 
         # pylint: disable=unused-variable
         user_account, created = models.UserAccount.objects.get_or_create(account=account, user=user)
@@ -136,14 +141,16 @@ class TestUpdateUserAccounts(APITestCase):
 
         updated_user = update_user_accounts(user)
         user_accounts = list(updated_user.useraccount_set.all())
-        self.assertTrue(len(user_accounts) == 1, f'Incorrect number of user_accounts {user_accounts}')
-        self.assertTrue(user_accounts[0].is_valid, f'is_valid flag not overridden {user_accounts}')
+        self.assertTrue(len(user_accounts) == 2, f'Incorrect number of user_accounts {user_accounts}')
+        self.assertTrue(all([ua.is_valid for ua in user_accounts]), f'is_valid flag not overridden {user_accounts}')
 
     def testUpdateUserProductAccount(self):
         '''
         Ensure that a UserProductAccount can be updated from Fiine
         '''
         data.init(types=['User', 'Organization'])
+        successes, errors = sync_facilities()
+        self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
 
         # test_account_data = deepcopy(data.FIINE_TEST_ACCOUNT)

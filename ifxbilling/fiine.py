@@ -21,7 +21,7 @@ from fiine.client import API as FiineAPI
 from fiine.client import ApiException
 from ifxmail.client import API as IfxMailAPI
 from ifxuser.models import Organization
-from ifxec import ExpenseCodeFields
+from ifxec import ExpenseCodeFields, OBJECT_CODES
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated, ValidationError
 
@@ -34,13 +34,13 @@ def replace_object_code_in_fiine_account(acct_data, object_code):
     Replace object code and return dictionary version of FiineAPI account for expense codes.
     Expense code should be in acct_data.account.code (it should be an account from FiineAPI)
     '''
-    if acct_data.account.account_type == 'Expense Code':
-        acct_data.account.code = ExpenseCodeFields.replace_field(
-            acct_data.account.code,
+    if acct_data['account']['account_type'] == 'Expense Code':
+        acct_data['account']['code'] = ExpenseCodeFields.replace_field(
+            acct_data['account']['code'],
             ExpenseCodeFields.OBJECT_CODE,
             object_code
         )
-    return acct_data.to_dict()
+    return acct_data
 
 def sync_facilities():
     '''
@@ -96,16 +96,11 @@ def sync_fiine_accounts(code=None):
     accounts_created = 0
 
     for facility in models.Facility.objects.all():
-        facility_object_code = facility.object_code
-        if not facility_object_code:
-            raise Exception(f'Facility object code not set for {facility}')
+        facility_codes = facility.facilitycodes_set.all()
+        if not facility_codes:
+            raise Exception(f'Facility {facility} does not have any facility codes.  These should be updated in fiine.')
+
         for account_obj in accounts:
-            if account_obj.account_type == 'Expense Code':
-                account_obj.code = ExpenseCodeFields.replace_field(
-                    account_obj.code,
-                    ExpenseCodeFields.OBJECT_CODE,
-                    facility_object_code
-                )
             account_data = account_obj.to_dict()
             total_accounts += 1
             organization_name = account_data.pop('organization')
@@ -116,15 +111,22 @@ def sync_fiine_accounts(code=None):
                 # pylint: disable=raise-missing-from
                 raise Exception(f'While synchronizing accounts from fiine, organization {organization_name} in account {account_data["name"]} was not found.')
 
-            try:
-                models.Account.objects.get(code=account_data['code'], organization=account_data['organization'])
-                models.Account.objects.filter(code=account_data['code'], organization=account_data['organization']).update(**account_data)
-                accounts_updated += 1
-            except models.Account.DoesNotExist:
-                models.Account.objects.create(**account_data)
-                accounts_created += 1
-            except Exception as e:
-                raise Exception(f'Unable to create account {account_data["name"]}: {e}') from e
+            if account_data['account_type'] == 'Expense Code':
+                for facility_code in facility_codes:
+                    account_data['code'] = ExpenseCodeFields.replace_field(
+                        account_data['code'],
+                        ExpenseCodeFields.OBJECT_CODE,
+                        OBJECT_CODES[facility_code.debit_object_code_category].debit_code
+                    )
+                    try:
+                        models.Account.objects.get(ifxacct=account_data['ifxacct'], code=account_data['code'])
+                        models.Account.objects.filter(ifxacct=account_data['ifxacct'], code=account_data['code']).update(**account_data)
+                        accounts_updated += 1
+                    except models.Account.DoesNotExist:
+                        models.Account.objects.create(**account_data)
+                        accounts_created += 1
+                    except Exception as e:
+                        raise Exception(f'Unable to create account {account_data["name"]}: {e}') from e
     return (accounts_updated, accounts_created, total_accounts)
 
 
@@ -157,23 +159,28 @@ def update_user_accounts(user):
     # Setup facility accounts first. Then, go through default accounts and add if organization is not already covered
     organizations_covered_by_facility_account = []
     for facility in models.Facility.objects.all():
-        facility_object_code = facility.object_code
-        if not facility_object_code:
-            raise Exception(f'Facility object code not set for {facility}')
+        facility_codes = facility.facilitycodes_set.all()
+        if not facility_codes:
+            raise Exception(f'Facility codes not set for {facility}')
 
         for facility_account in fiine_person.facility_accounts:
             if facility_account.facility == facility.name:
                 # replace code and dict-ify
-                facility_account_data = replace_object_code_in_fiine_account(facility_account, facility_object_code)
-                facility_account_data.pop('facility', None)
-                fiine_accounts.append(facility_account_data)
-                if facility_account_data['is_valid'] and facility_account_data['account']['active']:
-                    organizations_covered_by_facility_account.append(facility_account_data['account']['organization'])
+                for facility_code in facility_codes:
+                    facility_object_code = OBJECT_CODES[facility_code.debit_object_code_category].debit_code
+                    facility_account_data = replace_object_code_in_fiine_account(facility_account.to_dict(), facility_object_code)
+                    facility_account_data.pop('facility', None)
+                    fiine_accounts.append(facility_account_data)
+                    if facility_account_data['is_valid'] and facility_account_data['account']['active']:
+                        organizations_covered_by_facility_account.append(facility_account_data['account']['organization'])
 
     for default_account in fiine_person.accounts:
         try:
             if default_account.account.active and default_account.is_valid and default_account.account.organization not in organizations_covered_by_facility_account:
-                fiine_accounts.append(replace_object_code_in_fiine_account(default_account, facility_object_code))
+                for facility_code in facility_codes:
+                    facility_object_code = OBJECT_CODES[facility_code.debit_object_code_category].debit_code
+                    default_account_data = replace_object_code_in_fiine_account(default_account.to_dict(), facility_object_code)
+                    fiine_accounts.append(default_account_data)
         except Exception as e:
             logger.error(f'Error with default account {default_account}: {e}')
 
@@ -181,11 +188,12 @@ def update_user_accounts(user):
 
 
     product_accounts = []
-    for acct in [replace_object_code_in_fiine_account(pacct, facility_object_code) for pacct in fiine_person.product_accounts]:
+    for product_account in fiine_person.product_accounts:
         # Don't include authorizations from non-local products
         try:
-            models.Product.objects.get(product_number=acct['product']['product_number'])
-            product_accounts.append(acct)
+            product = models.Product.objects.get(product_number=product_account.product.product_number)
+            product_account_data = replace_object_code_in_fiine_account(product_account.to_dict(), OBJECT_CODES[product.object_code_category].debit_code)
+            product_accounts.append(product_account_data)
         except models.Product.DoesNotExist:
             pass
 
@@ -195,7 +203,7 @@ def update_user_accounts(user):
         for person_account_data in fiine_accounts + product_accounts:
             account_data = person_account_data['account']
             try:
-                account = models.Account.objects.get(code=account_data['code'], organization__name=account_data['organization'])
+                account = models.Account.objects.get(ifxacct=account_data['ifxacct'], code=account_data['code'])
 
                 # Update some of the account fields if it's available
                 for field in ['name', 'active', 'valid_from', 'expiration_date']:
@@ -224,7 +232,7 @@ def update_user_accounts(user):
         for fiine_account_data in fiine_accounts:
             try:
                 account = models.Account.objects.get(
-                    organization__name=fiine_account_data['account']['organization'],
+                    ifxacct=fiine_account_data['account']['ifxacct'],
                     code=fiine_account_data['account']['code']
                 )
                 user_account = models.UserAccount.objects.get(user=user, account=account)
@@ -240,7 +248,7 @@ def update_user_accounts(user):
         for product_account_data in product_accounts:
             try:
                 account = models.Account.objects.get(
-                    organization__name=product_account_data['account']['organization'],
+                    ifxacct=product_account_data['account']['ifxacct'],
                     code=product_account_data['account']['code']
                 )
                 product = models.Product.objects.get(product_number=product_account_data['product']['product_number'])
