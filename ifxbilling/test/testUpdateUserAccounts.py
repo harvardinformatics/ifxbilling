@@ -16,7 +16,7 @@ from rest_framework.reverse import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from ifxbilling.test import data
-from ifxbilling.fiine import update_user_accounts, update_products
+from ifxbilling.fiine import update_user_accounts, update_products, sync_facilities
 from ifxbilling import models
 
 
@@ -38,6 +38,31 @@ class TestUpdateUserAccounts(APITestCase):
 
     def tearDown(self):
         data.clearTestData()
+
+    def testSyncFacilities(self):
+        '''
+        Ensure that facilities can be updated from fiine
+        '''
+        data.init()
+        number_of_facilities = len(data.FACILITIES)
+
+        # Make sure they are in sync
+        successes, errors = sync_facilities()
+        self.assertTrue(successes == number_of_facilities, f'Incorrect number of successes {successes}')
+
+        # Modify one facility
+        facility = models.Facility.objects.first()
+        old_name = facility.name
+        new_name = 'New Name'
+        facility.name = new_name
+        facility.save()
+        self.assertTrue(models.Facility.objects.get(name=new_name), f'Facility not updated {facility}')
+
+        # sync to update
+        successes, errors = sync_facilities()
+        self.assertTrue(successes == number_of_facilities, f'Incorrect number of successes {successes}')
+        self.assertRaises(models.Facility.DoesNotExist, models.Facility.objects.get, name=new_name)
+        self.assertTrue(models.Facility.objects.get(name=old_name), f'Facility not updated {facility}')
 
     def testUpdateUserAccounts(self):
         '''

@@ -5,7 +5,7 @@ Update UserAccount, UserProductAccount records from Fiine
 '''
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from ifxbilling.fiine import update_user_accounts, sync_fiine_accounts
+from ifxbilling.fiine import update_user_accounts, sync_fiine_accounts, sync_facilities
 
 
 class Command(BaseCommand):
@@ -33,6 +33,11 @@ class Command(BaseCommand):
 
         if kwargs.get('sync_all'):
             try:
+                successes, errors = sync_facilities()
+                print(f'{successes} facilities successfully synchronized.')
+                if errors:
+                    error_str = '\n'.join(errors)
+                    print(f'{len(errors)} failed: \n{error_str}')
                 accounts_updated, accounts_created, total_accounts = sync_fiine_accounts()
                 print(f'{accounts_updated} accounts updated, {accounts_created} accounts created out of {total_accounts} total accounts')
             except Exception as e:

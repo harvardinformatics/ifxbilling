@@ -44,11 +44,38 @@ def replace_object_code_in_fiine_account(acct_data, object_code):
 
 def sync_facilities():
     '''
-    Sync local facilities with fiine facilities.  If a facility exists locally, update the facility name and object code.
-    If a facility does not exist locally, create a new facility.
+    Sync local facilities with fiine facilities.
     '''
-    pass
+    if not models.Facility.objects.exists():
+        raise Exception('No facilities found in database')
 
+    successes = 0
+    errors = []
+    for facility in models.Facility.objects.all():
+        try:
+            with transaction.atomic():
+                fiine_facilities = FiineAPI.listFacilities(ifxfac=facility.ifxfac)
+                if not fiine_facilities:
+                    raise Exception(f'Facility {facility.ifxfac} not found in fiine')
+                fiine_facility = fiine_facilities[0]
+                facility.name = fiine_facility.name
+                facility.application_username = fiine_facility.application_username
+                facility.invoice_prefix = fiine_facility.invoice_prefix
+                facility.save()
+                facility.facilitycodes_set.all().delete()
+                for facility_code in fiine_facility.facility_codes:
+                    facility_code_obj = models.FacilityCodes(
+                        facility=facility,
+                        credit_code=facility_code.credit_code,
+                        debit_object_code_category=facility_code.debit_object_code_category,
+                    )
+                    facility_code_obj.save()
+                successes += 1
+        except Exception as e:
+            logger.exception(e)
+            errors.append(f'Error syncing facility {facility.ifxfac} ({facility.name}): {e}')
+
+    return successes, errors
 
 def sync_fiine_accounts(code=None):
     '''
