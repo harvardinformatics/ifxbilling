@@ -199,6 +199,7 @@ class ProductAdmin(admin.ModelAdmin):
         'product_description',
         'facility',
         'billable',
+        'object_code_category',
         'product_category',
     )
     ordering = ('product_number',)
