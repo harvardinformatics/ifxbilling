@@ -419,3 +419,23 @@ def handle_fiine_ifxapps_messages(messages):
         IfxMailAPI.markSeen(data={'ids': seen_ids})
 
     return successes, errors
+
+def set_ifxaccts():
+    '''
+    Meant to be used to set ifxaccts for all accounts in the database.  This should only be used once.
+    All accounts are retrieved using FiineApi.listAccounts and then the ifxacct is set for each account
+    by matching local Accounts via code / organization.
+    '''
+    accounts = FiineAPI.listAccounts()
+    for account in accounts:
+        try:
+            local_account = models.Account.objects.get(code=account.code, organization__name=account.organization)
+            if not local_account.ifxacct:
+                local_account.ifxacct = account.ifxacct
+                local_account.save()
+        except models.Account.DoesNotExist:
+            logger.error(f'Account {account.code} for {account.organization} not found in local database')
+            continue
+        except models.Account.MultipleObjectsReturned:
+            logger.error(f'Multiple accounts found for {account.code} for {account.organization}')
+            continue
