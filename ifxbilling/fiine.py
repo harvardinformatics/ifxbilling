@@ -42,6 +42,19 @@ def replace_object_code_in_fiine_account(acct_data, object_code):
         )
     return acct_data
 
+def get_facility_object_codes(facility):
+    '''
+    Get a unique set of object codes for a facility based on object code category of the facility codes
+    '''
+    facility_codes = facility.facilitycodes_set.all()
+    if not facility_codes:
+        raise Exception(f'Facility codes not set for {facility}')
+    object_codes = set()
+    for facility_code in facility_codes:
+        object_codes.add(OBJECT_CODES[facility_code.debit_object_code_category].debit_code)
+
+    return object_codes
+
 def sync_facilities():
     '''
     Sync local facilities with fiine facilities.
@@ -96,9 +109,6 @@ def sync_fiine_accounts(code=None):
     accounts_created = 0
 
     for facility in models.Facility.objects.all():
-        facility_codes = facility.facilitycodes_set.all()
-        if not facility_codes:
-            raise Exception(f'Facility {facility} does not have any facility codes.  These should be updated in fiine.')
 
         for account_obj in accounts:
             account_data = account_obj.to_dict()
@@ -112,11 +122,11 @@ def sync_fiine_accounts(code=None):
                 raise Exception(f'While synchronizing accounts from fiine, organization {organization_name} in account {account_data["name"]} was not found.')
 
             if account_data['account_type'] == 'Expense Code':
-                for facility_code in facility_codes:
+                for facility_object_code in get_facility_object_codes(facility):
                     account_data['code'] = ExpenseCodeFields.replace_field(
                         account_data['code'],
                         ExpenseCodeFields.OBJECT_CODE,
-                        OBJECT_CODES[facility_code.debit_object_code_category].debit_code
+                        facility_object_code
                     )
                     try:
                         models.Account.objects.get(ifxacct=account_data['ifxacct'], code=account_data['code'])
@@ -159,15 +169,11 @@ def update_user_accounts(user):
     # Setup facility accounts first. Then, go through default accounts and add if organization is not already covered
     organizations_covered_by_facility_account = []
     for facility in models.Facility.objects.all():
-        facility_codes = facility.facilitycodes_set.all()
-        if not facility_codes:
-            raise Exception(f'Facility codes not set for {facility}')
 
         for facility_account in fiine_person.facility_accounts:
             if facility_account.facility == facility.name:
                 # replace code and dict-ify
-                for facility_code in facility_codes:
-                    facility_object_code = OBJECT_CODES[facility_code.debit_object_code_category].debit_code
+                for facility_object_code in get_facility_object_codes(facility):
                     facility_account_data = replace_object_code_in_fiine_account(facility_account.to_dict(), facility_object_code)
                     facility_account_data.pop('facility', None)
                     fiine_accounts.append(facility_account_data)
@@ -177,8 +183,7 @@ def update_user_accounts(user):
     for default_account in fiine_person.accounts:
         try:
             if default_account.account.active and default_account.is_valid and default_account.account.organization not in organizations_covered_by_facility_account:
-                for facility_code in facility_codes:
-                    facility_object_code = OBJECT_CODES[facility_code.debit_object_code_category].debit_code
+                for facility_object_code in get_facility_object_codes(facility):
                     default_account_data = replace_object_code_in_fiine_account(default_account.to_dict(), facility_object_code)
                     fiine_accounts.append(default_account_data)
         except Exception as e:
