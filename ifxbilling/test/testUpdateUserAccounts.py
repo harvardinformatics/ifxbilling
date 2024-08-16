@@ -15,6 +15,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
+from ifxec import OBJECT_CODES
 from ifxbilling.test import data
 from ifxbilling.fiine import update_user_accounts, update_products, sync_facilities
 from ifxbilling import models
@@ -76,6 +77,14 @@ class TestUpdateUserAccounts(APITestCase):
         self.assertTrue(len(user_accounts) == 2, f'Incorrect number of user_accounts {user_accounts}')
         user_account = user_accounts[0]
         self.assertTrue(user_account.account.name == 'mycode', f'Incorrect user acccount (should be mycode) {user_account.account}')
+
+        # Check that an object code for each facility code is represented
+        object_codes = [OBJECT_CODES[fc.debit_object_code_category].debit_code for fc in models.FacilityCodes.objects.all()]
+        for object_code in object_codes:
+            self.assertTrue(
+                updated_user.useraccount_set.filter(account__code__contains=object_code).exists(),
+                f'Object code not represented {object_code}'
+            )
 
     def testUpdateUserAccountView(self):
         '''
@@ -163,4 +172,7 @@ class TestUpdateUserAccounts(APITestCase):
         # Update user accounts
         updated_user = update_user_accounts(user)
         user_product_accounts = updated_user.userproductaccount_set.all()
-        self.assertTrue(len(user_product_accounts) == 2, f'Incorrect number of user_product_accounts {len(user_product_accounts)}')
+        self.assertTrue(
+            len(user_product_accounts) == 2,
+            f'Incorrect number of user_product_accounts {len(user_product_accounts)}'
+        )
