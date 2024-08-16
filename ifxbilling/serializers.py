@@ -42,6 +42,7 @@ class FacilitySerializer(serializers.ModelSerializer):
         model = models.Facility
         fields = (
             'id',
+            'ifxfac',
             'name',
             'application_username',
             'invoice_prefix'
@@ -146,8 +147,8 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Account
-        fields = ('id', 'code', 'name', 'organization', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated', 'slug', 'user_accounts', 'user_product_accounts')
-        read_only_fields = ('created', 'updated', 'id', 'slug')
+        fields = ('id', 'ifxacct', 'code', 'name', 'organization', 'account_type', 'root', 'expiration_date', 'active', 'valid_from', 'created', 'updated', 'slug', 'user_accounts', 'user_product_accounts')
+        read_only_fields = ('created', 'updated', 'id', 'slug', 'ifxacct')
 
     @transaction.atomic
     def create(self, validated_data):

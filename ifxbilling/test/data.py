@@ -29,6 +29,7 @@ FIINE_TEST_PRODUCT = 'Test Product'
 
 FACILITIES = [
     {
+        'ifxfac': 'IFXFAC0000000002',
         'name': 'Helium Recovery Service',
         'application_username': 'hers',
         'credit_code': '370-32556-8254-018485-627247-0000-00000',
@@ -36,6 +37,7 @@ FACILITIES = [
         'object_code': '6600',
     },
     {
+        'ifxfac': 'IFXFAC0000000003',
         'name': 'Liquid Nitrogen Service',
         'application_username': 'hers',
         'credit_code': '370-32556-8254-018485-627258-0000-00000',
@@ -346,6 +348,7 @@ def init(types=None):
     Initialize organizations and users.  If types is set, initialize those as well.
     types will be processed in order, so child objects will need to be after parents.
     '''
+
     for org_data in ORGS:
         Organization.objects.create(**org_data)
     for original_user_data in USERS:

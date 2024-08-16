@@ -89,6 +89,14 @@ class Facility(NaturalKeyModel):
             )
         ]
 
+    ifxfac = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        default=None,
+        help_text='IFXFAC',
+    )
+
     name = models.CharField(
         max_length=200,
         unique=True,
@@ -127,6 +135,34 @@ class Facility(NaturalKeyModel):
     def __str__(self):
         return str(self.name)
 
+
+class FacilityCodes(NaturalKeyModel):
+    '''
+    Credit codes for facilities along with the corresponding debit object code
+    '''
+    class Meta:
+        db_table = 'facility_codes'
+        verbose_name_plural = 'facility codes'
+
+    facility = models.ForeignKey(
+        Facility,
+        on_delete=models.CASCADE
+    )
+    credit_code = models.CharField(
+        max_length=50,
+        help_text='Credit code to receive funds from billing for product usages.',
+    )
+    debit_object_code_category = models.CharField(
+        choices=(
+            ('Laboratory Consumables', 'Laboratory Consumables'),
+            ('Technical Services', 'Technical Services'),
+            ('Animal Per Diem Charges', 'Animal Per Diem Charges'),
+        ),
+        max_length=100,
+        default='Technical Services',
+    )
+
+
 class Account(NaturalKeyModel):
     """
     Model for accounts, including both expense codes and POs
@@ -134,6 +170,14 @@ class Account(NaturalKeyModel):
     class Meta:
         db_table = "account"
         unique_together = ('code', 'organization')
+
+    ifxacct = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        default=None,
+        help_text='IFXACCT',
+    )
 
     code = models.CharField(
         max_length=50,
@@ -234,7 +278,6 @@ class Account(NaturalKeyModel):
                 (product.parent and self.userproductaccount_set.filter(user=user, is_valid=True, product=product.parent).exists())
 
         return False
-
 
 
 class UserAccount(NaturalKeyModel):

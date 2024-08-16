@@ -11,3 +11,4 @@ __pycache__
 docker-compose-local.yml
 build*
 ifxbilling.egg-info*
+*.http

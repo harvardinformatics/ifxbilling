@@ -28,11 +28,20 @@ class FacilityProductInlineAdmin(admin.TabularInline):
     extra = 0
 
 
+class FacilityCodesInlineAdmin(admin.TabularInline):
+    '''
+    Inline for facility codes
+    '''
+    model = models.FacilityCodes
+    extra = 0
+
+
 class FacilityAdmin(admin.ModelAdmin):
     '''
     Admin for Facilities
     '''
     fields = (
+        'ifxfac',
         'name',
         'application_username',
         'credit_code',
@@ -43,6 +52,7 @@ class FacilityAdmin(admin.ModelAdmin):
     )
     list_display = (
         'id',
+        'ifxfac',
         'name',
         'application_username',
         'credit_code',
@@ -55,7 +65,8 @@ class FacilityAdmin(admin.ModelAdmin):
     search_fields = (
         'name',
     )
-    inlines = [FacilityProductInlineAdmin]
+    readonly_fields = ('ifxfac', 'id')
+    inlines = [FacilityProductInlineAdmin, FacilityCodesInlineAdmin]
 
 
 admin.site.register(models.Facility, FacilityAdmin)
@@ -112,6 +123,7 @@ class AccountAdmin(admin.ModelAdmin):
     Admin for expense codes and POs
     '''
     fields = (
+        'ifxacct',
         'name',
         'code',
         'account_type',
@@ -125,6 +137,7 @@ class AccountAdmin(admin.ModelAdmin):
     )
     list_display = (
         'id',
+        'ifxacct',
         'name',
         'code',
         'account_type',
@@ -144,7 +157,7 @@ class AccountAdmin(admin.ModelAdmin):
         'organization__name',
     )
     list_filter = ('account_type', 'active', 'organization__name')
-    readonly_fields = ('created', 'updated')
+    readonly_fields = ('created', 'updated', 'ifxacct')
     inlines = (UserAccountInlineAdmin,)
     autocomplete_fields = ('organization',)
     formfield_overrides = {
@@ -186,6 +199,7 @@ class ProductAdmin(admin.ModelAdmin):
         'product_description',
         'facility',
         'billable',
+        'object_code_category',
         'product_category',
     )
     ordering = ('product_number',)
