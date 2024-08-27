@@ -251,6 +251,7 @@ class Account(NaturalKeyModel):
             self.slug = f'PO {self.code} ({self.organization.name})'
         super().save(*args, **kwargs)
 
+    @property
     def object_code(self):
         '''
         Return the object code for this account

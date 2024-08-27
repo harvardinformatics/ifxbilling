@@ -773,6 +773,7 @@ class NewBillingCalculator():
         # First try for the product_usage.product, then try the parent
         product = product_usage.product
         parent = product.parent
+
         user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
             (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
             product=product,
@@ -824,6 +825,7 @@ class NewBillingCalculator():
                     if user_account.account.account_type == 'Expense Code' and user_account.account.object_code == object_code:
                         selected_user_account = user_account
                     if user_account.account.account_type == 'PO':
+                        # If there is more than on PO, it'll be the last one
                         selected_user_account = user_account
 
             if selected_user_account:
