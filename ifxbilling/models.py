@@ -251,6 +251,15 @@ class Account(NaturalKeyModel):
             self.slug = f'PO {self.code} ({self.organization.name})'
         super().save(*args, **kwargs)
 
+    @property
+    def object_code(self):
+        '''
+        Return the object code for this account
+        '''
+        if self.account_type == 'PO':
+            return None
+        return ExpenseCodeFields.get_object_code(self.code)
+
     def replaceObjectCode(self, object_code):
         '''
         Return a string with the object code replaced
