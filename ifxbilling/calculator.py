@@ -19,6 +19,7 @@ from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 from ifxuser.models import Organization
+from ifxec import OBJECT_CODES
 from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
 
@@ -771,6 +772,7 @@ class NewBillingCalculator():
 
         # First try for the product_usage.product, then try the parent
         product = product_usage.product
+        parent = product.parent
         user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
             (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
             product=product,
@@ -779,10 +781,10 @@ class NewBillingCalculator():
             is_valid=True
         )
         if not user_product_accounts:
-            product = product_usage.product.parent
+            # Check the parent product
             user_product_accounts = product_usage.product_user.userproductaccount_set.filter(
                 (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
-                product=product,
+                product=parent,
                 account__organization=organization,
                 account__valid_from__lte=product_usage.start_date,
                 is_valid=True
@@ -803,16 +805,31 @@ class NewBillingCalculator():
             if pct_total != 100:
                 raise Exception(f'User product account percents add up to {pct_total} instead of 100')
         else:
-            # Only get the first one
-            user_account = product_usage.product_user.useraccount_set.filter(
+            # Try the product, then the parent
+            # Make sure object code matches the product object code category
+            selected_user_account = None
+            user_accounts = product_usage.product_user.useraccount_set.filter(
                 (Q(account__expiration_date=None) | Q(account__expiration_date__gt=product_usage.start_date)),
                 account__organization=organization,
                 account__valid_from__lte=product_usage.start_date,
-                is_valid=True).first()
-            if user_account:
+                is_valid=True)
+
+            for p in [product, parent]:
+                if selected_user_account:
+                    break
+                if not p:
+                    continue
+                object_code = OBJECT_CODES[p.object_code_category].debit_code
+                for user_account in user_accounts:
+                    if user_account.account.account_type == 'Expense Code' and user_account.account.object_code == object_code:
+                        selected_user_account = user_account
+                    if user_account.account.account_type == 'PO':
+                        selected_user_account = user_account
+
+            if selected_user_account:
                 account_percentages.append(
                     {
-                        'account': user_account.account,
+                        'account': selected_user_account.account,
                         'percent': 100,
                     }
                 )
