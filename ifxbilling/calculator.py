@@ -909,6 +909,7 @@ class NewBillingCalculator():
                     organization=product_usage.organization,
                     rate__product=product_usage.product,
                     start_date__lte=product_usage.start_date,
+                    rate__is_active=True,
                 ).rate.name
                 rate = self.get_rate(name=rate_name, product_usage=product_usage)
                 rates = [rate]
