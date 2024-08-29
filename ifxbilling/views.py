@@ -51,7 +51,6 @@ def get_remote_user_auth_token(request):
         'groups': [g.name for g in request.user.groups.all()]
     })
 
-
 @api_view(('POST',))
 def update_user_accounts_view(request):
     '''
@@ -65,13 +64,9 @@ def update_user_accounts_view(request):
     If no data is specified, all accounts will be updated
     '''
 
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-    except json.JSONDecodeError as e:
-        logger.exception(e)
-        return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
+    data = request.data
 
-    if not data:
+    if not data.keys():
         queryset = get_user_model().objects.filter(ifxid__isnull=False)
     else:
         queryset = get_user_model().objects.filter(ifxid__in=data['ifxids'])
