@@ -627,3 +627,249 @@ def get_billing_record_list(request):
     return Response(
         data=list(results.values())
     )
+
+@api_view(('GET', ))
+def get_summary_by_account(request):
+    '''
+    Return summary by account
+    '''
+    year = request.GET.get('year', None)
+    month = request.GET.get('month', None)
+    invoice_prefix = request.GET.get('invoice_prefix', None)
+    facility = request.GET.get('facility', None)
+    organization = request.GET.get('organization', None)
+    results = []
+
+    sql = '''
+        select
+            acct.id as account_id,
+            acct.code as account_code,
+            acct.name as account_name,
+            acct.account_type,
+            o.name as organization,
+            sum(br.decimal_charge) as total_decimal_charge,
+        from
+            billing_record br
+            inner join product_usage pu on pu.id = br.product_usage_id
+            inner join product p on p.id = pu.product_id
+            inner join facility f on f.id = p.facility_id
+            inner join account acct on acct.id = br.account_id
+            inner join nanites_organization o on o.id = acct.organization_id
+    '''
+    where_clauses = []
+    query_args = []
+    if year:
+        try:
+            year = int(year)
+        except ValueError:
+            return Response('year must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('br.year = %s')
+        query_args.append(year)
+
+    if month:
+        try:
+            month = int(month)
+        except ValueError:
+            return Response('month must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('br.month = %s')
+        query_args.append(month)
+
+    if invoice_prefix:
+        where_clauses.append('f.invoice_prefix = %s')
+        query_args.append(invoice_prefix)
+
+    if organization:
+        where_clauses.append('o.slug = %s')
+        query_args.append(organization)
+
+    if facility:
+        where_clauses.append('f.name = %s')
+        query_args.append(facility)
+
+    if where_clauses:
+        sql += ' where '
+        sql += ' and '.join(where_clauses)
+
+    sql += ' group by account_id, account_code, account_name, account_type, account_organization'
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute(sql, query_args)
+
+        desc = cursor.description
+
+        for row in cursor.fetchall():
+            # Make a dictionary labeled by column name
+            row_dict = dict(zip([col[0] for col in desc], row))
+            results.append(row_dict)
+    except Exception as e:
+        logger.exception(e)
+        return Response(f'Error getting billing records {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data=results
+    )
+
+@api_view(('GET', ))
+def get_summary_by_product(request):
+    '''
+    Return summary by product
+    '''
+    year = request.GET.get('year', None)
+    month = request.GET.get('month', None)
+    invoice_prefix = request.GET.get('invoice_prefix', None)
+    facility = request.GET.get('facility', None)
+    organization = request.GET.get('organization', None)
+    results = []
+
+    sql = '''
+        select
+            p.id as product_id,
+            p.product_name,
+            p.product_number,
+            sum(br.decimal_charge) as total_decimal_charge,
+        from
+            billing_record br
+            inner join product_usage pu on pu.id = br.product_usage_id
+            inner join product p on p.id = pu.product_id
+            inner join facility f on f.id = p.facility_id
+            inner join account acct on acct.id = br.account_id
+            inner join nanites_organization o on o.id = acct.organization_id
+    '''
+    where_clauses = []
+    query_args = []
+    if year:
+        try:
+            year = int(year)
+        except ValueError:
+            return Response('year must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('br.year = %s')
+        query_args.append(year)
+
+    if month:
+        try:
+            month = int(month)
+        except ValueError:
+            return Response('month must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('br.month = %s')
+        query_args.append(month)
+
+    if invoice_prefix:
+        where_clauses.append('f.invoice_prefix = %s')
+        query_args.append(invoice_prefix)
+
+    if organization:
+        where_clauses.append('o.slug = %s')
+        query_args.append(organization)
+
+    if facility:
+        where_clauses.append('f.name = %s')
+        query_args.append(facility)
+
+    if where_clauses:
+        sql += ' where '
+        sql += ' and '.join(where_clauses)
+
+    sql += ' group by product_id, product_name, product_number'
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute(sql, query_args)
+
+        desc = cursor.description
+
+        for row in cursor.fetchall():
+            # Make a dictionary labeled by column name
+            row_dict = dict(zip([col[0] for col in desc], row))
+            results.append(row_dict)
+    except Exception as e:
+        logger.exception(e)
+        return Response(f'Error getting summary by product {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data=results
+    )
+
+@api_view(('GET', ))
+def get_summary_by_user(request):
+    '''
+    Return summary by user
+    '''
+    year = request.GET.get('year', None)
+    month = request.GET.get('month', None)
+    invoice_prefix = request.GET.get('invoice_prefix', None)
+    facility = request.GET.get('facility', None)
+    organization = request.GET.get('organization', None)
+
+    results = []
+
+    sql = '''
+        select
+            product_user.id as product_user_id,
+            product_user.full_name as product_user_full_name,
+            product_user.ifxid as product_user_ifxid,
+            sum(br.decimal_charge) as total_decimal_charge,
+        from
+            billing_record br
+            inner join product_usage pu on pu.id = br.product_usage_id
+            inner join product p on p.id = pu.product_id
+            inner join facility f on f.id = p.facility_id
+            inner join account acct on acct.id = br.account_id
+            inner join nanites_organization o on o.id = acct.organization_id
+            inner join ifxuser product_user on pu.product_user_id = product_user.id
+    '''
+    where_clauses = []
+    query_args = []
+    if year:
+        try:
+            year = int(year)
+        except ValueError:
+            return Response('year must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('br.year = %s')
+        query_args.append(year)
+
+    if month:
+
+        try:
+            month = int(month)
+        except ValueError:
+            return Response('month must be an integer', status=status.HTTP_400_BAD_REQUEST)
+        where_clauses.append('br.month = %s')
+        query_args.append(month)
+
+    if invoice_prefix:
+        where_clauses.append('f.invoice_prefix = %s')
+        query_args.append(invoice_prefix)
+
+    if organization:
+        where_clauses.append('o.slug = %s')
+        query_args.append(organization)
+
+    if facility:
+        where_clauses.append('f.name = %s')
+        query_args.append(facility)
+
+    if where_clauses:
+        sql += ' where '
+        sql += ' and '.join(where_clauses)
+
+    sql += ' group by product_user_id, product_user_full_name, product_user_ifxid'
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute(sql, query_args)
+
+        desc = cursor.description
+
+        for row in cursor.fetchall():
+            # Make a dictionary labeled by column name
+            row_dict = dict(zip([col[0] for col in desc], row))
+            results.append(row_dict)
+
+    except Exception as e:
+        logger.exception(e)
+        return Response(f'Error getting summary by user {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data=results
+    )
