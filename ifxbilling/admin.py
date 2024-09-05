@@ -403,7 +403,7 @@ class AccountUserAdmin(admin.ModelAdmin):
         'primary_affiliation__name',
     )
     list_filter = ('primary_affiliation', )
-    inlines = (UserAccountInlineAdmin, UserProductAccountInlineAdmin, ProductUsageInlineAdmin)
+    inlines = (UserAccountInlineAdmin, UserProductAccountInlineAdmin)
 
 
 admin.site.register(models.AccountUser, AccountUserAdmin)
