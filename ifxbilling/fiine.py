@@ -108,7 +108,6 @@ def sync_fiine_accounts(code=None):
     accounts_updated = 0
     accounts_created = 0
 
-
     for account_obj in accounts:
         account_data = account_obj.to_dict()
         total_accounts += 1
@@ -137,6 +136,16 @@ def sync_fiine_accounts(code=None):
                         accounts_created += 1
                     except Exception as e:
                         raise Exception(f'Unable to create account {account_data["name"]}: {e}') from e
+        else:
+            try:
+                models.Account.objects.get(ifxacct=account_data['ifxacct'])
+                models.Account.objects.filter(ifxacct=account_data['ifxacct']).update(**account_data)
+                accounts_updated += 1
+            except models.Account.DoesNotExist:
+                models.Account.objects.create(**account_data)
+                accounts_created += 1
+            except Exception as e:
+                raise Exception(f'Unable to create account {account_data["name"]}: {e}') from e
     return (accounts_updated, accounts_created, total_accounts)
 
 
@@ -175,7 +184,10 @@ def update_user_accounts(user):
                 # replace code and dict-ify
                 for facility_object_code in get_facility_object_codes(facility):
                     facility_account_data = facility_account.to_dict()
-                    fiine_accounts.append(facility_account_data['account']['ifxid'])
+                    fiine_accounts.append({
+                        'ifxacct': facility_account_data['account']['ifxacct'],
+                        'is_valid': facility_account_data['is_valid'],
+                    })
                     if facility_account_data['is_valid'] and facility_account_data['account']['active']:
                         organizations_covered_by_facility_account.append(facility_account_data['account']['organization'])
 
@@ -183,7 +195,10 @@ def update_user_accounts(user):
         try:
             if default_account.account.active and default_account.is_valid and default_account.account.organization not in organizations_covered_by_facility_account:
                 default_account_data = default_account.to_dict()
-                fiine_accounts.append(default_account_data['account']['ifxid'])
+                fiine_accounts.append({
+                    'ifxacct': default_account_data['account']['ifxacct'],
+                    'is_valid': default_account_data['is_valid'],
+                })
         except Exception as e:
             logger.error(f'Error with default account {default_account}: {e}')
 
@@ -210,8 +225,8 @@ def update_user_accounts(user):
 
 
         # Update existing UserAccounts (is_valid flag) or create new
-        for fiine_account_ifxid in fiine_accounts:
-            for account in models.Account.objects.filter(ifxacct=fiine_account_ifxid):
+        for fiine_account_data in fiine_accounts:
+            for account in models.Account.objects.filter(ifxacct=fiine_account_data['ifxacct']):
                 try:
                     user_account = models.UserAccount.objects.get(user=user, account=account)
                     user_account.is_valid = fiine_account_data['is_valid']
@@ -236,6 +251,8 @@ def update_user_accounts(user):
                     product_account_data['percent'] = 100
                 user_product_account.percent = product_account_data['percent']
                 user_product_account.save()
+            except models.Account.DoesNotExist as e:
+                raise Exception(f"Account {product_account_data['account']} for product {product_account_data['product']} is missing") from e
             except models.Product.DoesNotExist as e:
                 raise Exception(f"Product with number {product_account_data['product']['product_number']} is missing") from e
             except models.UserProductAccount.DoesNotExist:
@@ -258,7 +275,6 @@ def update_products():
         fiine_products = FiineAPI.listProducts(facility=facility.name)
         for fiine_product in fiine_products:
             try:
-                logger.info(f'updating {fiine_product.product_number}')
                 product = models.Product.objects.get(product_number=fiine_product.product_number)
                 for field in ['product_name', 'product_description']:
                     setattr(product, field, getattr(fiine_product, field))
@@ -266,8 +282,6 @@ def update_products():
             except models.Product.DoesNotExist:
                 fiine_product_data = fiine_product.to_dict()
                 fiine_product_data['facility'] = facility
-                fiine_product_data.pop('object_code_category')
-                fiine_product_data.pop('reporting_group')
                 models.Product.objects.create(**fiine_product_data)
 
 

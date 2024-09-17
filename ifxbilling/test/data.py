@@ -35,6 +35,12 @@ FACILITIES = [
         'credit_code': '370-32556-8254-018485-627247-0000-00000',
         'invoice_prefix': 'HE',
         'object_code': '6600',
+        'facility_codes': [
+            {
+                'credit_code': '370-32556-8254-018485-627247-0000-00000',
+                'debit_object_code_category': 'Laboratory Consumables',
+            }
+        ],
     },
     {
         'ifxfac': 'IFXFAC0000000003',
@@ -43,6 +49,12 @@ FACILITIES = [
         'credit_code': '370-32556-8254-018485-627258-0000-00000',
         'invoice_prefix': 'LN2',
         'object_code': '6600',
+        'facility_codes': [
+            {
+                'credit_code': '370-32556-8254-018485-627258-0000-00000',
+                'debit_object_code_category': 'Laboratory Consumables',
+            }
+        ],
     },
 ]
 
@@ -108,6 +120,7 @@ ACCOUNTS = [
         'root': '44075',
         'active': True,
         'valid_from': '2000-01-01',
+        'ifxacct': 'IFXACCT9900000001',
         'expiration_date': '2100-01-01',
     },
     {
@@ -117,6 +130,7 @@ ACCOUNTS = [
         'root': '12345',
         'active': True,
         'valid_from': '2000-01-01',
+        'ifxacct': 'IFXACCT9900000002',
         'expiration_date': '2100-01-01',
     },
     {
@@ -126,6 +140,7 @@ ACCOUNTS = [
         'root': '44075',
         'active': True,
         'valid_from': '2000-01-01',
+        'ifxacct': 'IFXACCT9900000004',
         'expiration_date': '2100-01-01',
     },
     {
@@ -135,6 +150,7 @@ ACCOUNTS = [
         'root': '33333',
         'active': True,
         'valid_from': '2000-01-01',
+        'ifxacct': 'IFXACCT9900000003',
         'expiration_date': '2100-01-01',
     },
     {
@@ -144,6 +160,7 @@ ACCOUNTS = [
         'root': '99999',
         'active': False,
         'valid_from': '2000-01-01',
+        'ifxacct': 'IFXACCT9990000001',
         'expiration_date': '2100-01-01',
     },
     {
@@ -217,6 +234,7 @@ PRODUCTS = [
             }
         ],
         'facility': 'Helium Recovery Service',
+        'object_code_category': 'Laboratory Consumables',
     },
     {
         'product_number': 'IFXPX000000002',
@@ -231,6 +249,7 @@ PRODUCTS = [
             }
         ],
         'facility': 'Helium Recovery Service',
+        'object_code_category': 'Laboratory Consumables',
     }
 ]
 
@@ -356,7 +375,12 @@ def init(types=None):
         user_data['primary_affiliation'] = Organization.objects.get(name=user_data.pop('primary_affiliation'))
         get_user_model().objects.create(**user_data)
     for facility_data in FACILITIES:
-        models.Facility.objects.create(**facility_data)
+        facility_data_copy = deepcopy(facility_data)
+        facility_codes_data = facility_data_copy.pop('facility_codes')
+        facility = models.Facility.objects.create(**facility_data_copy)
+        for facility_code_data in facility_codes_data:
+            facility_code_data['facility'] = facility
+            models.FacilityCodes.objects.create(**facility_code_data)
 
     if types:
         if 'Account' in types:

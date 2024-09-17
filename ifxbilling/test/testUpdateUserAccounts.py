@@ -17,7 +17,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from ifxec import OBJECT_CODES
 from ifxbilling.test import data
-from ifxbilling.fiine import update_user_accounts, update_products, sync_facilities
+from ifxbilling.fiine import update_user_accounts, update_products, sync_facilities, sync_fiine_accounts
 from ifxbilling import models
 
 
@@ -70,6 +70,7 @@ class TestUpdateUserAccounts(APITestCase):
         successes, errors = sync_facilities()
         self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
         update_products()
+        sync_fiine_accounts()
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         updated_user = update_user_accounts(user)
@@ -112,9 +113,6 @@ class TestUpdateUserAccounts(APITestCase):
         Ensure that all UserAccounts can be updated from fiine, including creation of new Account, via view
         '''
         data.init(types=['User', 'Account', 'Organization'])
-        successes, errors = sync_facilities()
-        self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
-        update_products()
 
         url = reverse('update-user-accounts')
         response = self.client.post(url, data={}, format='json')
@@ -138,6 +136,8 @@ class TestUpdateUserAccounts(APITestCase):
         successes, errors = sync_facilities()
         self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
         update_products()
+        sync_fiine_accounts()
+
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         updated_user = update_user_accounts(user)
 
@@ -168,6 +168,7 @@ class TestUpdateUserAccounts(APITestCase):
 
         # Get products from Fiine
         update_products()
+        sync_fiine_accounts()
 
         # Update user accounts
         updated_user = update_user_accounts(user)
@@ -176,3 +177,42 @@ class TestUpdateUserAccounts(APITestCase):
             len(user_product_accounts) == 2,
             f'Incorrect number of user_product_accounts {len(user_product_accounts)}'
         )
+
+    def testOrgChange(self):
+        '''
+        Ensure that updating an account from Fiine with a different organization changes the organization
+        '''
+        data.init(types=['User', 'Account', 'Organization'])
+        new_org = models.Organization.objects.get(name='Derpiston Lab')
+
+        account = models.Account.objects.get(name='mycode')
+        old_org = account.organization
+
+        account.organization = new_org
+        account.save()
+
+        sync_fiine_accounts()
+
+        # Check that the account has been updated
+        account = models.Account.objects.get(name='mycode')
+        self.assertTrue(account.organization == old_org, f'Organization not updated {account.organization}')
+
+    def testMultipleUserAccounts(self):
+        '''
+        Ensure that multiple UserAccounts are created for a facility with multiple facility codes
+        '''
+        data.init(types=['User', 'Account', 'Organization'])
+        sync_facilities()
+        sync_fiine_accounts()
+
+        # slurpy slurpiston should have multiple user accounts for mycode because the LN2 facility has both 6600 and 8250
+        user = get_user_model().objects.get(full_name='Slurpy Slurpiston')
+        update_user_accounts(user)
+
+        user_accounts = user.useraccount_set.all()
+
+        # After sync, LN2 has technical services code
+        self.assertTrue(user_accounts.filter(account__name='mycode').filter(account__code__contains='-8250-').count() == 1, f'Could not find 8250 account {user_accounts}')
+
+        # Should be exactly one 6600 account even though there are two 6600 facilities
+        self.assertTrue(user_accounts.filter(account__name='mycode').filter(account__code__contains='-6600-').count() == 1, f'Could not find 6600 account {user_accounts}')
