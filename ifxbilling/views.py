@@ -73,7 +73,6 @@ def update_user_accounts_view(request):
 
     try:
         sync_facilities()
-        update_products()
         sync_fiine_accounts()
     except Exception as e:
         logger.exception(e)
