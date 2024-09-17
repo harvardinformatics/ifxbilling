@@ -24,7 +24,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from fiine.client import API as FiineAPI
-from ifxec import ExpenseCodeFields
+from ifxec import ExpenseCodeFields, OBJECT_CODES
 from ifxuser.models import Organization
 from ifxuser.serializers import UserSerializer
 from ifxbilling import models
@@ -1011,17 +1011,11 @@ class BillingRecordSerializer(serializers.ModelSerializer):
         try:
             # Ensure that account string has the right object code
             if account_data['account_type'] == 'Expense Code':
-                facility_object_code = product_usage.product.facility.object_code
-                if not facility_object_code:
-                    raise serializers.ValidationError(
-                        detail={
-                            'product_usage': f'Cannot find object code for {product_usage.product.facility}'
-                        }
-                    )
+                debit_code = OBJECT_CODES[product_usage.product.object_code_category].debit_code
                 account_data['code'] = ExpenseCodeFields.replace_field(
                     account_data['code'],
                     ExpenseCodeFields.OBJECT_CODE,
-                    facility_object_code
+                    debit_code
                 )
                 logger.debug(f'account code being checked is {account_data["code"]}')
             # Organization may be name if coming from fiine or slug if coming from facility application
