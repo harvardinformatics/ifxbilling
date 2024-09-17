@@ -25,25 +25,11 @@ class Command(BaseCommand):
             '--sync-all',
             action='store_true',
             dest='sync_all',
-            help='Synchronize all accounts, not just ones with facility authorizations',
+            help='Synchronize all accounts, not just ones with facility authorizations.  This is superfluous as it always happens unless --ifxids is specified.',
         )
 
     def handle(self, *args, **kwargs):
         ifxid_str = kwargs.get('ifxid_str')
-
-        if kwargs.get('sync_all'):
-            try:
-                successes, errors = sync_facilities()
-                print(f'{successes} facilities successfully synchronized.')
-                if errors:
-                    error_str = '\n'.join(errors)
-                    print(f'{len(errors)} failed: \n{error_str}')
-                accounts_updated, accounts_created, total_accounts = sync_fiine_accounts()
-                print(f'{accounts_updated} accounts updated, {accounts_created} accounts created out of {total_accounts} total accounts')
-            except Exception as e:
-                print(f'Unable to synchronize fiine accounts: {e}')
-                exit(1)
-
         successes = 0
         errors = []
         if ifxid_str:
@@ -60,6 +46,19 @@ class Command(BaseCommand):
                 except Exception as e:
                     errors.append(f'Unable to update {ifxid}: {e}')
         else:
+
+            try:
+                successes, errors = sync_facilities()
+                print(f'{successes} facilities successfully synchronized.')
+                if errors:
+                    error_str = '\n'.join(errors)
+                    print(f'{len(errors)} failed: \n{error_str}')
+                accounts_updated, accounts_created, total_accounts = sync_fiine_accounts()
+                print(f'{accounts_updated} accounts updated, {accounts_created} accounts created out of {total_accounts} total accounts')
+            except Exception as e:
+                print(f'Unable to synchronize fiine accounts: {e}')
+                exit(1)
+
             for user in get_user_model().objects.filter(ifxid__isnull=False):
                 try:
                     update_user_accounts(user)
