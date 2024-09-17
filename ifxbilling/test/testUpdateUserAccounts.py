@@ -69,7 +69,6 @@ class TestUpdateUserAccounts(APITestCase):
         data.init(types=['User', 'Account', 'Organization'])
         successes, errors = sync_facilities()
         self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
-        update_products()
         sync_fiine_accounts()
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
@@ -94,7 +93,6 @@ class TestUpdateUserAccounts(APITestCase):
         data.init(types=['User', 'Account', 'Organization'])
         successes, errors = sync_facilities()
         self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
-        update_products()
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
         url = reverse('update-user-accounts')
@@ -135,7 +133,6 @@ class TestUpdateUserAccounts(APITestCase):
         data.init(types=['User', 'Organization'])
         successes, errors = sync_facilities()
         self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
-        update_products()
         sync_fiine_accounts()
 
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
@@ -162,12 +159,6 @@ class TestUpdateUserAccounts(APITestCase):
         self.assertTrue(successes == len(data.FACILITIES), f'Incorrect number of successes {successes}')
         user = get_user_model().objects.get(full_name=data.FIINE_TEST_USER)
 
-        # test_account_data = deepcopy(data.FIINE_TEST_ACCOUNT)
-        # test_account_data['organization'] = Organization.objects.get(slug=test_account_data['organization'])
-        # account = models.Account.objects.create(**test_account_data)
-
-        # Get products from Fiine
-        update_products()
         sync_fiine_accounts()
 
         # Update user accounts

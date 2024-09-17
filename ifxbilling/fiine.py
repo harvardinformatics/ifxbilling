@@ -88,6 +88,8 @@ def sync_facilities():
             logger.exception(e)
             errors.append(f'Error syncing facility {facility.ifxfac} ({facility.name}): {e}')
 
+    update_products()
+
     return successes, errors
 
 def sync_fiine_accounts(code=None):
