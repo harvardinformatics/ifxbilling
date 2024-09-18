@@ -135,8 +135,10 @@ def sync_fiine_accounts(code=None):
                         facility_object_code
                     )
                     try:
-                        models.Account.objects.get(ifxacct=account_data['ifxacct'], code=account_data['code'])
-                        models.Account.objects.filter(ifxacct=account_data['ifxacct'], code=account_data['code']).update(**account_data)
+                        account = models.Account.objects.get(ifxacct=account_data['ifxacct'], code=account_data['code'])
+                        for field in ['name', 'description', 'active', 'organization', 'valid_from', 'expiration_date', 'funding_category', 'root']:
+                            setattr(account, field, account_data[field])
+                        account.save()
                         accounts_updated += 1
                     except models.Account.DoesNotExist:
                         models.Account.objects.create(**account_data)

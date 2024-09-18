@@ -133,7 +133,8 @@ class AccountAdmin(admin.ModelAdmin):
         'active',
         'valid_from',
         'created',
-        'updated'
+        'updated',
+        'slug',
     )
     list_display = (
         'id',
