@@ -62,6 +62,11 @@ class TestUpdateUserAccounts(APITestCase):
         self.assertRaises(models.Facility.DoesNotExist, models.Facility.objects.get, name=new_name)
         self.assertTrue(models.Facility.objects.get(name=old_name), f'Facility not updated {facility}')
 
+        # make sure facility code organizations are FAS
+        for facility in models.Facility.objects.all():
+            for facility_code in facility.facilitycodes_set.all():
+                self.assertTrue(facility_code.organization.name == 'Faculty of Arts and Sciences', f'Facility code organization not FAS {facility_code}')
+
     def testUpdateUserAccounts(self):
         '''
         Ensure that UserAccounts can be updated from fiine, including creation of new Account

@@ -78,6 +78,11 @@ ORGS = [
         'name': 'Aliens',
         'rank': 'company',
         'org_tree': 'Harvard'
+    },
+    {
+        'name': 'Faculty of Arts and Sciences',
+        'rank': 'school',
+        'org_tree': 'Harvard',
     }
 ]
 

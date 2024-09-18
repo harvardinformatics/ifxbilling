@@ -161,6 +161,13 @@ class FacilityCodes(NaturalKeyModel):
         max_length=100,
         default='Technical Services',
     )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        help_text='Organization responsible for the account.',
+        blank=True,
+        null=True,
+    )
 
 
 class Account(NaturalKeyModel):
