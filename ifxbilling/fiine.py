@@ -77,13 +77,18 @@ def sync_facilities():
                 facility.save()
                 facility.facilitycodes_set.all().delete()
                 for facility_code in fiine_facility.facility_codes:
+                    organization = Organization.objects.get(name=facility_code.organization, org_tree='Harvard')
                     facility_code_obj = models.FacilityCodes(
                         facility=facility,
                         credit_code=facility_code.credit_code,
                         debit_object_code_category=facility_code.debit_object_code_category,
+                        organization=organization,
                     )
                     facility_code_obj.save()
                 successes += 1
+        except Organization.DoesNotExist as e:
+            logger.error(f'Organization {facility_code.organization} not found')
+            errors.append(f'Organization {facility_code.organization} not found')
         except Exception as e:
             logger.exception(e)
             errors.append(f'Error syncing facility {facility.ifxfac} ({facility.name}): {e}')
