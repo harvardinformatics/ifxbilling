@@ -125,6 +125,8 @@ def sync_fiine_accounts(code=None):
         except Organization.DoesNotExist:
             # pylint: disable=raise-missing-from
             raise Exception(f'While synchronizing accounts from fiine, organization {organization_name} in account {account_data["name"]} was not found.')
+        except Organization.MultipleObjectsReturned:
+            raise Exception(f'While synchronizing accounts from fiine, multiple organizations found for {organization_name} in account {account_data["name"]}')
 
         if account_data['account_type'] == 'Expense Code':
             for facility in models.Facility.objects.all():
@@ -135,8 +137,10 @@ def sync_fiine_accounts(code=None):
                         facility_object_code
                     )
                     try:
-                        models.Account.objects.get(ifxacct=account_data['ifxacct'], code=account_data['code'])
-                        models.Account.objects.filter(ifxacct=account_data['ifxacct'], code=account_data['code']).update(**account_data)
+                        account = models.Account.objects.get(ifxacct=account_data['ifxacct'], code=account_data['code'])
+                        for field in ['name', 'active', 'organization', 'valid_from', 'expiration_date', 'root']:
+                            setattr(account, field, account_data[field])
+                        account.save()
                         accounts_updated += 1
                     except models.Account.DoesNotExist:
                         models.Account.objects.create(**account_data)

@@ -76,7 +76,7 @@ def update_user_accounts_view(request):
         sync_fiine_accounts()
     except Exception as e:
         logger.exception(e)
-        return Response(data={'error': f'Error syncing fiine accounts: {e}'}, status=status.HTTP_500_INTERNAL_SERVER)
+        return Response(data={'error': f'Error syncing fiine accounts: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     successes = 0
     errors = []
