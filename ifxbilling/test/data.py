@@ -102,6 +102,7 @@ USERS = [
 
 ACCOUNTS = [
     {
+        'ifxacct': 'IFXACCT9900000001',
         'code': '370-11111-6600-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'Alternate code',
@@ -111,6 +112,7 @@ ACCOUNTS = [
         'expiration_date': '2100-01-01',
     },
     {
+        'ifxacct': 'IFXACCT9900000002',
         'code': '370-31230-6600-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'mycode',
@@ -120,6 +122,7 @@ ACCOUNTS = [
         'expiration_date': '2100-01-01',
     },
     {
+        'ifxacct': 'IFXACCT9900000004',
         'code': '370-99999-6600-000775-600200-0000-44075',
         'organization': 'Kitzmiller Lab (a Harvard Laboratory)',
         'name': 'Another code',
@@ -129,6 +132,7 @@ ACCOUNTS = [
         'expiration_date': '2100-01-01',
     },
     {
+        'ifxacct': 'IFXACCT9900000003',
         'code': '370-11111-6600-000775-600200-0000-33333',
         'organization': 'Nobody Lab (a Harvard Laboratory)',
         'name': 'Nobody lab code',
