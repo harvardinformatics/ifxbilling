@@ -649,12 +649,12 @@ def get_summary_by_account(request):
 
     sql = '''
         select
-            acct.id as account_id,
-            acct.code as account_code,
-            acct.name as account_name,
+            acct.id as id,
+            acct.code as code,
+            acct.name as name,
             acct.account_type,
             o.name as organization,
-            sum(br.decimal_charge) as total_decimal_charge,
+            sum(br.decimal_charge) as total_decimal_charge
         from
             billing_record br
             inner join product_usage pu on pu.id = br.product_usage_id
@@ -697,7 +697,7 @@ def get_summary_by_account(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' group by account_id, account_code, account_name, account_type, account_organization'
+    sql += ' group by id, code, name, account_type, organization'
 
     try:
         cursor = connection.cursor()
@@ -718,7 +718,7 @@ def get_summary_by_account(request):
     )
 
 @api_view(('GET', ))
-def get_summary_by_product(request):
+def get_summary_by_product_rate(request):
     '''
     Return summary by product
     '''
@@ -734,11 +734,15 @@ def get_summary_by_product(request):
             p.id as product_id,
             p.product_name,
             p.product_number,
-            sum(br.decimal_charge) as total_decimal_charge,
+            r.name as rate_name,
+            r.units,
+            sum(pu.decimal_quantity) as total_decimal_quantity,
+            sum(br.decimal_charge) as total_decimal_charge
         from
             billing_record br
             inner join product_usage pu on pu.id = br.product_usage_id
             inner join product p on p.id = pu.product_id
+            inner join rate r on r.id = br.rate_obj_id
             inner join facility f on f.id = p.facility_id
             inner join account acct on acct.id = br.account_id
             inner join nanites_organization o on o.id = acct.organization_id
@@ -777,7 +781,7 @@ def get_summary_by_product(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' group by product_id, product_name, product_number'
+    sql += ' group by product_id, product_name, product_number, rate_name, units'
 
     try:
         cursor = connection.cursor()
@@ -815,7 +819,7 @@ def get_summary_by_user(request):
             product_user.id as product_user_id,
             product_user.full_name as product_user_full_name,
             product_user.ifxid as product_user_ifxid,
-            sum(br.decimal_charge) as total_decimal_charge,
+            sum(br.decimal_charge) as total_decimal_charge
         from
             billing_record br
             inner join product_usage pu on pu.id = br.product_usage_id
