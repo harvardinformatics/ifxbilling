@@ -31,6 +31,7 @@ migrate:
 	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py migrate; docker compose down --remove-orphans
 test: drf migrate
 	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) ./wait-for-it.sh -s -t 120 fiine-drf:80 -- ./manage.py test -v 2; docker compose down --remove-orphans
+
 prod:
 	docker build -t $(PRODIMAGE) $(PRODBUILDARGS) .
 	docker push $(PRODIMAGE)

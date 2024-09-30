@@ -595,20 +595,23 @@ class NewBillingCalculator():
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
                 billing_data_dicts = self.get_billing_data_dicts_for_usage(product_usage, **kwargs)
-                for billing_data_dict in billing_data_dicts:
-                    account = billing_data_dict.pop('account')
-                    percent = billing_data_dict.pop('percent')
-                    rate_obj = billing_data_dict.pop('rate_obj', None)
-                    if not rate_obj:
-                        raise Exception(f'No rate_obj for billing_data_dict {billing_data_dict}')
-                    decimal_quantity = billing_data_dict.pop('decimal_quantity')
-                    pup_message = billing_data_dict.pop('pup_message', 'OK')
-                    br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, rate_obj, decimal_quantity, billing_data_dict)
-                    if br: # can be none
-                        brs.append(br)
+                if not billing_data_dicts:
+                    raise Exception(f'No billing data for usage')
+                else:
+                    for billing_data_dict in billing_data_dicts:
+                        account = billing_data_dict.pop('account')
+                        percent = billing_data_dict.pop('percent')
+                        rate_obj = billing_data_dict.pop('rate_obj', None)
+                        if not rate_obj:
+                            raise Exception(f'No rate_obj for billing_data_dict {billing_data_dict}')
+                        decimal_quantity = billing_data_dict.pop('decimal_quantity')
+                        pup_message = billing_data_dict.pop('pup_message', 'OK')
+                        br = self.generate_billing_record_for_usage(year, month, product_usage, account, percent, rate_obj, decimal_quantity, billing_data_dict)
+                        if br: # can be none
+                            brs.append(br)
 
-                # processing complete update any product_usage_processing as resolved
-                self.update_product_usage_processing(product_usage, resolved=True, message=pup_message)
+                    # processing complete update any product_usage_processing as resolved
+                    self.update_product_usage_processing(product_usage, resolved=True, message=pup_message)
         except Exception as ex:
             if self.verbosity == self.CHATTY:
                 logger.error(ex)

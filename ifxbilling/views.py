@@ -21,7 +21,7 @@ from ifxmail.client import send, FieldErrorsException
 from ifxmail.client.views import messages, mailings
 from ifxurls.urls import FIINE_URL_BASE
 from ifxuser.models import Organization
-from ifxbilling.fiine import update_user_accounts
+from ifxbilling.fiine import update_user_accounts, sync_fiine_accounts, sync_facilities, update_products
 from ifxbilling import models, permissions
 from ifxbilling.calculator import calculateBillingMonth, getClassFromName
 
@@ -70,6 +70,13 @@ def update_user_accounts_view(request):
         queryset = get_user_model().objects.filter(ifxid__isnull=False)
     else:
         queryset = get_user_model().objects.filter(ifxid__in=data['ifxids'])
+
+    try:
+        sync_facilities()
+        sync_fiine_accounts()
+    except Exception as e:
+        logger.exception(e)
+        return Response(data={'error': f'Error syncing fiine accounts: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     successes = 0
     errors = []
