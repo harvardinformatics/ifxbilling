@@ -886,7 +886,7 @@ def get_summary_by_user(request):
     )
 
 @api_view(('GET', ))
-def get_orgs_with_billing(request, year, month):
+def get_orgs_with_billing(request, invoice_prefix, year, month):
     '''
     Return a list of organization slugs for which there are billing records
     '''
@@ -904,13 +904,17 @@ def get_orgs_with_billing(request, year, month):
                 from
                     billing_record br
                     inner join account acct on acct.id = br.account_id
+                    inner join product_usage pu on pu.id = br.product_usage_id
+                    inner join product p on p.id = pu.product_id
+                    inner join facility f on f.id = p.facility
                 where
                     acct.organization_id = o.id
                     and br.year = %s
                     and br.month = %s
+                    and f.invoice_prefix = %s
             )
     '''
-    query_args = [year, month]
+    query_args = [year, month, invoice_prefix]
 
     try:
         cursor = connection.cursor()
