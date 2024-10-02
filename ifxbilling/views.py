@@ -884,3 +884,45 @@ def get_summary_by_user(request):
     return Response(
         data=results
     )
+
+@api_view(('GET', ))
+def get_orgs_with_billing(request, year, month):
+    '''
+    Return a list of organization slugs for which there are billing records
+    '''
+
+    results = []
+    sql = '''
+        select
+            distinct o.slug
+        from
+            nanites_organization o
+        where
+            exists (
+                select
+                    1
+                from
+                    billing_record br
+                    inner join account acct on acct.id = br.account_id
+                where
+                    acct.organization_id = o.id
+                    and br.year = %s
+                    and br.month = %s
+            )
+    '''
+    query_args = [year, month]
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute(sql, query_args)
+
+        for row in cursor.fetchall():
+            results.append(row[0])
+
+    except Exception as e:
+        logger.exception(e)
+        return Response(f'Error getting organizations with billing records for {year}, {month} {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data=results
+    )
