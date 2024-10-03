@@ -906,7 +906,7 @@ def get_orgs_with_billing(request, invoice_prefix, year, month):
                     inner join account acct on acct.id = br.account_id
                     inner join product_usage pu on pu.id = br.product_usage_id
                     inner join product p on p.id = pu.product_id
-                    inner join facility f on f.id = p.facility
+                    inner join facility f on f.id = p.facility_id
                 where
                     acct.organization_id = o.id
                     and br.year = %s
