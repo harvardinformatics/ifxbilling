@@ -7,6 +7,7 @@ Common views for expense codes
 import logging
 import json
 import re
+from decimal import Decimal
 from collections import defaultdict
 from django.db import connection
 from django.contrib.auth import get_user_model
@@ -940,8 +941,11 @@ def get_charge_history(request):
     '''
     start_year = request.GET.get('start_year', None)
     start_month = request.GET.get('start_month', None)
-    end_year = request.GET.get('end_year', None)
-    end_month = request.GET.get('end_month', None)
+
+    today = timezone.now()
+    end_year = request.GET.get('end_year', today.year)
+    end_month = request.GET.get('end_month', today.month)
+
     invoice_prefix = request.GET.get('invoice_prefix', None)
 
     try:
@@ -961,7 +965,7 @@ def get_charge_history(request):
 
 
     results = defaultdict(lambda: defaultdict(Decimal))
-    for br in BillingRecord.objects.filter(year__gte=start_date.year, month__gte=start_date.month, year__lte=end_date.year, month__lte=end_date.month, product_usage__product__facility=facility):
+    for br in models.BillingRecord.objects.filter(year__gte=start_date.year, month__gte=start_date.month, year__lte=end_date.year, month__lte=end_date.month, product_usage__product__facility=facility):
         # month_key is concatenated year and month with left padded zeros in the month
         month_key = f'{br.year}-{str(br.month).zfill(2)}'
         results[br.account.organization.name][month_key] += br.decimal_charge
