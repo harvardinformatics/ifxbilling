@@ -7,6 +7,7 @@ Common views for expense codes
 import logging
 import json
 import re
+from collections import defaultdict
 from django.db import connection
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -926,6 +927,45 @@ def get_orgs_with_billing(request, invoice_prefix, year, month):
     except Exception as e:
         logger.exception(e)
         return Response(f'Error getting organizations with billing records for {year}, {month} {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data=results
+    )
+
+
+@api_view(('GET', ))
+def get_charge_history(request):
+    '''
+    Return organizations with billing record totals for the specified date range
+    '''
+    start_year = request.GET.get('start_year', None)
+    start_month = request.GET.get('start_month', None)
+    end_year = request.GET.get('end_year', None)
+    end_month = request.GET.get('end_month', None)
+    invoice_prefix = request.GET.get('invoice_prefix', None)
+
+    try:
+        start_date = timezone.datetime(int(start_year), int(start_month), 1)
+    except ValueError:
+        return Response(f'Invalid start date {start_year}-{start_month}-1', status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        end_date = timezone.datetime(int(end_year), int(end_month), 1)
+    except ValueError:
+        return Response(f'Invalid end date {end_year}-{end_month}-1', status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+    except models.Facility.DoesNotExist:
+        return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
+
+
+    results = defaultdict(lambda: defaultdict(Decimal))
+    for br in BillingRecord.objects.filter(year__gte=start_date.year, month__gte=start_date.month, year__lte=end_date.year, month__lte=end_date.month, product_usage__product__facility=facility):
+        # month_key is concatenated year and month with left padded zeros in the month
+        month_key = f'{br.year}-{str(br.month).zfill(2)}'
+        results[br.account.organization.name][month_key] += br.decimal_charge
+
 
     return Response(
         data=results
