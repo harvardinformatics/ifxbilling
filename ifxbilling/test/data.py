@@ -12,7 +12,7 @@ All rights reserved.
 '''
 from datetime import datetime
 from copy import deepcopy
-from ifxuser.models import Organization
+from ifxuser.models import Organization, Contact, OrganizationContact
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from fiine.client import API as FiineAPI
@@ -72,7 +72,44 @@ ORGS = [
     {
         'name': 'Derpiston Lab',
         'rank': 'lab',
-        'org_tree': 'Harvard'
+        'org_tree': 'Harvard',
+        'contacts': [
+            {
+                'role': 'PI',
+                'contact': {
+                    'type': 'Email',
+                    'detail': 'pi@ajk.com',
+                }
+            },
+            {
+                'role': 'Lab Manager',
+                'contact': {
+                    'type': 'Email',
+                    'detail': 'lab_manager@ajk.com',
+                }
+            },
+            {
+                'role': 'Billing Record Review',
+                'contact': {
+                    'type': 'Email',
+                    'detail': 'billing_record_review@ajk.com',
+                }
+            },
+            {
+                'role': 'Billing Record Review for Helium Recovery Service',
+                'contact': {
+                    'type': 'Email',
+                    'detail': 'billing_record_review_for_helium_recovery_service@ajk.com',
+                }
+            },
+            {
+                'role': 'Billing Record Review for Liquid Nitrogen Service',
+                'contact': {
+                    'type': 'Email',
+                    'detail': 'billing_record_review_for_liquid_nitrogen_service@ajk.com',
+                }
+            },
+        ]
     },
     {
         'name': 'Aliens',
@@ -83,6 +120,20 @@ ORGS = [
         'name': 'Faculty of Arts and Sciences',
         'rank': 'school',
         'org_tree': 'Harvard',
+    },
+    {
+        'name': 'Liquid Nitrogen Service',
+        'rank': 'facility',
+        'org_tree': 'Harvard',
+        'contacts': [
+            {
+                'role': 'Facility Invoice',
+                'contact': {
+                    'type': 'Email',
+                    'detail': 'facility_invoice_contact@ajk.com',
+                }
+            }
+        ]
     }
 ]
 
@@ -352,7 +403,7 @@ def clearTestData():
             get_user_model().objects.get(ifxid=user_data['ifxid']).delete()
         except get_user_model().DoesNotExist:
             pass
-
+    Contact.objects.all().delete()
     Organization.objects.all().delete()
 
     try:
@@ -378,7 +429,13 @@ def init(types=None):
     '''
 
     for org_data in ORGS:
-        Organization.objects.create(**org_data)
+        org_data_copy = deepcopy(org_data)
+        org_contacts_data = org_data_copy.pop('contacts', [])
+        org = Organization.objects.create(**org_data_copy)
+        for org_contact_data in org_contacts_data:
+            contact_data = org_contact_data.pop('contact')
+            contact = Contact.objects.create(**contact_data)
+            OrganizationContact.objects.create(organization=org, contact=contact, role=org_contact_data['role'])
     for original_user_data in USERS:
         user_data = deepcopy(original_user_data)
         user_data['primary_affiliation'] = Organization.objects.get(name=user_data.pop('primary_affiliation'))
