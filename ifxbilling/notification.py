@@ -220,15 +220,18 @@ class BillingRecordEmailGenerator():
         First, check for facility-specific billing record review contacts
         Then, billing record review, then lab manager, then pi
         '''
-        for role in [
-            f'{self.BILLING_RECORD_REVIEW_CONTACT_ROLE} for {self.facility.name}',
-            self.BILLING_RECORD_REVIEW_CONTACT_ROLE,
-            self.LAB_MANAGER_CONTACT_ROLE,
-            self.PI_CONTACT_ROLE,
-        ]:
-            contactables = get_contactables(role, [org])
-            if contactables:
-                return contactables
+        facility_review_role = f'{self.BILLING_RECORD_REVIEW_CONTACT_ROLE} for {self.facility.name}'
+
+        contactables = []
+        contactables.extend(get_contactables(facility_review_role, [org]))
+        contactables.extend(get_contactables(self.BILLING_RECORD_REVIEW_CONTACT_ROLE, [org]))
+
+        if not contactables:
+            contactables.extend(get_contactables(self.LAB_MANAGER_CONTACT_ROLE, [org]))
+
+        if not contactables:
+            contactables.extend(get_contactables(self.PI_CONTACT_ROLE, [org]))
+
         return contactables
 
     def get_billing_record_dict(self, rec):
