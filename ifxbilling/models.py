@@ -681,16 +681,19 @@ class BillingRecord(models.Model):
     class Meta:
         db_table = 'billing_record'
 
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
     @classmethod
     def createBillingRecord(
         cls,
         account,
-        charge,
+        decimal_charge,
         description,
         year,
         month,
-        rate,
+        rate_obj,
         author,
+        rate_description=None,
         product_usage=None,
         percent=100,
         initial_state='PENDING_LAB_APPROVAL',
@@ -709,23 +712,30 @@ class BillingRecord(models.Model):
             # Make the billing record
             br_data = {
                 'account': account,
-                'charge': charge,
+                'decimal_charge': decimal_charge,
                 'description': description,
                 'year': year,
                 'month': month,
-                'rate': rate,
+                'rate_obj': rate_obj,
                 'percent': percent,
                 'author': author,
             }
+
+            if rate_description:
+                br_data['rate'] = rate_description
+            else:
+                br_data['rate'] = str(rate_obj)
+
             if product_usage:
                 br_data['product_usage'] = product_usage
+
             br = cls.objects.create(**br_data)
 
             # Make the transaction
             txn_data = {
                 'billing_record': br,
-                'charge': charge,
-                'rate': rate,
+                'decimal_charge': decimal_charge,
+                'rate': rate_description if rate_description else str(rate_obj),
             }
             txn_data['description'] = transaction_description if transaction_description else description
             txn_data['author'] = transaction_author if transaction_author else author
