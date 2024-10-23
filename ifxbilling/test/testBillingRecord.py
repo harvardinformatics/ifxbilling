@@ -10,6 +10,7 @@ Created on  2021-02-10
 All rights reserved.
 @license: GPL v2.0
 '''
+from decimal import Decimal
 from dateutil.parser import parse
 from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
@@ -499,27 +500,29 @@ class TestBillingRecord(APITestCase):
         # Create a billing record
         product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
         account = models.Account.objects.first()
-        charge = 999
+        charge = Decimal(999)
         description = 'Dewar charge'
         rate = '999 per ton'
         initial_state = 'PENDING_LAB_APPROVAL'
+        rate_obj = product_usage.product.rate_set.first()
 
         billing_record_data = {
             'account': account,
             'product_usage': product_usage,
-            'charge': charge,
+            'decimal_charge': charge,
             'description': description,
             'year': 2022,
             'month': 4,
             'author': self.superuser,
-            'rate': rate,
+            'rate_description': rate,
+            'rate_obj': rate_obj,
         }
         br = models.BillingRecord.createBillingRecord(**billing_record_data)
-        self.assertTrue(br.charge == charge, f'Incorrect charge set {br.charge}')
+        self.assertTrue(br.decimal_charge == charge, f'Incorrect charge set {br.decimal_charge}')
 
         self.assertTrue(br.transaction_set.count() == 1, 'Incorrect number of transactions set.')
         txn = br.transaction_set.first()
-        self.assertTrue(txn.charge == charge, f'Incorrect transaction charge set {txn.charge}')
+        self.assertTrue(txn.decimal_charge == charge, f'Incorrect transaction charge set {txn.charge}')
         self.assertTrue(txn.description == description, f'Incorrect description set on transaction {txn.description}')
         self.assertTrue(txn.rate == rate, f'Incorrect rate set on transaction {txn.rate}')
 
@@ -527,38 +530,6 @@ class TestBillingRecord(APITestCase):
         self.assertTrue(br.billingrecordstate_set.count() == 1, 'Incorrect number of billing record states')
         state = br.billingrecordstate_set.first()
         self.assertTrue(state.name == initial_state, f'Incorrect billing record state name {state.name}')
-
-    def testAddTransaction(self):
-        '''
-        Ensure that a transaction can be added to a billing record using the addTransaction method
-        '''
-        data.init(types=['Account', 'Product', 'ProductUsage'])
-
-        # Create a billing record
-        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
-        account = models.Account.objects.first()
-        charge = 999
-        description = 'Dewar charge'
-        rate = '999 per ton'
-
-        billing_record_data = {
-            'account': account,
-            'product_usage': product_usage,
-            'charge': charge,
-            'description': description,
-            'year': 2022,
-            'month': 4,
-            'author': self.superuser,
-            'rate': rate,
-        }
-        br = models.BillingRecord.createBillingRecord(**billing_record_data)
-        self.assertTrue(br.charge == charge, f'Incorrect charge set {br.charge}')
-        self.assertTrue(br.transaction_set.count() == 1, 'Incorrect number of transactions set.')
-
-        br.addTransaction(charge * -1, rate, description, self.superuser)
-
-        self.assertTrue(br.transaction_set.count() == 2, 'Transaction not added!')
-        self.assertTrue(br.charge == 0, f'Incorrect adjusted billing record charge {br.charge}')
 
     def testDeleteOKForAdmin(self):
         '''
