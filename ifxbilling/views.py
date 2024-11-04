@@ -968,7 +968,7 @@ def get_charge_history(request):
     for br in models.BillingRecord.objects.filter(year__gte=start_date.year, month__gte=start_date.month, year__lte=end_date.year, month__lte=end_date.month, product_usage__product__facility=facility):
         # month_key is concatenated year and month with left padded zeros in the month
         month_key = f'{br.year}-{str(br.month).zfill(2)}'
-        results[br.account.organization.name][month_key] += br.decimal_charge
+        results[br.account.organization.name][month_key] += br.decimal_charge.quantize(Decimal('0.01'))
 
 
     return Response(
