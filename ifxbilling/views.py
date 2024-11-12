@@ -974,3 +974,21 @@ def get_charge_history(request):
     return Response(
         data=results
     )
+
+@api_view(('GET', ))
+def get_pending_year_month(request, invoice_prefix):
+    '''
+    Return the year and month of the most recent pending billing record.
+    Used by fiine to indicate what month will be rebalanced after saving coding changes.
+    '''
+    try:
+        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+    except models.Facility.DoesNotExist:
+        return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        br = models.BillingRecord.objects.filter(product_usage__product__facility=facility, current_state='PENDING_LAB_APPROVAL').latest('year', 'month')
+        return Response(data={ 'year': br.year, 'month': br.month })
+
+    except models.BillingRecord.DoesNotExist:
+        return Response(data={ 'error': 'No pending billing records found' }, status=status.HTTP_404_NOT_FOUND)
