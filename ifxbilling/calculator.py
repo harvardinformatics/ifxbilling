@@ -14,12 +14,15 @@ import logging
 import json
 from decimal import Decimal
 from importlib import import_module
+import requests
 from django.db import transaction
 from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 from ifxuser.models import Organization
 from ifxec import OBJECT_CODES
+from ifxurls import getIfxUrl
+from ifxbilling.fiine import update_user_accounts
 from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
 
@@ -1113,3 +1116,90 @@ class NewBillingCalculator():
             trxn.save()
 
         return billing_record
+
+
+class Rebalance():
+    '''
+    Rebalance user accounts and regenerate billing records for a given month
+    '''
+
+    def __init__(self, year, month, facility, auth_token_str):
+        '''
+        Initialize the rebalance object
+        '''
+        self.year = year
+        self.month = month
+        self.facility = facility
+        self.auth_token_str = auth_token_str # Authorization header string, including the word 'Token'
+
+    def update_usages_for_rebalance(self, user, account_data):
+        '''
+        Update the product usages for the given facility, user, year, and month.  Useful for HE, CBSN where account strings are on the usage
+        '''
+        # pylint: disable=unnecessary-pass
+        pass
+
+    def remove_billing_records(self, user):
+        '''
+        Remove the billing records for the given facility, user, year, and month
+        '''
+        # Remove the billing records for the user
+        for br in BillingRecord.objects.filter(
+            product_usage__product__facility=self.facility,
+            product_usage__product_user=user,
+            year=self.year,
+            month=self.month,
+            current_state='PENDING_LAB_APPROVAL'
+        ):
+            br.delete()
+        logger.error(f'Removed billing records for {user.full_name} for {self.month}/{self.year}')
+
+    def update_user_accounts(self, user):
+        '''
+        Update the user accounts for the given facility, user, year, and month
+        '''
+        # Update the user accounts for the user
+        update_user_accounts(user)
+        logger.error(f'Updated user accounts for {user.full_name} for {self.month}/{self.year}')
+
+    def recalculate_billing_records(self, user):
+        '''
+        Recalculate the billing records for the given facility, user, year, and month
+        '''
+        # Recreate the billing records by calling the application calculate-billing-month url with invoice_prefix, year, and month
+        url = getIfxUrl(f'{self.facility.application_username.upper()}_CALCULATE_BILLING_MONTH')
+        url = f'{url}{self.facility.invoice_prefix}/{self.year}/{self.month}/'
+        headers = {
+            'Authorization': self.auth_token_str,
+            'Content-Type': 'application/json',
+        }
+        response = requests.post(url, headers=headers, json={}, timeout=None)
+        if response.status_code != 200:
+            raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {response.text}')
+
+        logger.error(f'Recalculated billing records for {user.full_name} for {self.month}/{self.year}')
+
+    def rebalance_user_billing_month(self, user, account_data):
+        '''
+        Rebalance the billing records for the given facility, user, year, and month
+        '''
+        # Remove the billing records for the user
+        self.remove_billing_records(user)
+
+        # Sync the user accounts from fiine
+        self.update_user_accounts(user)
+
+        self.update_usages_for_rebalance(user, account_data)
+
+        # Recreate the billing records by calling the application calculate-billing-month url with invoice_prefix, year, and month
+        self.recalculate_billing_records(user)
+
+def get_rebalancer_class():
+    '''
+    Return a Rebalance object
+    '''
+    rebalancer_class_name = 'ifxbilling.calculator.Rebalance'
+    if hasattr(settings, 'REBALANCER_CLASS'):
+        rebalancer_class_name = getattr(settings, 'REBALANCER_CLASS')
+
+    return getClassFromName(rebalancer_class_name)
