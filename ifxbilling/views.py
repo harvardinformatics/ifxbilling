@@ -987,7 +987,7 @@ def get_pending_year_month(request, invoice_prefix):
         return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        br = models.BillingRecord.objects.filter(facility=facility, current_state='PENDING_LAB_APPROVAL').latest('year', 'month')
+        br = models.BillingRecord.objects.filter(product_usage__product__facility=facility, current_state='PENDING_LAB_APPROVAL').latest('year', 'month')
         return Response(data={ 'year': br.year, 'month': br.month })
 
     except models.BillingRecord.DoesNotExist:
