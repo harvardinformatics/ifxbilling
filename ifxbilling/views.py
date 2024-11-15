@@ -7,8 +7,9 @@ Common views for expense codes
 import logging
 import json
 import re
-from decimal import Decimal
 from collections import defaultdict
+from decimal import Decimal
+import requests
 from django.db import connection
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -21,11 +22,11 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from ifxmail.client import send, FieldErrorsException
 from ifxmail.client.views import messages, mailings
-from ifxurls.urls import FIINE_URL_BASE
-from ifxuser.models import Organization
-from ifxbilling.fiine import update_user_accounts, sync_fiine_accounts, sync_facilities, update_products
+from ifxurls.urls import FIINE_URL_BASE, getIfxUrl
+from ifxuser import models as ifxuser_models
+from ifxbilling.fiine import update_user_accounts, sync_fiine_accounts, sync_facilities
 from ifxbilling import models, permissions
-from ifxbilling.calculator import calculateBillingMonth, getClassFromName
+from ifxbilling.calculator import calculateBillingMonth, getClassFromName, get_rebalancer_class
 
 
 logger = logging.getLogger(__name__)
@@ -187,11 +188,11 @@ def expense_code_request(request):
     logger.info(f'Formatting message for {facility_name} {organization_name} request from {user.full_name} for {product_name}.')
 
     try:
-        org = models.Organization.objects.get(slug=organization_name)
+        org = ifxuser_models.Organization.objects.get(slug=organization_name)
         models.Facility.objects.get(name=facility_name)
         qparams = {'facility': facility_name, 'product':product_name}
         url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/?{urlencode(qparams)}'
-    except models.Organization.DoesNotExist:
+    except ifxuser_models.Organization.DoesNotExist:
         msg = f'Organization not found: {organization_name}.'
         logger.error(msg)
         return Response(data={'organization': f'Error {msg}'}, status=status.HTTP_400_BAD_REQUEST)
@@ -299,8 +300,8 @@ def send_billing_record_review_notification(request, invoice_prefix, year, month
     if ifxorg_ids:
         for ifxorg_id in ifxorg_ids:
             try:
-                organizations.append(Organization.objects.get(ifxorg=ifxorg_id))
-            except Organization.DoesNotExist:
+                organizations.append(ifxuser_models.Organization.objects.get(ifxorg=ifxorg_id))
+            except ifxuser_models.Organization.DoesNotExist:
                 return Response(data={
                     'error': f'Organization with ifxorg number {ifxorg_id} cannot be found'
                 }, status=status.HTTP_400_BAD_REQUEST)
@@ -699,7 +700,7 @@ def get_summary_by_account(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' group by id, code, name, account_type, organization'
+    sql += ' group by id, code, name, account_type, organization order by name'
 
     try:
         cursor = connection.cursor()
@@ -783,7 +784,7 @@ def get_summary_by_product_rate(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' group by product_id, product_name, product_number, rate_name, units'
+    sql += ' group by product_id, product_name, product_number, rate_name, units order by product_name'
 
     try:
         cursor = connection.cursor()
@@ -866,7 +867,7 @@ def get_summary_by_user(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' group by product_user_id, product_user_full_name, product_user_ifxid'
+    sql += ' group by product_user_id, product_user_full_name, product_user_ifxid order by product_user_full_name'
 
     try:
         cursor = connection.cursor()
@@ -992,3 +993,50 @@ def get_pending_year_month(request, invoice_prefix):
 
     except models.BillingRecord.DoesNotExist:
         return Response(data={ 'error': 'No pending billing records found' }, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(('POST', ))
+def rebalance(request):
+    '''
+    Rebalance the billing records for the given facility, user, year, and month
+    '''
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except json.JSONDecodeError as e:
+        logger.exception(e)
+        return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
+
+    invoice_prefix = data.get('invoice_prefix', None)
+    ifxid = data.get('ifxid', None)
+    year = data.get('year', None)
+    month = data.get('month', None)
+    account_data = data.get('account_data', None)
+
+    if not invoice_prefix:
+        return Response(data={ 'error': 'invoice_prefix is required' }, status=status.HTTP_400_BAD_REQUEST)
+    if not ifxid:
+        return Response(data={ 'error': 'ifxid is required' }, status=status.HTTP_400_BAD_REQUEST)
+    if not year:
+        return Response(data={ 'error': 'year is required' }, status=status.HTTP_400_BAD_REQUEST)
+    if not month:
+        return Response(data={ 'error': 'month is required' }, status=status.HTTP_400_BAD_REQUEST)
+
+
+    try:
+        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+    except models.Facility.DoesNotExist:
+        return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = ifxuser_models.IfxUser.objects.get(ifxid=ifxid)
+    except ifxuser_models.IfxUser.DoesNotExist:
+        return Response(data={ 'error': f'User cannot be found using ifxid {ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        auth_token_str = request.META.get('HTTP_AUTHORIZATION')
+        rebalancer = get_rebalancer_class()(year, month, facility, auth_token_str)
+        rebalancer.rebalance_user_billing_month(user, account_data)
+        return Response(data={ 'success': 'Rebalance successful' })
+    except Exception as e:
+        logger.exception(e)
+        return Response(data={ 'error': f'Rebalance failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
