@@ -700,7 +700,7 @@ def get_summary_by_account(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' group by id, code, name, account_type, organization'
+    sql += ' group by id, code, name, account_type, organization order by name'
 
     try:
         cursor = connection.cursor()
@@ -784,7 +784,7 @@ def get_summary_by_product_rate(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' group by product_id, product_name, product_number, rate_name, units'
+    sql += ' group by product_id, product_name, product_number, rate_name, units order by product_name'
 
     try:
         cursor = connection.cursor()
@@ -867,7 +867,7 @@ def get_summary_by_user(request):
         sql += ' where '
         sql += ' and '.join(where_clauses)
 
-    sql += ' group by product_user_id, product_user_full_name, product_user_ifxid'
+    sql += ' group by product_user_id, product_user_full_name, product_user_ifxid order by product_user_full_name'
 
     try:
         cursor = connection.cursor()
