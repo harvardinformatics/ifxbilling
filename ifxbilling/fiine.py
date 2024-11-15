@@ -251,6 +251,7 @@ def update_user_accounts(user):
         # Update UserProductAccounts (is_valid, percent) or create new
         for product_account_data in product_accounts:
             try:
+                logger.debug(f'Getting possible existing Product account data: {product_account_data}')
                 account = models.Account.objects.get(
                     ifxacct=product_account_data['account']['ifxacct'],
                     code=product_account_data['account']['code']
@@ -267,6 +268,7 @@ def update_user_accounts(user):
             except models.Product.DoesNotExist as e:
                 raise Exception(f"Product with number {product_account_data['product']['product_number']} is missing") from e
             except models.UserProductAccount.DoesNotExist:
+                logger.debug(f'Creating new UserProductAccount {product_account_data}')
                 models.UserProductAccount.objects.create(
                     user=user,
                     product=product,
@@ -280,14 +282,14 @@ def update_user_accounts(user):
 
 def update_products():
     '''
-    Get all of the products for this facility and update to apply any changes made in Fiine. Mainly product_name and product_description
+    Get all of the products for this facility and update to apply any changes made in Fiine. Mainly product_name, object_code_category and product_description
     '''
     for facility in models.Facility.objects.all():
         fiine_products = FiineAPI.listProducts(facility=facility.name)
         for fiine_product in fiine_products:
             try:
                 product = models.Product.objects.get(product_number=fiine_product.product_number)
-                for field in ['product_name', 'product_description']:
+                for field in ['product_name', 'product_description', 'object_code_category']:
                     setattr(product, field, getattr(fiine_product, field))
                 product.save()
             except models.Product.DoesNotExist:
