@@ -188,7 +188,7 @@ def expense_code_request(request):
     logger.info(f'Formatting message for {facility_name} {organization_name} request from {user.full_name} for {product_name}.')
 
     try:
-        org = ifxser_models.Organization.objects.get(slug=organization_name)
+        org = ifxuser_models.Organization.objects.get(slug=organization_name)
         models.Facility.objects.get(name=facility_name)
         qparams = {'facility': facility_name, 'product':product_name}
         url = f'{FIINE_URL_BASE}/labs/{org.ifxorg}/member/{user.ifxid}/?{urlencode(qparams)}'
