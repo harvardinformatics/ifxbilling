@@ -960,17 +960,49 @@ def get_charge_history(request):
         return Response(f'Invalid end date {end_year}-{end_month}-1', status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+        models.Facility.objects.get(invoice_prefix=invoice_prefix)
     except models.Facility.DoesNotExist:
         return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
 
 
-    results = defaultdict(lambda: defaultdict(Decimal))
-    for br in models.BillingRecord.objects.filter(year__gte=start_date.year, month__gte=start_date.month, year__lte=end_date.year, month__lte=end_date.month, product_usage__product__facility=facility):
-        # month_key is concatenated year and month with left padded zeros in the month
-        month_key = f'{br.year}-{str(br.month).zfill(2)}'
-        results[br.account.organization.name][month_key] += br.decimal_charge.quantize(Decimal('0.01'))
+    sql = '''
+        select
+            o.name,
+            concat(br.year, '-', lpad(br.month, 2, '0')) as month_key,
+            sum(br.decimal_charge) as total_decimal_charge
+        from
+            billing_record br
+            inner join account acct on acct.id = br.account_id
+            inner join product_usage pu on pu.id = br.product_usage_id
+            inner join product p on p.id = pu.product_id
+            inner join facility f on f.id = p.facility_id
+            inner join nanites_organization o on o.id = acct.organization_id
+        where
+            br.year >= %s
+            and br.month >= %s
+            and br.year <= %s
+            and br.month <= %s
+            and f.invoice_prefix = %s
+            and o.org_tree = 'Harvard'
+        group by o.name, month_key
+    '''
+    query_args = [start_date.year, start_date.month, end_date.year, end_date.month, invoice_prefix]
 
+    try:
+        cursor = connection.cursor()
+        cursor.execute(sql, query_args)
+
+        desc = cursor.description
+        results = defaultdict(lambda: defaultdict(Decimal))
+
+        for row in cursor.fetchall():
+            # Make a dictionary labeled by column name
+            row_dict = dict(zip([col[0] for col in desc], row))
+            results[row_dict['name']][row_dict['month_key']] = row_dict['total_decimal_charge']
+
+    except Exception as e:
+        logger.exception(e)
+        return Response(f'Error getting charge history {e}', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(
         data=results
