@@ -1011,7 +1011,7 @@ def get_charge_history(request):
 @api_view(('GET', ))
 def get_pending_year_month(request, invoice_prefix):
     '''
-    Return the year and month of the most recent pending billing record.
+    Return the year and month of the most recent pending billing record for the organization.
     Used by fiine to indicate what month will be rebalanced after saving coding changes.
     '''
     try:
