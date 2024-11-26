@@ -1165,7 +1165,6 @@ class Rebalance():
         '''
         # Update the user accounts for the user
         update_user_accounts(user)
-        logger.error(f'Updated user accounts for {user.full_name} for {self.month}/{self.year}')
 
     def recalculate_billing_records(self, user):
         '''
@@ -1181,8 +1180,6 @@ class Rebalance():
         response = requests.post(url, headers=headers, json={}, timeout=None)
         if response.status_code != 200:
             raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {response.text}')
-
-        logger.error(f'Recalculated billing records for {user.full_name} for {self.month}/{self.year}')
 
     def rebalance_user_billing_month(self, user, account_data):
         '''
