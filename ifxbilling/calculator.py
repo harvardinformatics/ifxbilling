@@ -1179,7 +1179,7 @@ class Rebalance():
             'Authorization': self.auth_token_str,
             'Content-Type': 'application/json',
         }
-        response = requests.post(url, headers=headers, json={}, timeout=None)
+        response = requests.post(url, headers=headers, json={ 'recalculate': True }, timeout=None)
         if response.status_code != 200:
             raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {response.text}')
 
