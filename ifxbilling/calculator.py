@@ -524,7 +524,8 @@ class NewBillingCalculator():
             try:
                 if BillingRecord.objects.filter(product_usage=product_usage).exists():
                     if recalculate:
-                        BillingRecord.objects.filter(product_usage=product_usage).delete()
+                        for br in BillingRecord.objects.filter(product_usage=product_usage):
+                            br.delete()
                     else:
                         msg = f'Billing record already exists for usage {product_usage}'
                         raise Exception(msg)
@@ -597,6 +598,7 @@ class NewBillingCalculator():
         brs = []
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
+                ProductUsageProcessing.objects.filter(product_usage=product_usage).delete()
                 billing_data_dicts = self.get_billing_data_dicts_for_usage(product_usage, **kwargs)
                 if not billing_data_dicts:
                     raise Exception(f'No billing data for usage')
