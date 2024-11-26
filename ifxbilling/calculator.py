@@ -1139,19 +1139,26 @@ class Rebalance():
         # pylint: disable=unnecessary-pass
         pass
 
-    def remove_billing_records(self, user):
+    def remove_billing_records(self, user, account_data):
         '''
-        Remove the billing records for the given facility, user, year, and month
+        Remove the billing records for the given facility, user, year, and month.
+        If product is specified in the account_data, only remove billing records for that product
         '''
         # Remove the billing records for the user
-        for br in BillingRecord.objects.filter(
+        billing_records = BillingRecord.objects.filter(
             product_usage__product__facility=self.facility,
             product_usage__product_user=user,
             year=self.year,
             month=self.month,
             current_state='PENDING_LAB_APPROVAL'
-        ):
+        )
+        product_number = account_data[0].get('product', None)
+        if product_number:
+            billing_records = billing_records.filter(product_usage__product__product_number=product_number)
+
+        for br in billing_records:
             br.delete()
+
         logger.error(f'Removed billing records for {user.full_name} for {self.month}/{self.year}')
 
     def update_user_accounts(self, user):
@@ -1184,7 +1191,7 @@ class Rebalance():
         Rebalance the billing records for the given facility, user, year, and month
         '''
         # Remove the billing records for the user
-        self.remove_billing_records(user)
+        self.remove_billing_records(user, account_data)
 
         # Sync the user accounts from fiine
         self.update_user_accounts(user)

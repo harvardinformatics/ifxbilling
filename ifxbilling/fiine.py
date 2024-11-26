@@ -263,7 +263,7 @@ def update_user_accounts(user):
                 user_product_account.percent = product_account_data['percent']
                 user_product_account.save()
             except models.Account.DoesNotExist as e:
-                raise Exception(f"Account {product_account_data['account']} for product {product_account_data['product']} is missing") from e
+                raise Exception(f"Account {product_account_data['account']['name']} for product {product_account_data['product']['product_number']} is missing") from e
             except models.Product.DoesNotExist as e:
                 raise Exception(f"Product with number {product_account_data['product']['product_number']} is missing") from e
             except models.UserProductAccount.DoesNotExist:
