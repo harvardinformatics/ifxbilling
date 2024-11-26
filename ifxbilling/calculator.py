@@ -22,6 +22,7 @@ from django.utils import timezone
 from ifxuser.models import Organization
 from ifxec import OBJECT_CODES
 from ifxurls import getIfxUrl
+from ifxmail.client import send
 from ifxbilling.fiine import update_user_accounts
 from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
@@ -1125,7 +1126,7 @@ class Rebalance():
     Rebalance user accounts and regenerate billing records for a given month
     '''
 
-    def __init__(self, year, month, facility, auth_token_str):
+    def __init__(self, year, month, facility, auth_token_str, notification_contact):
         '''
         Initialize the rebalance object
         '''
@@ -1133,6 +1134,34 @@ class Rebalance():
         self.month = month
         self.facility = facility
         self.auth_token_str = auth_token_str # Authorization header string, including the word 'Token'
+        self.notification_contact = notification_contact
+
+    def send_result_notification(self, body):
+        '''
+        Send a notification email with the given body to the Facility Organization Facility Primary Contact and cc
+        the self.notification_contact
+        '''
+        try:
+            facility_organization = Organization.objects.get(name=self.facility.name, rank='Facility')
+        except Organization.DoesNotExist:
+            raise Exception(f'Facility organization {self.facility.name} does not exist')
+
+        try:
+            facility_primary_contact = facility_organization.organizationcontact_set.get(role='Facility Primary Contact')
+        except OrganizationContact.DoesNotExist:
+            raise Exception(f'Facility organization {self.facility.name} does not have a Facility Primary Contact')
+
+        logger.error(f'Notification contact {self.notification_contact}')
+        subject = f'{self.facility.name} Rebalance Results for {self.month}/{self.year} submitted by {self.notification_contact.full_name}'
+        cclist = [self.notification_contact.email]
+        send(
+            to=facility_primary_contact.contact.detail,
+            fromaddr=settings.EMAILS.DEFAULT_EMAIL_FROM_ADDRESS,
+            subject=subject,
+            message=body,
+            field_errors=True,
+            cclist=cclist,
+        )
 
     def update_usages_for_rebalance(self, user, account_data):
         '''
@@ -1197,6 +1226,8 @@ class Rebalance():
 
         # Recreate the billing records by calling the application calculate-billing-month url with invoice_prefix, year, and month
         self.recalculate_billing_records(user)
+
+
 
 def get_rebalancer_class():
     '''
