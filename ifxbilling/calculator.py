@@ -1159,8 +1159,6 @@ class Rebalance():
         for br in billing_records:
             br.delete()
 
-        logger.error(f'Removed billing records for {user.full_name} for {self.month}/{self.year}')
-
     def update_user_accounts(self, user):
         '''
         Update the user accounts for the given facility, user, year, and month
