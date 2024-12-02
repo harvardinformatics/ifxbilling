@@ -441,7 +441,7 @@ class NewBillingCalculator():
                 raise Exception('Default facility can only be set if there is exactly 1 Facility record.')
 
 
-    def calculate_billing_month(self, year, month, organizations=None, recalculate=False, verbosity=0):
+    def calculate_billing_month(self, year, month, organizations=None, recalculate=False, verbosity=0, user=None):
         '''
         Calculate a month of billing for the given year and month
 
@@ -476,12 +476,12 @@ class NewBillingCalculator():
 
         results = {}
         for organization in organizations_to_process:
-            result = self.generate_billing_records_for_organization(year, month, organization, recalculate)
+            result = self.generate_billing_records_for_organization(year, month, organization, recalculate, user)
             results[organization.name] = result
 
         return results
 
-    def generate_billing_records_for_organization(self, year, month, organization, recalculate, **kwargs):
+    def generate_billing_records_for_organization(self, year, month, organization, recalculate, user=None, **kwargs):
         '''
         Create and save all of the :class:`~ifxbilling.models.BillingRecord` objects for the month for an organization.
 
@@ -505,6 +505,9 @@ class NewBillingCalculator():
         :param recalculate: If True, will delete existing :class:`~ifxbilling.models.BillingRecord` objects if possible
         :type recalculate: bool
 
+        :param user: Only generate billing records for usages of this user
+        :type user: ifxuser.models.IfxUser
+
         :return: A dictionary with keys "successes" (a list of successfully created :class:`~ifxbilling.models.BillingRecord` objects) and
             "errors" (a list of error messages)
         :rtype: dict
@@ -513,7 +516,7 @@ class NewBillingCalculator():
         errors = []
 
         try:
-            product_usages = self.get_product_usages_for_organization(year, month, organization, **kwargs)
+            product_usages = self.get_product_usages_for_organization(year, month, organization, user, **kwargs)
         except Exception as e:
             logger.error(e)
             errors.append(str(e))
@@ -545,7 +548,7 @@ class NewBillingCalculator():
             'errors': errors,
         }
 
-    def get_product_usages_for_organization(self, year, month, organization, **kwargs):
+    def get_product_usages_for_organization(self, year, month, organization, user=None, **kwargs):
         '''
         Get a list of :class:`~ifxbilling.models.ProductUsage` object to be converted to :class:`~ifxbilling.models.BillingRecord`
         objects for the given :class:`~ifxuser.models.Organization`.  Base class just gets the
@@ -560,10 +563,15 @@ class NewBillingCalculator():
         :param organization: The organization whose :class:`~ifxbilling.models.BillingRecord` objects should be generated
         :type organization: list
 
+        :param user: Only get usages for this user
+        :type user: ifxuser.models.IfxUser
+
         :return: QuerySet of :class:`~ifxbilling.models.ProductUsage` objects filtered by the organization, year, and month
         :rtype: :class:`~django.db.models.query.QuerySet`
         '''
         product_usages = ProductUsage.objects.filter(organization=organization, year=year, month=month, product__facility=self.facility, product__billable=True)
+        if user:
+            product_usages = product_usages.filter(product_user=user)
         if not product_usages and self.verbosity > self.CHATTY:
             logger.info(f'No product usages for: {organization.name}, {month}, {year}')
         return product_usages
@@ -1208,9 +1216,29 @@ class Rebalance():
             'Authorization': self.auth_token_str,
             'Content-Type': 'application/json',
         }
-        response = requests.post(url, headers=headers, json={ 'recalculate': True }, timeout=None)
+        data = {
+            'recalculate': True,
+            'user_ifxid': user.ifxid,
+        }
+        response = requests.post(url, headers=headers, json=data, timeout=None)
+        response_data = None
+        try:
+            response_data = response.json()
+        except json.JSONDecodeError:
+            raise Exception(f'Unable to decode response from {url}: {response.text}')
+
         if response.status_code != 200:
-            raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {response.text}')
+            if response_data:
+                error_message = ','.join(str(k) for k in response_data.keys())
+            else:
+                error_message = response.text
+            raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {error_message}')
+
+        if response_data.get('errors', None):
+            error_message = ','.join(set(response_data['errors']))
+            raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {error_message}')
+
+        logger.error(f'Recalculate billing records response: {response_data}')
 
     def rebalance_user_billing_month(self, user, account_data):
         '''
