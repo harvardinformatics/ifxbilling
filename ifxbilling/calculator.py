@@ -24,7 +24,7 @@ from ifxec import OBJECT_CODES
 from ifxurls import getIfxUrl
 from ifxmail.client import send
 from ifxbilling.fiine import update_user_accounts
-from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
+from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility, UserProductAccount
 
 
 logger = logging.getLogger('ifxbilling')
@@ -1189,11 +1189,7 @@ class Rebalance():
             product_usage__product_user=user,
             year=self.year,
             month=self.month,
-            current_state='PENDING_LAB_APPROVAL'
-        )
-        product_number = account_data[0].get('product', None)
-        if product_number:
-            billing_records = billing_records.filter(product_usage__product__product_number=product_number)
+        ).exclude(current_state='FINAL')
 
         for br in billing_records:
             br.delete()
@@ -1217,7 +1213,7 @@ class Rebalance():
             'Content-Type': 'application/json',
         }
         data = {
-            'recalculate': True,
+            'recalculate': False,
             'user_ifxid': user.ifxid,
         }
         response = requests.post(url, headers=headers, json=data, timeout=None)

@@ -885,7 +885,7 @@ class BillingRecord(models.Model):
         """
         Prevent delete of BillingRecord
         """
-        if self.current_state and self.current_state not in ['INIT', 'PENDING_LAB_APPROVAL']:
+        if self.current_state and self.current_state not in ['INIT', 'PENDING_LAB_APPROVAL', 'LAB_APPROVED']:
             raise ProtectedError('Billing Records can not be deleted.', self)
 
         super().delete()
