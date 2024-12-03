@@ -26,10 +26,10 @@ class BillingRecordUpdatePermissions(permissions.IsAuthenticated):
 
     def has_object_permission(self, request, view, obj):
         '''
-        Only allow deletes if the user is an admin and the current_state is 'PENDING_LAB_APPROVAL' or 'INIT'
+        Only allow deletes if the user is an admin and the current_state is 'LAB_APPROVED', 'PENDING_LAB_APPROVAL' or 'INIT'
         '''
         if request.method == 'DELETE':
-            return Roles.userIsAdmin(request.user) and obj.current_state in ['PENDING_LAB_APPROVAL', 'INIT']
+            return Roles.userIsAdmin(request.user) and obj.current_state in ['LAB_APPROVED', 'PENDING_LAB_APPROVAL', 'INIT']
         return super().has_object_permission(request, view, obj)
 
 class AdminPermissions(permissions.IsAuthenticated):
