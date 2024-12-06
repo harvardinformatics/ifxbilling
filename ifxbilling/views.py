@@ -1074,14 +1074,15 @@ def rebalance(request):
 
 
     auth_token_str = request.META.get('HTTP_AUTHORIZATION')
+    logger.error(f'auth_token_str: {auth_token_str}')
     rebalancer = get_rebalancer_class()(year, month, facility, auth_token_str, requestor)
     try:
         rebalancer.rebalance_user_billing_month(user, account_data)
         result = f'Rebalance of accounts for {user.full_name} for billing month {month}/{year} was successful.'
-        rebalancer.send_result_notification(result)
+        # rebalancer.send_result_notification(result)
         return Response(data={ 'success':  result })
     except Exception as e:
         logger.exception(e)
         result = f'Rebalance of accounts for {user.full_name} for billing month {month}/{year} failed: {e}'
-        rebalancer.send_result_notification(result)
+        # rebalancer.send_result_notification(result)
         return Response(data={ 'error': f'Rebalance failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

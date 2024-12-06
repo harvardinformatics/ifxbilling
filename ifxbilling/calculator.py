@@ -19,7 +19,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
-from ifxuser.models import Organization
+from ifxuser.models import Organization, OrganizationContact
 from ifxec import OBJECT_CODES
 from ifxurls import getIfxUrl
 from ifxmail.client import send
@@ -1226,6 +1226,7 @@ class Rebalance():
         response_data = None
         try:
             response_data = response.json()
+            logger.error(f'Recalculate billing records response_data: {response_data}')
         except json.JSONDecodeError:
             raise Exception(f'Unable to decode response from {url}: {response.text}')
 
@@ -1237,7 +1238,7 @@ class Rebalance():
             logger.error(f'Recalculate billing records error response: {response_data}')
             raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {error_message}')
 
-        if response_data.get('errors', None):
+        if response_data != 'OK' and response_data.get('errors', None):
             error_message = ','.join(set(response_data['errors']))
             raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {error_message}')
 
