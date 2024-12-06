@@ -251,7 +251,6 @@ def update_user_accounts(user):
         # Update UserProductAccounts (is_valid, percent) or create new
         for product_account_data in product_accounts:
             try:
-                logger.debug(f'Getting possible existing Product account data: {product_account_data}')
                 account = models.Account.objects.get(
                     ifxacct=product_account_data['account']['ifxacct'],
                     code=product_account_data['account']['code']

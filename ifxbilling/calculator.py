@@ -1201,7 +1201,16 @@ class Rebalance():
         # Update the user accounts for the user
         update_user_accounts(user)
 
-    def recalculate_billing_records(self, user):
+    def get_recalculate_body(self, user, account_data):
+        '''
+        Get the body of the recalculate POST
+        '''
+        return {
+            'recalculate': False,
+            'user_ifxid': user.ifxid,
+        }
+
+    def recalculate_billing_records(self, user, account_data):
         '''
         Recalculate the billing records for the given facility, user, year, and month
         '''
@@ -1212,10 +1221,7 @@ class Rebalance():
             'Authorization': self.auth_token_str,
             'Content-Type': 'application/json',
         }
-        data = {
-            'recalculate': False,
-            'user_ifxid': user.ifxid,
-        }
+        data = self.get_recalculate_body(user, account_data)
         response = requests.post(url, headers=headers, json=data, timeout=None)
         response_data = None
         try:
@@ -1225,9 +1231,10 @@ class Rebalance():
 
         if response.status_code != 200:
             if response_data:
-                error_message = ','.join(str(k) for k in response_data.keys())
+                error_message = ','.join(str(k) for k in response_data.values())
             else:
                 error_message = response.text
+            logger.error(f'Recalculate billing records error response: {response_data}')
             raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {error_message}')
 
         if response_data.get('errors', None):
@@ -1249,7 +1256,7 @@ class Rebalance():
         self.update_usages_for_rebalance(user, account_data)
 
         # Recreate the billing records by calling the application calculate-billing-month url with invoice_prefix, year, and month
-        self.recalculate_billing_records(user)
+        self.recalculate_billing_records(user, account_data)
 
 
 
