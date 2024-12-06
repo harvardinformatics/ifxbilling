@@ -1078,10 +1078,10 @@ def rebalance(request):
     try:
         rebalancer.rebalance_user_billing_month(user, account_data)
         result = f'Rebalance of accounts for {user.full_name} for billing month {month}/{year} was successful.'
-        # rebalancer.send_result_notification(result)
+        rebalancer.send_result_notification(result)
         return Response(data={ 'success':  result })
     except Exception as e:
         logger.exception(e)
         result = f'Rebalance of accounts for {user.full_name} for billing month {month}/{year} failed: {e}'
-        # rebalancer.send_result_notification(result)
+        rebalancer.send_result_notification(result)
         return Response(data={ 'error': f'Rebalance failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
