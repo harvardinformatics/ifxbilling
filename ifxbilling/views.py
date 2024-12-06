@@ -1074,7 +1074,6 @@ def rebalance(request):
 
 
     auth_token_str = request.META.get('HTTP_AUTHORIZATION')
-    logger.error(f'auth_token_str: {auth_token_str}')
     rebalancer = get_rebalancer_class()(year, month, facility, auth_token_str, requestor)
     try:
         rebalancer.rebalance_user_billing_month(user, account_data)
