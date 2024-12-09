@@ -27,6 +27,7 @@ from ifxuser import models as ifxuser_models
 from ifxbilling.fiine import update_user_accounts, sync_fiine_accounts, sync_facilities
 from ifxbilling import models, permissions
 from ifxbilling.calculator import calculateBillingMonth, getClassFromName, get_rebalancer_class
+from ifxbilling.notification import BillingRecordEmailGenerator
 
 
 logger = logging.getLogger(__name__)
@@ -1085,3 +1086,41 @@ def rebalance(request):
         result = f'Rebalance of accounts for {user.full_name} for billing month {month}/{year} failed: {e}'
         rebalancer.send_result_notification(result)
         return Response(data={ 'error': f'Rebalance failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(('GET', ))
+def get_billing_contacts(request):
+    '''
+    Return the billing contacts for the given facility using the BillingRecordEmailGenerator
+    '''
+    org_slugs = request.GET.get('org_slugs', [])
+    organizations = []
+    if not org_slugs or not len(org_slugs):
+        return Response(data={ 'error': 'org_slugs must be provided' }, status=status.HTTP_400_BAD_REQUEST)
+    for org_slug in org_slugs:
+        try:
+            organizations.append(ifxuser_models.Organization.objects.get(slug=org_slug))
+        except ifxuser_models.Organization.DoesNotExist:
+            return Response(data={ 'error': f'Organization cannot be found using slug {org_slug}' }, status=status.HTTP_400_BAD_REQUEST)
+
+    invoice_prefix = request.GET.get('invoice_prefix', None)
+    if not invoice_prefix:
+        return Response(data={ 'error': 'invoice_prefix is required' }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+    except models.Facility.DoesNotExist:
+        return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
+
+    results = []
+    try:
+        breg = BillingRecordEmailGenerator(2024, 1, facility=facility) # Dummy year and month
+        for organization in organizations:
+            contacts = breg.get_billing_contacts(organization)
+            results.extend(contacts)
+    except Exception as e:
+        logger.exception(e)
+        return Response(data={ 'error': f'Error getting billing contacts {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data=results
+    )
