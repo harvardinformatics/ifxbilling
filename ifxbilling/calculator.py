@@ -1189,6 +1189,7 @@ class Rebalance():
             product_usage__product_user=user,
             year=self.year,
             month=self.month,
+            product_usage__product__billable=True,
         ).exclude(current_state='FINAL')
 
         for br in billing_records:
