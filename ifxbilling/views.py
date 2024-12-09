@@ -1113,7 +1113,12 @@ def get_billing_contacts(request):
 
     results = []
     try:
-        breg = BillingRecordEmailGenerator(2024, 1, facility=facility) # Dummy year and month
+        breg_class_name = 'ifxbilling.notification.BillingRecordEmailGenerator'
+        if hasattr(settings, 'BILLING_RECORD_EMAIL_GENERATOR_CLASS') and settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS:
+            app_name = settings.IFX_APP['name']
+            breg_class_name = f'{app_name}.{settings.BILLING_RECORD_EMAIL_GENERATOR_CLASS}'
+        breg_class = getClassFromName(breg_class_name)
+        breg = breg_class(2024, 1, facility=facility) # Dummy year and month
         for organization in organizations:
             contacts = breg.get_billing_contacts(organization)
             results.extend(contacts)
