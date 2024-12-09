@@ -1087,12 +1087,18 @@ def rebalance(request):
         rebalancer.send_result_notification(result)
         return Response(data={ 'error': f'Rebalance failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(('GET', ))
+@api_view(('POST', ))
 def get_billing_contacts(request):
     '''
     Return the billing contacts for the given facility using the BillingRecordEmailGenerator
     '''
-    org_slugs = request.GET.get('org_slugs', [])
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except json.JSONDecodeError as e:
+        logger.exception(e)
+        return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
+
+    org_slugs = data.get('org_slugs', [])
     organizations = []
     if not org_slugs or not len(org_slugs):
         return Response(data={ 'error': 'org_slugs must be provided' }, status=status.HTTP_400_BAD_REQUEST)
@@ -1102,7 +1108,7 @@ def get_billing_contacts(request):
         except ifxuser_models.Organization.DoesNotExist:
             return Response(data={ 'error': f'Organization cannot be found using slug {org_slug}' }, status=status.HTTP_400_BAD_REQUEST)
 
-    invoice_prefix = request.GET.get('invoice_prefix', None)
+    invoice_prefix = data.get('invoice_prefix', None)
     if not invoice_prefix:
         return Response(data={ 'error': 'invoice_prefix is required' }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1120,7 +1126,7 @@ def get_billing_contacts(request):
         breg_class = getClassFromName(breg_class_name)
         breg = breg_class(2024, 1, facility=facility) # Dummy year and month
         for organization in organizations:
-            contacts = breg.get_billing_contacts(organization)
+            contacts = breg.get_organization_contacts(organization)
             results.extend(contacts)
     except Exception as e:
         logger.exception(e)
