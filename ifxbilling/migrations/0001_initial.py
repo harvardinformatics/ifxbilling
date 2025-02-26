@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('ifxuser', '0011_auto_20210727_1929'),
+        ('ifxuser', '0007_ifxuser_scholar_type'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
