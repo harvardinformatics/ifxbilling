@@ -21,6 +21,7 @@ from django.contrib.auth.models import Group
 from django.utils import timezone
 from django.conf import settings
 from django.db.models import ProtectedError
+from ifxuser import models as ifxuser_models
 from ifxbilling.test import data
 from ifxbilling import models
 
@@ -41,7 +42,7 @@ class TestBillingRecord(APITestCase):
         self.superuser.save()
 
         admin_group, created = Group.objects.get_or_create(name=settings.GROUPS.ADMIN_GROUP_NAME)
-        self.superuser.groups.add(admin_group)
+        ifxuser_models.IfxUserGroups.objects.create(user=self.superuser, group=admin_group)
 
         self.token = Token(user=self.superuser)
         self.token.save()
@@ -571,18 +572,18 @@ class TestBillingRecord(APITestCase):
         self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
         self.assertTrue(response.data['current_state'] == 'PENDING_LAB_APPROVAL', f'Incorrect billing record state {response.data["current_state"]}')
 
-        id = response.data['id']
+        brid = response.data['id']
 
         # Ensure that deletion fails when superuser has no groups
-        self.superuser.groups.clear()
-        url = reverse('billing-record-detail', kwargs={ 'pk': id })
+        self.superuser.ifxusergroups_set.all().delete()
+        url = reverse('billing-record-detail', kwargs={ 'pk': brid })
         response = self.client.delete(url)
         self.assertTrue(response.status_code == status.HTTP_403_FORBIDDEN, f'Failed to delete {response}')
 
         # Ensure that deletion succeeds when superuser is an admin
         admin_group, created = Group.objects.get_or_create(name=settings.GROUPS.ADMIN_GROUP_NAME)
-        self.superuser.groups.add(admin_group)
-        url = reverse('billing-record-detail', kwargs={ 'pk': id })
+        ifxuser_models.IfxUserGroups.objects.create(user=self.superuser, group=admin_group)
+        url = reverse('billing-record-detail', kwargs={ 'pk': brid })
         response = self.client.delete(url)
         self.assertTrue(response.status_code == status.HTTP_204_NO_CONTENT, f'Failed to delete {response}')
 
