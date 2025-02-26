@@ -20,4 +20,4 @@ def userIsAdmin(user):
     '''
     Determine if a user is an admin by checking for admin group
     '''
-    return user.groups.filter(name=settings.GROUPS.ADMIN_GROUP_NAME).exists()
+    return user.ifxusergroups_set.filter(group__name=settings.GROUPS.ADMIN_GROUP_NAME).exists()

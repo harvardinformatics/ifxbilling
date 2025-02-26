@@ -18,8 +18,8 @@ from rest_framework.reverse import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.utils import timezone
 from django.conf import settings
+from ifxuser import models as ifxuser_models
 from ifxbilling.test import data
 from ifxbilling import models
 
@@ -40,7 +40,7 @@ class TestBillingRecordAuthorship(APITestCase):
         self.superuser.save()
 
         admin_group, created = Group.objects.get_or_create(name=settings.GROUPS.ADMIN_GROUP_NAME)
-        self.superuser.groups.add(admin_group)
+        ifxuser_models.IfxUserGroups.objects.create(user=self.superuser, group=admin_group)
 
         self.token = Token(user=self.superuser)
         self.token.save()
