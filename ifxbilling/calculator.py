@@ -533,6 +533,8 @@ class NewBillingCalculator():
                     else:
                         msg = f'Billing record already exists for usage {product_usage}'
                         raise Exception(msg)
+                # Clear out old PUPs if they exist
+                ProductUsageProcessing.objects.filter(product_usage=product_usage).delete()
                 successes.extend(
                     self.generate_billing_records_for_usage(year, month, product_usage, **kwargs)
                 )

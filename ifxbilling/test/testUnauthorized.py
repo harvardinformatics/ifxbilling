@@ -42,8 +42,8 @@ class TestUnauthorized(APITestCase):
         data.init(['Account', 'UserAccount', 'Product'])
         year = 2021
         month = 2
-        ifxid_with_user_account = 'IFXID000000000D'
-        ifxid_without_user_account = 'IFXID000000000E'
+        ifxid_with_user_account = 'IFXIDC00000000D'
+        ifxid_without_user_account = 'IFXIDC00000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
                 'product': 'Dev Helium Dewar',
@@ -73,8 +73,8 @@ class TestUnauthorized(APITestCase):
         year = 2021
         month = 2
 
-        ifxid_with_user_account = 'IFXID000000000D'
-        ifxid_without_user_account = 'IFXID000000000E'
+        ifxid_with_user_account = 'IFXIDC00000000D'
+        ifxid_without_user_account = 'IFXIDC00000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
                 'product': 'Dev Helium Dewar',
@@ -107,8 +107,8 @@ class TestUnauthorized(APITestCase):
         year = 2021
         month = 2
 
-        ifxid_with_user_account = 'IFXID000000000D'
-        ifxid_without_user_account = 'IFXID000000000E'
+        ifxid_with_user_account = 'IFXIDC00000000D'
+        ifxid_without_user_account = 'IFXIDC00000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
                 'product': 'Dev Helium Balloon',
@@ -140,8 +140,8 @@ class TestUnauthorized(APITestCase):
         year = 2021
         month = 2
 
-        ifxid_with_user_account = 'IFXID000000000D'
-        ifxid_without_user_account = 'IFXID000000000E'
+        ifxid_with_user_account = 'IFXIDC00000000D'
+        ifxid_without_user_account = 'IFXIDC00000000E'
         for ifxid in [ifxid_with_user_account, ifxid_without_user_account]:
             product_usage_data = {
                 'product': 'Dev Helium Dewar',

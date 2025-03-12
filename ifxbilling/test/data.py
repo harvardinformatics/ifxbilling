@@ -144,7 +144,7 @@ USERS = [
         'last_name': 'Slurpiston',
         'full_name': 'Slurpy Slurpiston',
         'email': 'sslurpiston@gmail.com',
-        'ifxid': 'IFXID000000000D',
+        'ifxid': 'IFXIDC00000000D',
         'primary_affiliation': 'Kitzmiller Lab',
     },
     {
@@ -153,7 +153,7 @@ USERS = [
         'last_name': 'Derpiston',
         'full_name': 'Derpy Derpiston',
         'email': 'dderpiston@gmail.com',
-        'ifxid': 'IFXID000000000E',
+        'ifxid': 'IFXIDC00000000E',
         'primary_affiliation': 'Kitzmiller Lab',
     },
     {
@@ -162,7 +162,7 @@ USERS = [
         'last_name': 'Hankin',
         'full_name': 'Markos Hankin',
         'email': 'mhankin@gmail.com',
-        'ifxid': 'IFXID000000000F',
+        'ifxid': 'IFXIDC00000000F',
         'is_staff': True,
         'primary_affiliation': 'Kitzmiller Lab',
     },
