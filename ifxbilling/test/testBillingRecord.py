@@ -99,6 +99,70 @@ class TestBillingRecord(APITestCase):
         self.assertTrue(start == product_usage.start_date, f'Incorrect billing record start date {start}, should be {product_usage.start_date}')
         self.assertTrue(response.data['end_date'] is None, f'Incorrect billing record end date {response.data["end_date"]} should be None')
 
+    def testFinalizeBillingRecord(self):
+        '''
+        Use the finalize-billing-record endpoint to set organization billing record final
+        '''
+        data.init(types=['Account', 'Product', 'ProductUsage'])
+        # Create a billing record
+        product_usage = models.ProductUsage.objects.filter(product__product_name='Dev Helium Dewar').first()
+        account = models.Account.objects.first()
+        billing_record_data = {
+            'account': {
+                'id': account.id,
+            },
+            'product_usage': {
+                'id': product_usage.id
+            },
+            'charge': 999,  # This will be overwritten
+            'description': 'Dewar charge',
+            'transactions': [
+                {
+                    'charge': 100,
+                    'description': 'Dewar charge',
+                },
+                {
+                    'charge': -10,
+                    'description': '10%% off coupon',
+                }
+            ],
+            'billing_record_states': [
+                {
+                    'name': 'PENDING_LAB_APPROVAL',
+                    'user': self.superuser.ifxid
+                }
+            ]
+        }
+        url = reverse('billing-record-list')
+        response = self.client.post(url, billing_record_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Failed to post {response}')
+
+        # Ensure that current status is PENDING_LAB_APPRVOAL
+        self.assertTrue(response.data['current_state'] == 'PENDING_LAB_APPROVAL', f'Incorrect billing record state {response.data["current_state"]}')
+
+        year = response.data['year']
+        month = response.data['month']
+        organization = account.organization
+        facility = product_usage.product.facility
+        user = self.superuser
+
+        # Finalize the billing record
+        post_data = {
+            'year': year,
+            'month': month,
+            'organizations': [
+                organization.ifxorg
+            ],
+            'facility': facility.ifxfac,
+            'user': user.ifxid,
+        }
+        url = reverse('finalize-billing-month')
+        response = self.client.post(url, post_data, format='json')
+        self.assertTrue(response.status_code == status.HTTP_200_OK, f'Failed to finalize {response.content}')
+
+        for br in models.BillingRecord.objects.filter(year=year, month=month, account__organization=organization):
+            self.assertTrue(br.current_state == 'FINAL', f'Incorrect billing record state {br.current_state}')
+
     def testBillingRecordUpdate(self):
         '''
         Ensure that account can be changed on a billing record, even if the id is mismatched (support the update-from-fiine case).
