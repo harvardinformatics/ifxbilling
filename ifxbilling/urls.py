@@ -34,5 +34,6 @@ urlpatterns = [
     path(r'ifxbilling/api/expense-code-request/', views.expense_code_request, name='expense-code-request'),
     path(r'ifxbilling/api/send-billing-record-review-notification/<str:invoice_prefix>/<int:year>/<int:month>/', views.send_billing_record_review_notification, name='send-billing-record-review-notification'),
     path(r'ifxbilling/api/unauthorized/', views.unauthorized, name='unauthorized'),
+    path(r'ifxbilling/api/finalize-billing-month/', views.finalize_billing_month, name='finalize-billing-month'),
     path(r'ifxbilling/api/', include(router.urls)),
 ]

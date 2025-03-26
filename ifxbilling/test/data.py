@@ -63,16 +63,19 @@ ORGS = [
         'name': 'Kitzmiller Lab',
         'rank': 'lab',
         'org_tree': 'Harvard',
+        'ifxorg': 'IFXORGQ000000001',
     },
     {
         'name': 'Nobody Lab',
         'rank': 'lab',
         'org_tree': 'Harvard',
+        'ifxorg': 'IFXORGQ000000002',
     },
     {
         'name': 'Derpiston Lab',
         'rank': 'lab',
         'org_tree': 'Harvard',
+        'ifxorg': 'IFXORGQ000000003',
         'contacts': [
             {
                 'role': 'PI',
@@ -114,17 +117,20 @@ ORGS = [
     {
         'name': 'Aliens',
         'rank': 'company',
-        'org_tree': 'Harvard'
+        'org_tree': 'Harvard',
+        'ifxorg': 'IFXORGQ000000004',
     },
     {
         'name': 'Faculty of Arts and Sciences',
         'rank': 'school',
         'org_tree': 'Harvard',
+        'ifxorg': 'IFXORGQ000000005',
     },
     {
         'name': 'Liquid Nitrogen Service',
         'rank': 'facility',
         'org_tree': 'Harvard',
+        'ifxorg': 'IFXORGQ000000006',
         'contacts': [
             {
                 'role': 'Facility Invoice',

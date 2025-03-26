@@ -10,7 +10,7 @@ import re
 from collections import defaultdict
 from decimal import Decimal
 import requests
-from django.db import connection
+from django.db import connection, transaction
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.http import urlencode
@@ -1134,4 +1134,71 @@ def get_billing_contacts(request):
 
     return Response(
         data=results
+    )
+
+@api_view(('POST', ))
+def finalize_billing_month(request):
+    '''
+    Finalize the billing month for the given facility, year and month by setting billing record state to FINAL
+    '''
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except json.JSONDecodeError as e:
+        logger.exception(e)
+        return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
+
+    ifxfac = data.get('facility', None)
+    year_str = data.get('year', None)
+    month_str = data.get('month', None)
+    ifxid = data.get('user', None)
+    ifxorgs = data.get('organizations', None)
+
+    try:
+        year = int(year_str)
+    except ValueError:
+        return Response(data={ 'error': 'year must be an integer' }, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        month = int(month_str)
+    except ValueError:
+        return Response(data={ 'error': 'month must be an integer' }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        facility = models.Facility.objects.get(ifxfac=ifxfac)
+    except models.Facility.DoesNotExist:
+        return Response(data={ 'error': f'Facility cannot be found using ifxfac {ifxfac}' }, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        user = ifxuser_models.IfxUser.objects.get(ifxid=ifxid)
+    except ifxuser_models.IfxUser.DoesNotExist:
+        return Response(data={ 'error': f'User cannot be found using ifxid {ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
+
+
+    organizations = [ifxuser_models.Organization.objects.filter(org_tree='Harvard')]
+    if ifxorgs:
+        organizations = []
+        for ifxorg in ifxorgs:
+            try:
+                organizations.append(ifxuser_models.Organization.objects.get(ifxorg=ifxorg))
+            except ifxuser_models.Organization.DoesNotExist:
+                return Response(data={ 'error': f'Organization cannot be found using ifxorg {ifxorg}' }, status=status.HTTP_400_BAD_REQUEST)
+            except ifxuser_models.Organization.MultipleObjectsReturned:
+                return Response(data={ 'error': f'Multiple organizations returned for ifxorg {ifxorg}'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with transaction.atomic():
+            for organization in organizations:
+                for br in models.BillingRecord.objects.filter(
+                    product_usage__product__facility=facility,
+                    year=year,
+                    month=month,
+                    account__organization=organization
+                ):
+                    br.setState('FINAL', user=user.username)
+                    br.save()
+    except Exception as e:
+        return Response(data={'error': f'Error finalizing billing month {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(
+        data={
+            'success': f'Billing month {month}/{year} finalized for {facility.name} and {len(organizations)} organizations'
+        }
     )
