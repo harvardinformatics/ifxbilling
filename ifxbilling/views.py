@@ -1183,16 +1183,19 @@ def finalize_billing_month(request):
             except ifxuser_models.Organization.MultipleObjectsReturned:
                 return Response(data={ 'error': f'Multiple organizations returned for ifxorg {ifxorg}'}, status=status.HTTP_400_BAD_REQUEST)
 
-    with transaction.atomic():
-        for organization in organizations:
-            for br in models.BillingRecord.objects.filter(
-                product_usage__product__facility=facility,
-                year=year,
-                month=month,
-                account__organization=organization
-            ):
-                br.setState('FINAL', user=user.username)
-                br.save()
+    try:
+        with transaction.atomic():
+            for organization in organizations:
+                for br in models.BillingRecord.objects.filter(
+                    product_usage__product__facility=facility,
+                    year=year,
+                    month=month,
+                    account__organization=organization
+                ):
+                    br.setState('FINAL', user=user.username)
+                    br.save()
+    except Exception as e:
+        return Response(data={'error': f'Error finalizing billing month {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(
         data={
