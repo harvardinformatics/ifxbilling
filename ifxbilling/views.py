@@ -960,11 +960,13 @@ def get_charge_history(request):
     except ValueError:
         return Response(f'Invalid end date {end_year}-{end_month}-1', status=status.HTTP_400_BAD_REQUEST)
 
+    if start_date > end_date:
+        return Response(f'Start date {start_date} is after end date {end_date}', status=status.HTTP_400_BAD_REQUEST)
+
     try:
         models.Facility.objects.get(invoice_prefix=invoice_prefix)
     except models.Facility.DoesNotExist:
         return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
-
 
     sql = '''
         select
@@ -979,15 +981,42 @@ def get_charge_history(request):
             inner join facility f on f.id = p.facility_id
             inner join nanites_organization o on o.id = acct.organization_id
         where
-            br.year >= %s
-            and br.month >= %s
-            and br.year <= %s
-            and br.month <= %s
-            and f.invoice_prefix = %s
+            f.invoice_prefix = %s
             and o.org_tree = 'Harvard'
+    '''
+
+
+    if start_date.year == end_date.year:
+        sql += '''
+                and br.year >= %s
+                and br.month >= %s
+                and br.year <= %s
+                and br.month <= %s
+        '''
+        query_args = [invoice_prefix, start_date.year, start_date.month, end_date.year, end_date.month]
+    else: # cross year
+        sql += '''
+            and (
+                (br.year = %s and br.month >= %s)
+        '''
+        query_args = [invoice_prefix, start_date.year, start_date.month]
+        for i in range(start_date.year + 1, end_date.year):
+            sql += '''
+                or
+                (br.year = %s)
+            '''
+            query_args.append(i)
+        sql += '''
+                or
+                (br.year = %s and br.month <= %s)
+            )
+        '''
+        query_args.append(end_date.year)
+        query_args.append(end_date.month)
+
+    sql += '''
         group by o.name, month_key
     '''
-    query_args = [start_date.year, start_date.month, end_date.year, end_date.month, invoice_prefix]
 
     try:
         cursor = connection.cursor()
