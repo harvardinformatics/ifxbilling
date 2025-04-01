@@ -63,7 +63,7 @@ ORGS = [
         'name': 'Kitzmiller Lab',
         'rank': 'lab',
         'org_tree': 'Harvard',
-        'ifxorg': 'IFXORGQ000000001',
+        'ifxorg': 'IFXORGX00000000G',
     },
     {
         'name': 'Nobody Lab',

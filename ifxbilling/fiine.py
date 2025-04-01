@@ -349,7 +349,7 @@ def create_new_product(
                 'product_number': parent.product_number
             }
         if product_organization:
-            product_data['organization'] = {
+            product_data['product_organization'] = {
                 'ifxorg': product_organization.ifxorg
             }
         if not hasattr(settings, 'FIINELESS') or not settings.FIINELESS:
