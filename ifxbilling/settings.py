@@ -238,3 +238,4 @@ SWAGGER_SETTINGS = {
 
 STANDARD_QUANTIZE = Decimal('0.0000')
 TWO_DIGIT_QUANTIZE = Decimal('0.00')
+FIINELESS = os.environ.get('FIINELESS', 'FALSE').upper() == 'TRUE'

@@ -425,7 +425,10 @@ def clearFiineProducts():
     products = FiineAPI.listProducts()
     for product in products:
         if product.product_name == 'Helium Dewar Test':
-            FiineAPI.deleteProduct(product_number=product.product_number)
+            try:
+                FiineAPI.deleteProduct(product_number=product.product_number)
+            except Exception:
+                pass
 
 
 def init(types=None):
