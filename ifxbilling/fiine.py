@@ -13,12 +13,12 @@ All rights reserved.
 
 import logging
 import re
-from copy import deepcopy
-
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
+from django.conf import settings
 from fiine.client import API as FiineAPI
 from fiine.client import ApiException
+from fiine.client.swagger.models import Product as FiineProductObj
 from ifxmail.client import API as IfxMailAPI
 from ifxuser.models import Organization
 from ifxec import ExpenseCodeFields, OBJECT_CODES
@@ -296,14 +296,45 @@ def update_products():
                 fiine_product_data['facility'] = facility
                 models.Product.objects.create(**fiine_product_data)
 
+def increment_ifxp(currentval):
+    '''
+    Increments ifxp.  Used in FIINELESS mode to create new products.
+    '''
+    numparts = currentval.split('IFXP')
+    arr = list(numparts[1])
+    i = len(arr) - 1
+    while arr[i] == 'Z':
+        arr[i] = '0'
+        i = i - 1
 
-def create_new_product(product_name, product_description, facility, object_code_category='Technical Services', billing_calculator=None, billable=True, parent=None, product_category=None):
+    # Get ascii value and increment
+    n = ord(arr[i])
+    # After 9 should be A
+    if n == 57:
+        n = 65
+    else:
+        n = n + 1
+    arr[i] = chr(n)
+    nextval = ''.join(arr)
+    return f'IFXP{nextval}'
+
+def create_new_product(
+    product_name,
+    product_description,
+    facility,
+    object_code_category='Technical Services',
+    billing_calculator=None,
+    billable=True,
+    parent=None,
+    product_category=None,
+    product_organization=None):
     '''
     Creates product record in fiine, and creates the local record with product number
     '''
-    products = FiineAPI.listProducts(product_name=product_name)
-    if products:
-        raise IntegrityError(f'Product with name {product_name} exists in fiine.')
+    if not hasattr(settings, 'FIINELESS') or not settings.FIINELESS:
+        products = FiineAPI.listProducts(product_name=product_name)
+        if products:
+            raise IntegrityError(f'Product with name {product_name} exists in fiine.')
 
     try:
         product_data = {
@@ -317,9 +348,31 @@ def create_new_product(product_name, product_description, facility, object_code_
             product_data['parent'] = {
                 'product_number': parent.product_number
             }
-        product_obj = FiineAPI.createProduct(
-            **product_data
-        )
+        if product_organization:
+            product_data['product_organization'] = {
+                'ifxorg': product_organization.ifxorg
+            }
+        if not hasattr(settings, 'FIINELESS') or not settings.FIINELESS:
+            product_obj = FiineAPI.createProduct(
+                **product_data
+            )
+        else:
+            # Do something else
+            last_one = models.Product.objects.all().order_by('-product_number').first()
+            product_number = increment_ifxp(last_one.product_number) if last_one else 'IFXP0000000001'
+            product_obj = FiineProductObj(
+                product_number=product_number,
+                product_name=product_name,
+                product_description=product_description,
+                facility=facility.name,
+                object_code_category=object_code_category,
+                product_category=product_category,
+            )
+            if parent:
+                product_obj.parent = FiineProductObj(
+                    product_number=parent.product_number
+                )
+
         product = models.Product(
             product_number=product_obj.product_number,
             product_name=product_obj.product_name,
@@ -327,6 +380,8 @@ def create_new_product(product_name, product_description, facility, object_code_
             facility=facility,
             product_category=product_obj.product_category,
             object_code_category=product_obj.object_code_category,
+            billable=billable,
+            product_organization=product_organization,
         )
         if billing_calculator:
             product.billing_calculator = billing_calculator

@@ -61,6 +61,11 @@ class TestProduct(APITestCase):
             },
             'object_code_category': object_code_category,
             'product_category': product_category,
+            'product_organization': {
+                'name': 'Kitzmiller Lab',
+                'slug': 'Kitzmiller Lab (a Harvard Laboratory)',
+                'ifxorg': 'IFXORGX00000000G',
+            }
         }
         url = reverse('product-list')
         response = self.client.post(url, product_data, format='json')

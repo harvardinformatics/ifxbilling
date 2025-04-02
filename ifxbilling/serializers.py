@@ -248,6 +248,18 @@ class RateSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'description', 'price', 'decimal_price', 'units', 'is_active', 'max_qty', 'created', 'updated', 'version', 'sort_order')
         read_only_fields = ('id', 'created', 'updated', 'version')
 
+class SkinnyOrganizationSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for Organization
+    '''
+    class Meta:
+        model = Organization
+        fields = (
+            'slug',
+            'name',
+            'ifxorg',
+        )
+
 
 class ParentProductSerializer(serializers.ModelSerializer):
     '''
@@ -260,6 +272,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
     billing_calculator = serializers.CharField(max_length=100, required=False)
     rates = RateSerializer(many=True, read_only=True, source='rate_set')
     object_code_category = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
+    product_organization = SkinnyOrganizationSerializer(many=False, read_only=True)
 
     class Meta:
         model = models.Product
@@ -275,6 +288,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'parent',
             'product_category',
             'object_code_category',
+            'product_organization',
         )
         read_only_fields = ('id',)
 
@@ -301,6 +315,24 @@ class ParentProductSerializer(serializers.ModelSerializer):
                     }
                 ) from dne
 
+        project_organization_data = self.initial_data.get('product_organization', None)
+        if project_organization_data:
+            try:
+                project_organization = Organization.objects.get(ifxorg=project_organization_data['ifxorg'])
+                validated_data['product_organization'] = project_organization
+            except KeyError as ke:
+                raise serializers.ValidationError(
+                    detail={
+                        'product_organization': 'Product organization must have a ifxorg'
+                    }
+                ) from ke
+            except Organization.DoesNotExist as dne:
+                raise serializers.ValidationError(
+                    detail={
+                        'product_organization': f'Cannot find organization with ifxorg {project_organization_data["ifxorg"]}'
+                    }
+                ) from dne
+
         kwargs = {
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
@@ -309,6 +341,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'product_category': validated_data.get('product_category', None),
             'object_code_category': validated_data.get('object_code_category', 'Technical Services'),
             'billing_calculator': validated_data.get('billing_calculator', 'ifxbilling.calculator.BasicBillingCalculator'),
+            'product_organization': validated_data.get('product_organization', None),
         }
         if validated_data.get('parent'):
             kwargs['parent'] = validated_data['parent']
@@ -351,27 +384,28 @@ class ParentProductSerializer(serializers.ModelSerializer):
         Update product and rates.  Ensure updated in Fiine as well.
         '''
         product_data = self.get_validated_data(validated_data)
-        try:
-            product = FiineAPI.readProduct(product_number=instance.product_number)
-            product.product_name = product_data['product_name']
-            product.description = product_data['product_description']
-            product.billable = product_data['billable']
-            product.product_category = product_data.get('product_category')
-            product.object_code_category = product_data.get('object_code_category')
-            if product_data.get('parent'):
-                product.parent = { 'product_number': product_data['parent'].product_number }
-            FiineAPI.updateProduct(**product.to_dict())
-        except Exception as e:
-            logger.exception(e)
-            if 'Not authorized' in str(e):
-                msg = 'Cannot access fiine system due to authorization failure.  Check application key.'
-            else:
-                msg = f'fiine system access failed: {e}'
-            raise serializers.ValidationError(
-                detail={
-                    'product_name': msg
-                }
-            )
+        if not hasattr(settings, 'FIINELESS') or not settings.FIINELESS:
+            try:
+                product = FiineAPI.readProduct(product_number=instance.product_number)
+                product.product_name = product_data['product_name']
+                product.description = product_data['product_description']
+                product.billable = product_data['billable']
+                product.product_category = product_data.get('product_category')
+                product.object_code_category = product_data.get('object_code_category')
+                if product_data.get('parent'):
+                    product.parent = { 'product_number': product_data['parent'].product_number }
+                FiineAPI.updateProduct(**product.to_dict())
+            except Exception as e:
+                logger.exception(e)
+                if 'Not authorized' in str(e):
+                    msg = 'Cannot access fiine system due to authorization failure.  Check application key.'
+                else:
+                    msg = f'fiine system access failed: {e}'
+                raise serializers.ValidationError(
+                    detail={
+                        'product_name': msg
+                    }
+                )
 
         for attr in ['product_name', 'product_description', 'billable']:
             setattr(instance, attr, validated_data[attr])
@@ -459,6 +493,7 @@ class ProductSerializer(ParentProductSerializer):
             'parent',
             'product_category',
             'object_code_category',
+            'product_organization',
         )
         read_only_fields = ('id', )
 

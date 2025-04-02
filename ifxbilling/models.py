@@ -399,6 +399,13 @@ class Product(NaturalKeyModel):
         null=True,
         default='Technical Services',
     )
+    product_organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        help_text='Organization responsible for the account.',
+        blank=True,
+        null=True,
+    )
 
     def is_billable(self):
         '''
