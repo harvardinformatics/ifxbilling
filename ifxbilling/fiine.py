@@ -13,6 +13,7 @@ All rights reserved.
 
 import logging
 import re
+import json
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.conf import settings
@@ -397,11 +398,11 @@ def create_new_product(
         return product
 
     except ApiException as e:
-        logger.exception(e)
+        # logger.exception(e)
         if e.status == status.HTTP_400_BAD_REQUEST:
             raise ValidationError(
                 detail={
-                    'product': str(e)
+                    'product': json.loads(e.body)
                 }
             ) from e
         if 'Duplicate' in str(e):
