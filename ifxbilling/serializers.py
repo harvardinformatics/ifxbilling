@@ -1163,6 +1163,7 @@ class SkinnyAccountSerializer(serializers.ModelSerializer):
         model = models.Account
         fields = (
             'id',
+            'ifxacct',
             'code',
             'name',
             'organization',
