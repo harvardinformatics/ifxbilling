@@ -337,7 +337,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'product_name': validated_data['product_name'],
             'product_description': validated_data['product_description'],
             'facility': validated_data['facility'],
-            'billable': validated_data['billable'],
+            'billable': validated_data.get('billable', False),
             'product_category': validated_data.get('product_category', None),
             'object_code_category': validated_data.get('object_code_category', 'Technical Services'),
             'billing_calculator': validated_data.get('billing_calculator', 'ifxbilling.calculator.BasicBillingCalculator'),
@@ -389,7 +389,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
                 product = FiineAPI.readProduct(product_number=instance.product_number)
                 product.product_name = product_data['product_name']
                 product.description = product_data['product_description']
-                product.billable = product_data['billable']
+                product.billable = product_data.get('billable', False)
                 product.product_category = product_data.get('product_category')
                 product.object_code_category = product_data.get('object_code_category')
                 if product_data.get('parent'):
@@ -407,8 +407,9 @@ class ParentProductSerializer(serializers.ModelSerializer):
                     }
                 )
 
-        for attr in ['product_name', 'product_description', 'billable']:
+        for attr in ['product_name', 'product_description']:
             setattr(instance, attr, validated_data[attr])
+        instance.billable = validated_data.get('billable', False)
         instance.billing_calculator = validated_data.get('billing_calculator', 'ifxbilling.calculator.BasicBillingCalculator')
         instance.parent = validated_data.get('parent')
         instance.product_category = validated_data.get('product_category', None)
