@@ -122,7 +122,7 @@ class Migration(migrations.Migration):
                 'indexes': [],
                 'constraints': [],
             },
-            bases=('ifxuser.ifxuser',),
+            bases=('ifxuser.IfxUser',),
             managers=[
                 ('objects', django.contrib.auth.models.UserManager()),
             ],

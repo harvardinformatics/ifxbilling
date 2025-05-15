@@ -16,7 +16,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.reverse import reverse
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from ifxuser.models import Organization
 from ifxbilling.test import data
 
 class TestAccount(APITestCase):
@@ -94,7 +93,7 @@ class TestAccount(APITestCase):
         response = self.client.post(url, account_data, format='json')
         self.assertTrue(response.status_code == status.HTTP_201_CREATED, f'Incorrect response status: {response.data}')
         self.assertTrue(response.data['account_type'] == 'Expense Code', f'Incorrect value in "account_type" {response.data}')
-        self.assertTrue(response.data['active'] == False, f'Incorrect value in "active" {response.data}')
+        self.assertTrue(response.data['active'] is False, f'Incorrect value in "active" {response.data}')
         self.assertTrue('valid_from' in response.data and response.data['valid_from'], f'Incorrect value in "valid_from" {response.data}')
 
     def testInvalidRoot(self):
@@ -179,7 +178,7 @@ class TestAccount(APITestCase):
         url = reverse('account-list')
         response = self.client.get(url, { 'active': 'true' }, format='json')
         accounts = response.data
-        self.assertTrue(len(accounts) == len(data.ACCOUNTS) - 1, f'active filter for account list did not work')
+        self.assertTrue(len(accounts) == len(data.ACCOUNTS) - 1, 'active filter for account list did not work')
 
     def testFilterPO(self):
         '''
