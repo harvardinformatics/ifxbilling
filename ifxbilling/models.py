@@ -345,7 +345,7 @@ class Product(NaturalKeyModel):
         help_text='Product number of the form IFXP0000000000'
     )
     product_name = models.CharField(
-        max_length=50,
+        max_length=100,
         null=False,
         blank=False,
         default=None,

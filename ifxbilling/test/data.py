@@ -316,6 +316,21 @@ PRODUCTS = [
         ],
         'facility': 'Helium Recovery Service',
         'object_code_category': 'Laboratory Consumables',
+    },
+    {
+        'product_number': 'IFXPX000000003',
+        'product_name': 'Dev Product with a really long name that is not a test product but is over 50 characters',
+        'product_description': 'A balloon of helium',
+        'rates': [
+            {
+                'name': 'Harvard Internal',
+                'price': 100,
+                'decimal_price': 100.00,
+                'units': 'ea',
+            }
+        ],
+        'facility': 'Helium Recovery Service',
+        'object_code_category': 'Laboratory Consumables',
     }
 ]
 

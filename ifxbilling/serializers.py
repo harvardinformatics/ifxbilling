@@ -266,7 +266,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
     Serializer for Products
     '''
     product_number = serializers.ReadOnlyField()
-    product_name = serializers.CharField(max_length=50)
+    product_name = serializers.CharField(max_length=100)
     product_description = serializers.CharField(max_length=4000)
     facility = serializers.SlugRelatedField(slug_field='name', queryset=models.Facility.objects.all())
     billing_calculator = serializers.CharField(max_length=100, required=False)
