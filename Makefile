@@ -38,7 +38,7 @@ prod:
 up: drf
 	docker compose -f $(DOCKERCOMPOSEFILE) $(DOCKERCOMPOSEARGS) up
 down:
-	docker compose -f $(DOCKERCOMPOSEFILE) down
+	docker compose -f $(DOCKERCOMPOSEFILE) down --remove-orphans
 run: build
 	docker compose -f $(DOCKERCOMPOSEFILE) run $(DRFTARGET) /bin/bash
 docs:
