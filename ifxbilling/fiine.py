@@ -10,21 +10,21 @@ Created on  2021-4-5
 All rights reserved.
 @license: GPL v2.0
 '''
-
+# pylint: disable=broad-exception-caught,broad-exception-raised,logging-fstring-interpolation
 import logging
 import re
 import json
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.conf import settings
+from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated, ValidationError
 from fiine.client import API as FiineAPI
 from fiine.client import ApiException
 from fiine.client.swagger.models import Product as FiineProductObj
 from ifxmail.client import API as IfxMailAPI
 from ifxuser.models import Organization
 from ifxec import ExpenseCodeFields, OBJECT_CODES
-from rest_framework import status
-from rest_framework.exceptions import NotAuthenticated, ValidationError
 
 from ifxbilling import models
 
@@ -87,7 +87,7 @@ def sync_facilities():
                     )
                     facility_code_obj.save()
                 successes += 1
-        except Organization.DoesNotExist as e:
+        except Organization.DoesNotExist:
             logger.error(f'Organization {facility_code.organization} not found')
             errors.append(f'Organization {facility_code.organization} not found')
         except Exception as e:
@@ -338,6 +338,8 @@ def create_new_product(
             raise IntegrityError(f'Product with name {product_name} exists in fiine.')
 
     try:
+        product_obj = None # The FiineAPI product object
+
         product_data = {
             'product_name': product_name,
             'product_description': product_description,
@@ -374,28 +376,38 @@ def create_new_product(
                     product_number=parent.product_number
                 )
 
-        product = models.Product(
-            product_number=product_obj.product_number,
-            product_name=product_obj.product_name,
-            product_description=product_obj.product_description,
-            facility=facility,
-            product_category=product_obj.product_category,
-            object_code_category=product_obj.object_code_category,
-            billable=billable,
-            product_organization=product_organization,
-        )
-        if billing_calculator:
-            product.billing_calculator = billing_calculator
-        if product_obj.parent:
-            try:
-                product_number = product_obj.parent.product_number
-                parent = models.Product.objects.get(product_number=product_number)
-            except models.Product.DoesNotExist as dne:
-                logger.exception(f'Unable to find parent product {product_number}')
-                raise Exception(f'Unable to find parent product {product_number}') from dne
-            product.parent = parent
-        product.save()
-        return product
+        try:
+            product = models.Product(
+                product_number=product_obj.product_number,
+                product_name=product_obj.product_name,
+                product_description=product_obj.product_description,
+                facility=facility,
+                product_category=product_obj.product_category,
+                object_code_category=product_obj.object_code_category,
+                billable=billable,
+                product_organization=product_organization,
+            )
+            if billing_calculator:
+                product.billing_calculator = billing_calculator
+            if product_obj.parent:
+                try:
+                    product_number = product_obj.parent.product_number
+                    parent = models.Product.objects.get(product_number=product_number)
+                except models.Product.DoesNotExist as dne:
+                    logger.exception(f'Unable to find parent product {product_number}')
+                    raise Exception(f'Unable to find parent product {product_number}') from dne
+                product.parent = parent
+            product.save()
+            return product
+        except Exception as e:
+            if product_obj and not hasattr(settings, 'FIINELESS') or not settings.FIINELESS:
+                # Remove the product from fiine
+                try:
+                    FiineAPI.deleteProduct(product_obj.product_number)
+                except Exception as ex:
+                    logger.exception(f'Unable to delete product {product_obj.product_number} from fiine: {ex}')
+                    raise Exception(f'Unable to delete product {product_obj.product_number} from fiine: {ex}') from ex
+            raise e
 
     except ApiException as e:
         # logger.exception(e)
