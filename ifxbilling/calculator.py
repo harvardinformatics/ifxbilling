@@ -935,11 +935,10 @@ class NewBillingCalculator():
         if not product_usage and not name:
             raise Exception('Need to specify either product_usage or name options')
 
-        rates = Rate.objects.filter(is_active=True)
+        rates = product_usage.product.get_active_rates() if product_usage else Rate.objects.filter(is_active=True)
         if name:
             rates = rates.filter(name=name)
-            if product_usage:
-                rates = rates.filter(product=product_usage.product)
+
         else:
             try:
                 rate_name = OrganizationRate.objects.filter(
