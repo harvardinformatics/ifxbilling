@@ -501,6 +501,23 @@ class ProductSerializer(ParentProductSerializer):
     parent = ParentProductSerializer(many=False, read_only=True)
 
 
+class SkinnyProductSerializer(serializers.ModelSerializer):
+    '''
+    Serializer for Products that provides product_number, product_name
+    '''
+    product_number = serializers.ReadOnlyField()
+    product_name = serializers.CharField(max_length=100)
+
+    class Meta:
+        model = models.Product
+        fields = (
+            'id',
+            'product_number',
+            'product_name',
+        )
+        read_only_fields = ('id',)
+
+
 class ProductViewSet(viewsets.ModelViewSet):
     '''
     ViewSet for Product models
