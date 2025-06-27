@@ -19,12 +19,12 @@ from django.db import transaction
 from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
+from ifxmail.client import send
 from ifxuser.models import Organization, OrganizationContact
 from ifxec import OBJECT_CODES
 from ifxurls import getIfxUrl
-from ifxmail.client import send
 from ifxbilling.fiine import update_user_accounts
-from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility, UserProductAccount
+from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
 
 logger = logging.getLogger('ifxbilling')
@@ -612,7 +612,7 @@ class NewBillingCalculator():
                 ProductUsageProcessing.objects.filter(product_usage=product_usage).delete()
                 billing_data_dicts = self.get_billing_data_dicts_for_usage(product_usage, **kwargs)
                 if not billing_data_dicts:
-                    raise Exception(f'No billing data for usage')
+                    raise Exception('No billing data for usage')
                 else:
                     for billing_data_dict in billing_data_dicts:
                         account = billing_data_dict.pop('account')
