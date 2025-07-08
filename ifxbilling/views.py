@@ -1196,9 +1196,11 @@ def finalize_billing_month(request):
     except models.Facility.DoesNotExist:
         return Response(data={ 'error': f'Facility cannot be found using ifxfac {ifxfac}' }, status=status.HTTP_400_BAD_REQUEST)
     try:
-        user = ifxuser_models.IfxUser.objects.get(ifxid=ifxid)
+        user = ifxuser_models.IfxUser.get_preferred_user(ifxid=ifxid)
     except ifxuser_models.IfxUser.DoesNotExist:
         return Response(data={ 'error': f'User cannot be found using ifxid {ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response(data={ 'error': f'Error getting user using ifxid {ifxid}: {e}' }, status=status.HTTP_400_BAD_REQUEST)
 
 
     organizations = [ifxuser_models.Organization.objects.filter(org_tree='Harvard')]
