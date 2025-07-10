@@ -24,7 +24,7 @@ from ifxuser.models import Organization, OrganizationContact
 from ifxec import OBJECT_CODES
 from ifxurls import getIfxUrl
 from ifxbilling.fiine import update_user_accounts
-from ifxbilling.models import OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
+from ifxbilling.models import Account, OrganizationRate, Rate, BillingRecord, Transaction, BillingRecordState, ProductUsageProcessing, ProductUsage, Product, Facility
 
 
 logger = logging.getLogger('ifxbilling')
@@ -1181,16 +1181,29 @@ class Rebalance():
 
     def remove_billing_records(self, user, account_data):
         '''
-        Remove the billing records for the given facility, user, year, and month.
-        If product is specified in the account_data, only remove billing records for that product
+        Remove the billing records for the given facility, year, month, and organization (as determined by the account_data)
+        Need to clear out the whole org so that offer letter allocations can be properly credited
         '''
-        # Remove the billing records for the user
+        if not account_data or not len(account_data):
+            raise Exception('No account data provided')
+
+        # Figure out the organization that needs to be rebalanced from the account_data
+        organization = None
+        try:
+            account = Account.objects.filter(ifxacct=account_data[0]['account']).first()
+            organization = account.organization
+        except Account.DoesNotExist:
+            raise Exception(f'Account {account_data[0]["account"]} not found')
+
+        if not organization:
+            raise Exception(f'Organization not found for account {account_data[0]["account"]}')
+
+        # Remove the billing records for the organization
         billing_records = BillingRecord.objects.filter(
             product_usage__product__facility=self.facility,
-            product_usage__product_user=user,
+            account__organization=organization,
             year=self.year,
             month=self.month,
-            product_usage__product__billable=True,
         ).exclude(current_state='FINAL')
 
         for br in billing_records:
@@ -1207,9 +1220,20 @@ class Rebalance():
         '''
         Get the body of the recalculate POST
         '''
+        if not account_data or not len(account_data):
+            raise Exception('No account data provided')
+
+        # Figure out the organization that needs to be rebalanced from the account_data
+        organization = None
+        try:
+            account = Account.objects.filter(ifxacct=account_data[0]['account']).first()
+            organization = account.organization
+        except Account.DoesNotExist:
+            raise Exception(f'Account {account_data[0]["account"]} not found')
+
         return {
             'recalculate': False,
-            'user_ifxid': user.ifxid,
+            'user_ifxorg': organization.ifxorg,
         }
 
     def recalculate_billing_records(self, user, account_data):
