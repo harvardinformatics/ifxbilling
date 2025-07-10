@@ -1085,6 +1085,8 @@ def rebalance(request):
         return Response(data={ 'error': 'month is required' }, status=status.HTTP_400_BAD_REQUEST)
     if not requestor_ifxid:
         return Response(data={ 'error': 'requestor_ifxid is required' }, status=status.HTTP_400_BAD_REQUEST)
+    if not account_data:
+        return Response(data={ 'error': 'account_data must be a non-empty list' }, status=status.HTTP_400_BAD_REQUEST)
 
 
     try:
@@ -1093,26 +1095,31 @@ def rebalance(request):
         return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = ifxuser_models.IfxUser.objects.get(ifxid=ifxid)
+        user = ifxuser_models.IfxUser.get_preferred_user(ifxid)
     except ifxuser_models.IfxUser.DoesNotExist:
         return Response(data={ 'error': f'User cannot be found using ifxid {ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        requestor = ifxuser_models.IfxUser.objects.get(ifxid=requestor_ifxid)
+        requestor = ifxuser_models.IfxUser.get_preferred_user(ifxid=requestor_ifxid)
     except ifxuser_models.IfxUser.DoesNotExist:
         return Response(data={ 'error': f'Requestor cannot be found using ifxid {requestor_ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
 
+    try:
+        account = models.Account.objects.get(ifxacct=account_data[0]['account'])
+        organization = account.organization
+    except models.Account.DoesNotExist:
+        raise Exception(f'Account {account_data[0]["account"]} not found')
 
     auth_token_str = request.META.get('HTTP_AUTHORIZATION')
     rebalancer = get_rebalancer_class()(year, month, facility, auth_token_str, requestor)
     try:
         rebalancer.rebalance_user_billing_month(user, account_data)
-        result = f'Rebalance of accounts for {user.full_name} for billing month {month}/{year} was successful.'
+        result = f'Rebalance of accounts for {organization.name} for billing month {month}/{year} was successful.'
         rebalancer.send_result_notification(result)
         return Response(data={ 'success':  result })
     except Exception as e:
         logger.exception(e)
-        result = f'Rebalance of accounts for {user.full_name} for billing month {month}/{year} failed: {e}'
+        result = f'Rebalance of accounts for {organization.name} for billing month {month}/{year} failed: {e}'
         rebalancer.send_result_notification(result)
         return Response(data={ 'error': f'Rebalance failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
