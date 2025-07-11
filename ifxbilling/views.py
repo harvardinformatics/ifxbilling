@@ -1063,65 +1063,65 @@ def rebalance(request):
     Rebalance the billing records for the given facility, user, year, and month
     '''
     try:
-        data = json.loads(request.body.decode('utf-8'))
-    except json.JSONDecodeError as e:
-        logger.exception(e)
-        return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError as e:
+            logger.exception(e)
+            return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
 
-    invoice_prefix = data.get('invoice_prefix', None)
-    ifxid = data.get('ifxid', None)
-    year = data.get('year', None)
-    month = data.get('month', None)
-    account_data = data.get('account_data', None)
-    requestor_ifxid = data.get('requestor_ifxid', None)
+        invoice_prefix = data.get('invoice_prefix', None)
+        year = data.get('year', None)
+        month = data.get('month', None)
+        account_data = data.get('account_data', None)
+        requestor_ifxid = data.get('requestor_ifxid', None)
 
-    if not invoice_prefix:
-        return Response(data={ 'error': 'invoice_prefix is required' }, status=status.HTTP_400_BAD_REQUEST)
-    if not ifxid:
-        return Response(data={ 'error': 'ifxid is required' }, status=status.HTTP_400_BAD_REQUEST)
-    if not year:
-        return Response(data={ 'error': 'year is required' }, status=status.HTTP_400_BAD_REQUEST)
-    if not month:
-        return Response(data={ 'error': 'month is required' }, status=status.HTTP_400_BAD_REQUEST)
-    if not requestor_ifxid:
-        return Response(data={ 'error': 'requestor_ifxid is required' }, status=status.HTTP_400_BAD_REQUEST)
-    if not account_data:
-        return Response(data={ 'error': 'account_data must be a non-empty list' }, status=status.HTTP_400_BAD_REQUEST)
+        if not invoice_prefix:
+            return Response(data={ 'error': 'invoice_prefix is required' }, status=status.HTTP_400_BAD_REQUEST)
+        if not year:
+            return Response(data={ 'error': 'year is required' }, status=status.HTTP_400_BAD_REQUEST)
+        if not month:
+            return Response(data={ 'error': 'month is required' }, status=status.HTTP_400_BAD_REQUEST)
+        if not requestor_ifxid:
+            return Response(data={ 'error': 'requestor_ifxid is required' }, status=status.HTTP_400_BAD_REQUEST)
+        if not account_data:
+            return Response(data={ 'error': 'account_data must be a non-empty list' }, status=status.HTTP_400_BAD_REQUEST)
 
 
-    try:
-        facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
-    except models.Facility.DoesNotExist:
-        return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            facility = models.Facility.objects.get(invoice_prefix=invoice_prefix)
+        except models.Facility.DoesNotExist:
+            return Response(data={ 'error': f'Facility cannot be found using invoice_prefix {invoice_prefix}' }, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        user = ifxuser_models.IfxUser.get_preferred_user(ifxid)
-    except ifxuser_models.IfxUser.DoesNotExist:
-        return Response(data={ 'error': f'User cannot be found using ifxid {ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            requestor = ifxuser_models.IfxUser.get_preferred_user(ifxid=requestor_ifxid)
+        except ifxuser_models.IfxUser.DoesNotExist:
+            return Response(data={ 'error': f'Requestor cannot be found using ifxid {requestor_ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        requestor = ifxuser_models.IfxUser.get_preferred_user(ifxid=requestor_ifxid)
-    except ifxuser_models.IfxUser.DoesNotExist:
-        return Response(data={ 'error': f'Requestor cannot be found using ifxid {requestor_ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        account = models.Account.objects.get(ifxacct=account_data[0]['account'])
+        # Doing "first" because there can be multiple Accounts for the same ifxacct
+        account = models.Account.objects.filter(ifxacct=account_data[0]['account']).first()
+        if not account:
+            return Response(data={ 'error': f'Account {account_data[0]["account"]} not found' }, status=status.HTTP_400_BAD_REQUEST)
         organization = account.organization
-    except models.Account.DoesNotExist:
-        raise Exception(f'Account {account_data[0]["account"]} not found')
 
-    auth_token_str = request.META.get('HTTP_AUTHORIZATION')
-    rebalancer = get_rebalancer_class()(year, month, facility, auth_token_str, requestor)
-    try:
-        rebalancer.rebalance_user_billing_month(user, account_data)
-        result = f'Rebalance of accounts for {organization.name} for billing month {month}/{year} was successful.'
-        rebalancer.send_result_notification(result)
-        return Response(data={ 'success':  result })
+        try:
+            auth_token_str = request.META.get('HTTP_AUTHORIZATION')
+            rebalancer = get_rebalancer_class()(year, month, facility, auth_token_str, requestor)
+        except Exception as e:
+            logger.exception(e)
+            return Response(data={ 'error': f'Error initializing rebalancer: {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        try:
+            rebalancer.rebalance_organization_billing_month(organization, account_data)
+            result = f'Rebalance of accounts for {organization.name} for billing month {month}/{year} was successful.'
+            rebalancer.send_result_notification(result)
+            return Response(data={ 'success':  result })
+        except Exception as e:
+            logger.exception(e)
+            result = f'Rebalance of accounts for {organization.name} for billing month {month}/{year} failed: {e}'
+            rebalancer.send_result_notification(result)
+            return Response(data={ 'error': f'Rebalance failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
         logger.exception(e)
-        result = f'Rebalance of accounts for {organization.name} for billing month {month}/{year} failed: {e}'
-        rebalancer.send_result_notification(result)
-        return Response(data={ 'error': f'Rebalance failed {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(data={ 'error': f'Error rebalancing billing records: {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(('POST', ))
 def get_billing_contacts(request):
