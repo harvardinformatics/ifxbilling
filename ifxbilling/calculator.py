@@ -473,7 +473,7 @@ class NewBillingCalculator():
         organizations_to_process = organizations
         if not organizations_to_process:
             organizations_to_process = Organization.objects.all()
-
+        logger.debug(f'Calculating billing month for {len(organizations_to_process)} organizations for year {year} and month {month}')
         results = {}
         for organization in organizations_to_process:
             result = self.generate_billing_records_for_organization(year, month, organization, recalculate, user)
@@ -524,6 +524,7 @@ class NewBillingCalculator():
                 'successes': successes,
                 'errors': errors,
             }
+        logger.debug(f'Found {len(product_usages)} product usages for organization {organization.name} for year {year} and month {month}')
         for product_usage in product_usages:
             try:
                 if BillingRecord.objects.filter(product_usage=product_usage).exists():
@@ -606,6 +607,7 @@ class NewBillingCalculator():
         :raises Exception: Any exception thrown during :class:`~ifxbilling.models.BillingRecord` creation is
             caught and used to create :class:`~ifxbilling.models.ProductUsageProcessing` and then re-raised
         '''
+        logger.debug(f'Generating billing records for {product_usage} for year {year} and month {month}')
         brs = []
         try: # errors are captured in the product_usage_processing table
             with transaction.atomic():
@@ -635,6 +637,7 @@ class NewBillingCalculator():
                 logger.exception(ex)
             self.update_product_usage_processing(product_usage, resolved=False, message=str(ex))
             raise ex
+        logger.debug(f'Generated {len(brs)} billing records for {product_usage} for year {year} and month {month}')
         return brs
 
     def get_rate_for_product_usage(self, product_usage, **kwargs):
@@ -1172,14 +1175,14 @@ class Rebalance():
             cclist=cclist,
         )
 
-    def update_usages_for_rebalance(self, user, account_data):
+    def update_usages_for_rebalance(self, organization, account_data):
         '''
         Update the product usages for the given facility, user, year, and month.  Useful for HE, CBSN where account strings are on the usage
         '''
         # pylint: disable=unnecessary-pass
         pass
 
-    def remove_billing_records(self, user, account_data):
+    def remove_billing_records(self, organization, account_data):
         '''
         Remove the billing records for the given facility, year, month, and organization (as determined by the account_data)
         Need to clear out the whole org so that offer letter allocations can be properly credited
@@ -1187,56 +1190,39 @@ class Rebalance():
         if not account_data or not len(account_data):
             raise Exception('No account data provided')
 
-        # Figure out the organization that needs to be rebalanced from the account_data
-        organization = None
-        try:
-            account = Account.objects.filter(ifxacct=account_data[0]['account']).first()
-            organization = account.organization
-        except Account.DoesNotExist:
-            raise Exception(f'Account {account_data[0]["account"]} not found')
-
-        if not organization:
-            raise Exception(f'Organization not found for account {account_data[0]["account"]}')
-
         # Remove the billing records for the organization
-        billing_records = BillingRecord.objects.filter(
-            product_usage__product__facility=self.facility,
-            account__organization=organization,
+        pus = ProductUsage.objects.filter(
+            product__facility=self.facility,
+            organization=organization,
             year=self.year,
-            month=self.month,
-        ).exclude(current_state='FINAL')
+            month=self.month
+        )
+        for pu in pus:
+            pu.productusageprocessing_set.all().delete()
+            for br in pu.billingrecord_set.all():
+                br.delete()
 
-        for br in billing_records:
-            br.delete()
-
-    def update_user_accounts(self, user):
+    def update_organization_accounts(self, organization):
         '''
-        Update the user accounts for the given facility, user, year, and month
+        Update the organization accounts for the given facility, user, year, and month
         '''
-        # Update the user accounts for the user
-        update_user_accounts(user)
+        # Update the user accounts for the organization
+        for ua in organization.useraffiliation_set.all():
+            update_user_accounts(ua.user)
 
-    def get_recalculate_body(self, user, account_data):
+    def get_recalculate_body(self, organization, account_data):
         '''
         Get the body of the recalculate POST
         '''
-        if not account_data or not len(account_data):
+        if not account_data:
             raise Exception('No account data provided')
 
-        # Figure out the organization that needs to be rebalanced from the account_data
-        organization = None
-        try:
-            account = Account.objects.filter(ifxacct=account_data[0]['account']).first()
-            organization = account.organization
-        except Account.DoesNotExist:
-            raise Exception(f'Account {account_data[0]["account"]} not found')
-
         return {
-            'recalculate': False,
+            'recalculate': 'true',
             'user_ifxorg': organization.ifxorg,
         }
 
-    def recalculate_billing_records(self, user, account_data):
+    def recalculate_billing_records(self, organization, account_data):
         '''
         Recalculate the billing records for the given facility, user, year, and month
         '''
@@ -1247,7 +1233,7 @@ class Rebalance():
             'Authorization': self.auth_token_str,
             'Content-Type': 'application/json',
         }
-        data = self.get_recalculate_body(user, account_data)
+        data = self.get_recalculate_body(organization, account_data)
         response = requests.post(url, headers=headers, json=data, timeout=None)
         response_data = None
         try:
@@ -1262,28 +1248,28 @@ class Rebalance():
             else:
                 error_message = response.text
             logger.error(f'Recalculate billing records error response: {response_data}')
-            raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {error_message}')
+            raise Exception(f'Error recalculating billing records for {organization.name} for {self.month}/{self.year}: {error_message}')
 
         if response_data != 'OK' and response_data.get('errors', None):
             error_message = ','.join(set(response_data['errors']))
-            raise Exception(f'Error recalculating billing records for {user.full_name} for {self.month}/{self.year}: {error_message}')
+            raise Exception(f'Error recalculating billing records for {organization.name} for {self.month}/{self.year}: {error_message}')
 
         logger.error(f'Recalculate billing records response: {response_data}')
 
-    def rebalance_user_billing_month(self, user, account_data):
+    def rebalance_organization_billing_month(self, organization, account_data):
         '''
-        Rebalance the billing records for the given facility, user, year, and month
+        Rebalance the billing records for the given facility, organization, year, and month
         '''
         # Remove the billing records for the user
-        self.remove_billing_records(user, account_data)
+        self.remove_billing_records(organization, account_data)
 
         # Sync the user accounts from fiine
-        self.update_user_accounts(user)
+        self.update_organization_accounts(organization)
 
-        self.update_usages_for_rebalance(user, account_data)
+        self.update_usages_for_rebalance(organization, account_data)
 
         # Recreate the billing records by calling the application calculate-billing-month url with invoice_prefix, year, and month
-        self.recalculate_billing_records(user, account_data)
+        self.recalculate_billing_records(organization, account_data)
 
 
 
