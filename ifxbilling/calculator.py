@@ -1222,6 +1222,12 @@ class Rebalance():
             'user_ifxorg': organization.ifxorg,
         }
 
+    def filter_errors(self, response_data):
+        '''
+        Remove any errors that shouldn't be treated as errors for rebalancing purposes.  This is mainly for CBSN.
+        '''
+        return response_data['errors']
+
     def recalculate_billing_records(self, organization, account_data):
         '''
         Recalculate the billing records for the given facility, user, year, and month
@@ -1251,10 +1257,11 @@ class Rebalance():
             raise Exception(f'Error recalculating billing records for {organization.name} for {self.month}/{self.year}: {error_message}')
 
         if response_data != 'OK' and response_data.get('errors', None):
-            error_message = ','.join(set(response_data['errors']))
-            raise Exception(f'Error recalculating billing records for {organization.name} for {self.month}/{self.year}: {error_message}')
+            error_list = self.filter_errors(response_data)
+            error_message = ','.join(set(error_list))
+            if error_message:
+                raise Exception(f'Error recalculating billing records for {organization.name} for {self.month}/{self.year}: {error_message}')
 
-        logger.error(f'Recalculate billing records response: {response_data}')
 
     def rebalance_organization_billing_month(self, organization, account_data, users):
         '''
