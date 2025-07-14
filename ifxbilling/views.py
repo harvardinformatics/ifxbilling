@@ -1070,6 +1070,7 @@ def rebalance(request):
             return Response(data={'error': 'Cannot parse request body'}, status=status.HTTP_400_BAD_REQUEST)
 
         invoice_prefix = data.get('invoice_prefix', None)
+        ifxids = data.get('ifxids', None)
         year = data.get('year', None)
         month = data.get('month', None)
         account_data = data.get('account_data', None)
@@ -1077,6 +1078,8 @@ def rebalance(request):
 
         if not invoice_prefix:
             return Response(data={ 'error': 'invoice_prefix is required' }, status=status.HTTP_400_BAD_REQUEST)
+        if not ifxids or not isinstance(ifxids, list) or len(ifxids) == 0:
+            return Response(data={ 'error': 'ifxids must be a non-empty list' }, status=status.HTTP_400_BAD_REQUEST)
         if not year:
             return Response(data={ 'error': 'year is required' }, status=status.HTTP_400_BAD_REQUEST)
         if not month:
@@ -1104,13 +1107,24 @@ def rebalance(request):
         organization = account.organization
 
         try:
+            users = []
+            for ifxid in ifxids:
+                try:
+                    users.append(ifxuser_models.IfxUser.get_preferred_user(ifxid=ifxid))
+                except ifxuser_models.IfxUser.DoesNotExist:
+                    return Response(data={ 'error': f'User cannot be found using ifxid {ifxid}' }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception(e)
+            return Response(data={ 'error': f'Error getting users using ifxids {ifxids}: {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        try:
             auth_token_str = request.META.get('HTTP_AUTHORIZATION')
             rebalancer = get_rebalancer_class()(year, month, facility, auth_token_str, requestor)
         except Exception as e:
             logger.exception(e)
             return Response(data={ 'error': f'Error initializing rebalancer: {e}' }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         try:
-            rebalancer.rebalance_organization_billing_month(organization, account_data)
+            rebalancer.rebalance_organization_billing_month(organization, account_data, users)
             result = f'Rebalance of accounts for {organization.name} for billing month {month}/{year} was successful.'
             rebalancer.send_result_notification(result)
             return Response(data={ 'success':  result })
