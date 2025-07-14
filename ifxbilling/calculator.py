@@ -1175,7 +1175,7 @@ class Rebalance():
             cclist=cclist,
         )
 
-    def update_usages_for_rebalance(self, organization, account_data):
+    def update_usages_for_rebalance(self, user, account_data):
         '''
         Update the product usages for the given facility, user, year, and month.  Useful for HE, CBSN where account strings are on the usage
         '''
@@ -1256,9 +1256,9 @@ class Rebalance():
 
         logger.error(f'Recalculate billing records response: {response_data}')
 
-    def rebalance_organization_billing_month(self, organization, account_data):
+    def rebalance_organization_billing_month(self, organization, account_data, users):
         '''
-        Rebalance the billing records for the given facility, organization, year, and month
+        Rebalance the billing records for the given facility, organization, users, year, and month
         '''
         # Remove the billing records for the user
         self.remove_billing_records(organization, account_data)
@@ -1266,7 +1266,8 @@ class Rebalance():
         # Sync the user accounts from fiine
         self.update_organization_accounts(organization)
 
-        self.update_usages_for_rebalance(organization, account_data)
+        for user in users:
+            self.update_usages_for_rebalance(user, account_data)
 
         # Recreate the billing records by calling the application calculate-billing-month url with invoice_prefix, year, and month
         self.recalculate_billing_records(organization, account_data)
