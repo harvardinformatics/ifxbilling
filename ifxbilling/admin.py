@@ -20,13 +20,6 @@ from django import forms
 from django.db.models import CharField
 from ifxbilling import models
 
-class FacilityProductInlineAdmin(admin.TabularInline):
-    '''
-    List products for a Facility
-    '''
-    model = models.Product
-    extra = 0
-
 
 class FacilityCodesInlineAdmin(admin.TabularInline):
     '''
@@ -66,7 +59,7 @@ class FacilityAdmin(admin.ModelAdmin):
         'name',
     )
     readonly_fields = ('ifxfac', 'id')
-    inlines = [FacilityProductInlineAdmin, FacilityCodesInlineAdmin]
+    inlines = [FacilityCodesInlineAdmin]
 
 
 admin.site.register(models.Facility, FacilityAdmin)
