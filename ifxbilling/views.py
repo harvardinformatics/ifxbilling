@@ -1302,9 +1302,9 @@ def get_user_list(request):
             affo.ifxorg as affiliation_ifxorg
         from
             ifxuser u
-            inner join nanites_user_affiliation pa on u.primary_affiliation_id = pa.id
-            inner join nanites_organization pao on pa.organization_id = pao.id
-            left join ifxuser_groups ug on u.id = ug.ifxuser_id
+            left join nanites_user_affiliation pa on u.primary_affiliation_id = pa.id
+            left join nanites_organization pao on pa.organization_id = pao.id
+            left join new_ifxuser_groups ug on ug.user_id = u.id
             left join auth_group g on ug.group_id = g.id
             left join user_account ua on u.id = ua.user_id
             left join account uaa on ua.account_id = uaa.id
@@ -1361,6 +1361,7 @@ def get_user_list(request):
                     'primary_affiliation': row_dict['primary_affiliation'],
                 }
             # add to existing user dictonaries
+            logger.debug(row_dict['group_name'])
             results[user_id]['groups'][row_dict['group_name']] = { 'name': row_dict['group_name'] } if row_dict['group_name'] else {}
             results[user_id]['affiliations'][row_dict['affiliation_slug']] = {
                 'name': row_dict['affiliation_name'],
@@ -1393,11 +1394,12 @@ def get_user_list(request):
 
         # Convert defaultdicts to lists
         for user_id in results:
+            logger.debug(results[user_id]['groups'])
             results[user_id]['groups'] = [results[user_id]['groups'][k] for k in results[user_id]['groups'] if k]
             results[user_id]['affiliations'] = [results[user_id]['affiliations'][k] for k in results[user_id]['affiliations'] if k]
             results[user_id]['user_accounts'] = [results[user_id]['user_accounts'][k] for k in results[user_id]['user_accounts'] if k]
             results[user_id]['user_product_accounts'] = [results[user_id]['user_product_accounts'][k] for k in results[user_id]['user_product_accounts'] if k]
-
+        logger.debug(f'number of users is {len(list(results.values()))}')
         return Response(data=list(results.values()))
     except Exception as e:
         logger.exception(e)
