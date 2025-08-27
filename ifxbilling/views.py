@@ -1254,3 +1254,177 @@ def finalize_billing_month(request):
             'success': f'Billing month {month}/{year} finalized for {facility.name} and {len(organizations)} organizations'
         }
     )
+
+
+@api_view(['POST'])
+def get_contactables(request):
+    '''
+    Email contact and "type" for use in IFXMailing components
+    If role and org_slugs are set, only org contacts are searched (this is
+    specifically for the Lab Manager notification for billing records)
+    '''
+    role_name = request.data.get('role', None)
+    organization_slug_str = request.data.get('org_slugs', None)
+    orgs = None
+    if organization_slug_str:
+        orgs = Organization.objects.filter(slug__in=organization_slug_str.split(','))
+    try:
+        result = contacts.get_contactables(role_name, orgs)
+    except Exception as e:
+        logger.exception(e)
+        return Response(data={'error': f'Unable to retrieve contactables: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response(data=result)
+
+@api_view(['GET'])
+def get_user_list(request):
+    '''
+    Return a list of users for the current application.
+    '''
+    local_tz = timezone.get_current_timezone()
+
+    username = request.GET.get('username', None)
+    exclude_application_users = request.GET.get('exclude_application_users', 'true').upper() == 'TRUE'
+    include_disabled = request.GET.get('include_disabled', 'false').upper() == 'TRUE'
+    results = {}
+    sql = f'''
+        select
+            u.id,
+            u.ifxid,
+            u.username,
+            u.first_name,
+            u.last_name,
+            u.full_name,
+            u.email,
+            u.is_active,
+            u.is_staff,
+            g.name as group_name,
+            pao.slug as primary_affiliation,
+            ua.is_valid as user_account_is_valid,
+            ua.id as user_account_id,
+            uaa.name as user_account_name,
+            uaa.ifxacct as user_account_ifxacct,
+            uaa.code as user_account_code,
+            uaa.active as user_account_active,
+            uaao.name as user_account_organization_name,
+            uaao.slug as user_account_organization_slug,
+            uaao.ifxorg as user_account_organization_ifxorg,
+            upa.is_valid as user_product_account_is_valid,
+            upa.id as user_product_account_id,
+            upa.percent as user_product_account_percent,
+            upaa.ifxacct as user_product_account_ifxacct,
+            upaa.code as user_product_account_code,
+            upaa.active as user_product_account_active,
+            upaa.name as user_product_account_name,
+            upao.name as user_product_account_organization_name,
+            upao.slug as user_product_account_organization_slug,
+            upao.ifxorg as user_product_account_organization_ifxorg,
+            aff.role as affiliation_role,
+            aff.active as affiliation_active,
+            affo.name as affiliation_name,
+            affo.slug as affiliation_slug,
+            affo.ifxorg as affiliation_ifxorg
+        from
+            ifxuser u
+            left join nanites_user_affiliation pa on u.primary_affiliation_id = pa.id
+            left join nanites_organization pao on pa.organization_id = pao.id
+            left join new_ifxuser_groups ug on ug.user_id = u.id
+            left join auth_group g on ug.group_id = g.id
+            left join user_account ua on u.id = ua.user_id
+            left join account uaa on ua.account_id = uaa.id
+            left join nanites_organization uaao on uaa.organization_id = uaao.id
+            left join user_product_account upa on u.id = upa.user_id
+            left join account upaa on upa.account_id = upaa.id
+            left join nanites_organization upao on upaa.organization_id = upao.id
+            left join nanites_user_affiliation aff on u.id = aff.user_id
+            left join nanites_organization affo on aff.organization_id = affo.id
+    '''
+    where_clauses = []
+    query_args = []
+
+    if username:
+        where_clauses.append('u.username = %s')
+        query_args.append(username)
+    if exclude_application_users:
+        where_clauses.append("u.last_name != 'Application'")
+    if not include_disabled:
+        where_clauses.append('u.is_active = 1')
+
+    if where_clauses:
+        sql += ' where '
+        sql += ' and '.join(where_clauses)
+
+    sql += ' order by u.last_name, u.first_name'
+
+    try:
+
+        cursor = connection.cursor()
+        cursor.execute(sql, query_args)
+
+        desc = cursor.description
+
+        for row in cursor.fetchall():
+            # Make a dictionary labeled by column name
+            row_dict = dict(zip([col[0] for col in desc], row))
+            user_id = row_dict['id']
+            if not user_id in results:
+                results[user_id] = {
+                    'id': row_dict['id'],
+                    'ifxid': row_dict['ifxid'],
+                    'username': row_dict['username'],
+                    'first_name': row_dict['first_name'],
+                    'last_name': row_dict['last_name'],
+                    'full_name': row_dict['full_name'],
+                    'email': row_dict['email'],
+                    'is_active': row_dict['is_active'],
+                    'is_staff': row_dict['is_staff'],
+                    'groups': defaultdict(dict),
+                    'affiliations': defaultdict(dict),
+                    'user_accounts': defaultdict(dict),
+                    'user_product_accounts': defaultdict(dict),
+                    'primary_affiliation': row_dict['primary_affiliation'],
+                }
+            # add to existing user dictonaries
+            logger.debug(row_dict['group_name'])
+            results[user_id]['groups'][row_dict['group_name']] = { 'name': row_dict['group_name'] } if row_dict['group_name'] else {}
+            results[user_id]['affiliations'][row_dict['affiliation_slug']] = {
+                'name': row_dict['affiliation_name'],
+                'role': row_dict['affiliation_role'],
+                'active': row_dict['affiliation_active'],
+                'ifxorg': row_dict['affiliation_ifxorg'],
+                'slug': row_dict['affiliation_slug'],
+            }
+            results[user_id]['user_accounts'][row_dict['user_account_id']] = {
+                'name': row_dict['user_account_name'],
+                'ifxacct': row_dict['user_account_ifxacct'],
+                'code': row_dict['user_account_code'],
+                'active': row_dict['user_account_active'],
+                'organization_name': row_dict['user_account_organization_name'],
+                'organization_slug': row_dict['user_account_organization_slug'],
+                'organization_ifxorg': row_dict['user_account_organization_ifxorg'],
+                'is_valid': row_dict['user_account_is_valid'],
+            }
+            results[user_id]['user_product_accounts'][row_dict['user_product_account_id']] = {
+                'name': row_dict['user_product_account_name'],
+                'ifxacct': row_dict['user_product_account_ifxacct'],
+                'code': row_dict['user_product_account_code'],
+                'active': row_dict['user_product_account_active'],
+                'organization_name': row_dict['user_product_account_organization_name'],
+                'organization_slug': row_dict['user_product_account_organization_slug'],
+                'organization_ifxorg': row_dict['user_product_account_organization_ifxorg'],
+                'is_valid': row_dict['user_product_account_is_valid'],
+                'percent': row_dict['user_product_account_percent'],
+            }
+
+        # Convert defaultdicts to lists
+        for user_id in results:
+            logger.debug(results[user_id]['groups'])
+            results[user_id]['groups'] = [results[user_id]['groups'][k] for k in results[user_id]['groups'] if k]
+            results[user_id]['affiliations'] = [results[user_id]['affiliations'][k] for k in results[user_id]['affiliations'] if k]
+            results[user_id]['user_accounts'] = [results[user_id]['user_accounts'][k] for k in results[user_id]['user_accounts'] if k]
+            results[user_id]['user_product_accounts'] = [results[user_id]['user_product_accounts'][k] for k in results[user_id]['user_product_accounts'] if k]
+        logger.debug(f'number of users is {len(list(results.values()))}')
+        return Response(data=list(results.values()))
+    except Exception as e:
+        logger.exception(e)
+        return Response(data={'error': f'Error getting user list: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Make a dictionary labeled by column name
