@@ -392,10 +392,11 @@ class ParentProductSerializer(serializers.ModelSerializer):
                 product.billable = product_data.get('billable', False)
                 product.product_category = product_data.get('product_category')
                 product.object_code_category = product_data.get('object_code_category')
-                product_organization = product_data.get('product_organization')
-                product.product_organization = {
-                    'ifxorg': product_organization.ifxorg,
-                }
+                product_organization = product_data.get('product_organization', None)
+                if product_organization:
+                    product.product_organization = {
+                        'ifxorg': product_organization.ifxorg,
+                    }
                 if product_data.get('parent'):
                     product.parent = { 'product_number': product_data['parent'].product_number }
                 FiineAPI.updateProduct(**product.to_dict())
