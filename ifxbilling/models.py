@@ -406,6 +406,10 @@ class Product(NaturalKeyModel):
         blank=True,
         null=True,
     )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Is this product currently active?'
+    )
 
     def is_billable(self):
         '''
