@@ -289,7 +289,7 @@ def update_products():
         for fiine_product in fiine_products:
             try:
                 product = models.Product.objects.get(product_number=fiine_product.product_number)
-                for field in ['product_name', 'product_description', 'object_code_category']:
+                for field in ['product_name', 'product_description', 'object_code_category', 'is_active']:
                     setattr(product, field, getattr(fiine_product, field))
                 product.save()
             except models.Product.DoesNotExist:
@@ -328,7 +328,9 @@ def create_new_product(
     billable=True,
     parent=None,
     product_category=None,
-    product_organization=None):
+    product_organization=None,
+    is_active=True,
+    ):
     '''
     Creates product record in fiine, and creates the local record with product number
     '''
@@ -346,6 +348,7 @@ def create_new_product(
             'facility': facility.name,
             'object_code_category': object_code_category,
             'product_category': product_category,
+            'is_active': is_active,
         }
         if parent:
             product_data['parent'] = {
@@ -370,6 +373,7 @@ def create_new_product(
                 facility=facility.name,
                 object_code_category=object_code_category,
                 product_category=product_category,
+                is_active=is_active,
             )
             if parent:
                 product_obj.parent = FiineProductObj(
@@ -386,6 +390,7 @@ def create_new_product(
                 object_code_category=product_obj.object_code_category,
                 billable=billable,
                 product_organization=product_organization,
+                is_active=product_obj.is_active,
             )
             if billing_calculator:
                 product.billing_calculator = billing_calculator
