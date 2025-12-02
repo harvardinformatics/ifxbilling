@@ -542,7 +542,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         parent_number = self.request.query_params.get('parent_number')
         parent_name = self.request.query_params.get('parent_name')
         product_category = self.request.query_params.get('product_category')
-        include_inactive = self.request.query_params.get('include_inactive', 'false').upper() == 'TRUE'
+        exclude_inactive = self.request.query_params.get('exclude_inactive', 'false').upper() == 'TRUE'
 
         queryset = models.Product.objects.all()
 
@@ -556,7 +556,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(parent__product_name=parent_name)
         if product_category:
             queryset = queryset.filter(product_category=product_category)
-        if not include_inactive:
+        if exclude_inactive:
             queryset = queryset.filter(is_active=True)
 
         return queryset
