@@ -289,6 +289,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'product_category',
             'object_code_category',
             'product_organization',
+            'is_active',
         )
         read_only_fields = ('id',)
 
@@ -342,6 +343,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
             'object_code_category': validated_data.get('object_code_category', 'Technical Services'),
             'billing_calculator': validated_data.get('billing_calculator', 'ifxbilling.calculator.BasicBillingCalculator'),
             'product_organization': validated_data.get('product_organization', None),
+            'is_active': validated_data.get('is_active', True),
         }
         if validated_data.get('parent'):
             kwargs['parent'] = validated_data['parent']
@@ -392,6 +394,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
                 product.billable = product_data.get('billable', False)
                 product.product_category = product_data.get('product_category')
                 product.object_code_category = product_data.get('object_code_category')
+                product.is_active = product_data.get('is_active', True)
                 product_organization = product_data.get('product_organization', None)
                 if product_organization:
                     product.product_organization = {
@@ -420,6 +423,7 @@ class ParentProductSerializer(serializers.ModelSerializer):
         instance.product_category = validated_data.get('product_category', None)
         instance.object_code_category = validated_data.get('object_code_category', None)
         instance.product_organization = validated_data.get('product_organization', None)
+        instance.is_active = validated_data.get('is_active', True)
 
         instance.save()
 
@@ -501,6 +505,7 @@ class ProductSerializer(ParentProductSerializer):
             'product_category',
             'object_code_category',
             'product_organization',
+            'is_active',
         )
         read_only_fields = ('id', )
 
@@ -520,6 +525,7 @@ class SkinnyProductSerializer(serializers.ModelSerializer):
             'id',
             'product_number',
             'product_name',
+            'is_active',
         )
         read_only_fields = ('id',)
 
@@ -536,6 +542,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         parent_number = self.request.query_params.get('parent_number')
         parent_name = self.request.query_params.get('parent_name')
         product_category = self.request.query_params.get('product_category')
+        exclude_inactive = self.request.query_params.get('exclude_inactive', 'false').upper() == 'TRUE'
 
         queryset = models.Product.objects.all()
 
@@ -549,6 +556,8 @@ class ProductViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(parent__product_name=parent_name)
         if product_category:
             queryset = queryset.filter(product_category=product_category)
+        if exclude_inactive:
+            queryset = queryset.filter(is_active=True)
 
         return queryset
 
