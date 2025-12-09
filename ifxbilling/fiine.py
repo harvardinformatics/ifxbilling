@@ -14,6 +14,8 @@ All rights reserved.
 import logging
 import re
 import json
+import requests
+from time import sleep
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.conf import settings
@@ -25,6 +27,7 @@ from fiine.client.swagger.models import Product as FiineProductObj
 from ifxmail.client import API as IfxMailAPI
 from ifxuser.models import Organization
 from ifxec import ExpenseCodeFields, OBJECT_CODES
+from ifxurls.urls import getIfxUrl
 
 from ifxbilling import models
 
@@ -287,15 +290,38 @@ def update_products():
     for facility in models.Facility.objects.all():
         fiine_products = FiineAPI.listProducts(facility=facility.name)
         for fiine_product in fiine_products:
-            try:
-                product = models.Product.objects.get(product_number=fiine_product.product_number)
-                for field in ['product_name', 'product_description', 'object_code_category', 'is_active']:
-                    setattr(product, field, getattr(fiine_product, field))
-                product.save()
-            except models.Product.DoesNotExist:
-                fiine_product_data = fiine_product.to_dict()
-                fiine_product_data['facility'] = facility
-                models.Product.objects.create(**fiine_product_data)
+            fiine_product_data = fiine_product.to_dict()
+            update_or_create_product_with_fiine_data(fiine_product_data)
+
+
+def update_or_create_product_with_fiine_data(fiine_product_data):
+    '''
+    Update a local product with data from fiine product data dict.  Specifically updates product_name, product_description, object_code_category, is_active
+    If the product does not exist locally, it is created.
+    :param fiine_product_data: Dictionary version of FiineAPI Product object
+    :type fiine_product_data: dict
+    :return: The updated or created product
+    :rtype: :class:`~ifxbilling.models.Product`
+    '''
+    try:
+        product = models.Product.objects.get(product_number=fiine_product_data['product_number'])
+        for field in ['product_name', 'product_description', 'object_code_category', 'is_active', 'product_category']:
+            setattr(product, field, fiine_product_data[field])
+        product.save()
+    except models.Product.DoesNotExist:
+        fiine_product_data['facility'] = models.Facility.objects.get(name=fiine_product_data['facility'])
+        fiine_product_data.pop('id')
+        fiine_product_parent_data = fiine_product_data.pop('parent', None)
+        if fiine_product_parent_data:
+            fiine_product_data['parent'] = models.Product.objects.get(product_number=fiine_product_parent_data['product_number'])
+        fiine_product_organization_data = fiine_product_data.pop('product_organization', None)
+        if fiine_product_organization_data:
+            fiine_product_data['product_organization'] = Organization.objects.get(ifxorg=fiine_product_organization_data['ifxorg'])
+
+        product = models.Product.objects.create(**fiine_product_data)
+
+    return product
+
 
 def increment_ifxp(currentval):
     '''
@@ -521,3 +547,69 @@ def set_ifxaccts():
                 except models.Account.MultipleObjectsReturned:
                     logger.error(f'Multiple accounts found for {account.code} for {account.organization}')
                     continue
+
+def migrate_product(old_product, mods, migrate_authorizations=True, deactivate_old_product=True):
+    '''
+    Migrate a product to a new product with modifications as specified in mods dict.
+    If migrate_authorizations is True, UserProductAccounts for the old product will be copied to the new product.
+    If deactivate_old_product is True, the old product will be set to inactive.
+
+    :param old_product: The product to be migrated
+    :type old_product: :class:`~ifxbilling.models.Product`
+    :param mods: Dictionary of fields to be modified in the new product
+    :type mods: dict
+    :param migrate_authorizations: Whether to migrate UserProductAccounts from old to new product
+    :type migrate_authorizations: bool
+    :param deactivate_old_product: Whether to set the old product to inactive
+    :type deactivate_old_product: bool
+
+    :return: The new product
+    :rtype: :class:`~ifxbilling.models.Product`
+    '''
+
+    # Use the migrate-product fiine endpoint with requests
+
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': f'Token {settings.IFX_APP["token"]}',
+    }
+    post_data = {
+        'product_number': old_product.product_number,
+        'mods': mods,
+        'migrate_authorizations': migrate_authorizations,
+        'deactivate_old_product': deactivate_old_product,
+    }
+
+    url = getIfxUrl('FIINE_MIGRATE_PRODUCT')
+    result = requests.post(
+        url,
+        headers=headers,
+        json=post_data
+    )
+    if result.status_code != status.HTTP_200_OK:
+        error_message = result.text
+        try:
+            error_data = result.json()
+            error_message = error_data.get('error', result.text)
+            if 'Duplicate' in error_message:
+                error_message = f'Duplicate entry for product with name {mods.get("product_name", old_product.product_name)}'
+        except Exception:
+            pass
+        logger.exception(f'Error migrating product: {result.status_code} {error_message}')
+        raise Exception(f'Error migrating product: {error_message}')
+
+    result_data = result.json()
+
+    # Sync the new product
+    new_product_number = result_data.get('new_product_number')
+    fiine_product = FiineAPI.readProduct(product_number=new_product_number)
+    fiine_product_data = fiine_product.to_dict()
+    new_product = update_or_create_product_with_fiine_data(fiine_product_data)
+
+    # Sync the old product
+    fiine_old_product = FiineAPI.readProduct(product_number=old_product.product_number)
+    fiine_old_product_data = fiine_old_product.to_dict()
+    update_or_create_product_with_fiine_data(fiine_old_product_data)
+
+    return new_product
