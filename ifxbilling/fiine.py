@@ -287,15 +287,30 @@ def update_products():
     for facility in models.Facility.objects.all():
         fiine_products = FiineAPI.listProducts(facility=facility.name)
         for fiine_product in fiine_products:
-            try:
-                product = models.Product.objects.get(product_number=fiine_product.product_number)
-                for field in ['product_name', 'product_description', 'object_code_category', 'is_active']:
-                    setattr(product, field, getattr(fiine_product, field))
-                product.save()
-            except models.Product.DoesNotExist:
-                fiine_product_data = fiine_product.to_dict()
-                fiine_product_data['facility'] = facility
-                models.Product.objects.create(**fiine_product_data)
+            fiine_product_data = fiine_product.to_dict()
+            update_or_create_product_with_fiine_data(fiine_product_data)
+
+
+def update_or_create_product_with_fiine_data(fiine_product_data):
+    '''
+    Update a local product with data from fiine product data dict.  Specifically updates product_name, product_description, object_code_category, is_active
+    If the product does not exist locally, it is created.
+    :param fiine_product_data: Dictionary version of FiineAPI Product object
+    :type fiine_product_data: dict
+    :return: The updated or created product
+    :rtype: :class:`~ifxbilling.models.Product`
+    '''
+    try:
+        product = models.Product.objects.get(product_number=fiine_product_data.['product_number'])
+        for field in ['product_name', 'product_description', 'object_code_category', 'is_active']:
+            setattr(product, field, fiine_product_data[field])
+        product.save()
+    except models.Product.DoesNotExist:
+        fiine_product_data['facility'] = models.Facility.objects.get(name=fiine_product_data['facility'])
+        product = models.Product.objects.create(**fiine_product_data)
+
+    return product
+
 
 def increment_ifxp(currentval):
     '''
@@ -521,3 +536,36 @@ def set_ifxaccts():
                 except models.Account.MultipleObjectsReturned:
                     logger.error(f'Multiple accounts found for {account.code} for {account.organization}')
                     continue
+
+def migrate_product(old_product, mods, migrate_authorizations, deactivate_old_product):
+    '''
+    Migrate a product to a new product with modifications as specified in mods dict.
+    If migrate_authorizations is True, UserProductAccounts for the old product will be copied to the new product.
+    If deactivate_old_product is True, the old product will be set to inactive.
+
+    :param old_product: The product to be migrated
+    :type old_product: :class:`~ifxbilling.models.Product`
+    :param mods: Dictionary of fields to be modified in the new product
+    :type mods: dict
+    :param migrate_authorizations: Whether to migrate UserProductAccounts from old to new product
+    :type migrate_authorizations: bool
+    :param deactivate_old_product: Whether to set the old product to inactive
+    :type deactivate_old_product: bool
+
+    :return: The new product
+    :rtype: :class:`~ifxbilling.models.Product`
+    '''
+
+    # Use the migrate-product fiine api call
+    result = FiineAPI.migrateProduct(
+        old_product_number=old_product.product_number,
+        mods=mods,
+        migrate_authorizations=migrate_authorizations,
+        deactivate_old_product=deactivate_old_product
+    )
+
+    fiine_product = FiineAPI.readProduct(product_number=result.new_product_number)
+    fiine_product_data = fiine_product.to_dict()
+    new_product = update_or_create_product_with_fiine_data(fiine_product_data)
+
+    return new_product
